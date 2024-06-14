@@ -1,0 +1,7 @@
+{
+    "Lua.workspace.library": [
+        "${3rd}/love2d/library",
+        "c:/Users/Jakub/.vscode/extensions/sumneko.lua-3.6.20-win32-x64/server/meta/7815c96b"
+    ],
+    "Lua.workspace.checkThirdParty": false
+}
