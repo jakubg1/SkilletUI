@@ -1,9 +1,5 @@
 {
     "name": "root",
-    "pos": {
-        "x": 0,
-        "y": 0
-    },
     "children": [
         {
             "name": "box",

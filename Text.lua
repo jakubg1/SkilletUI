@@ -13,7 +13,7 @@ local Color = require("Color")
 ---@param data table The data to be used for this Text.
 function Text:new(data)
     self.font = _FONTS[data.font]
-    self.text = data.text
+    self.text = data.text or ""
     self.scale = data.scale or 1
     self.color = Color(data.color)
     self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
@@ -28,14 +28,6 @@ function Text:new(data)
     self.gradientWaveColor = data.gradientWave and Color(data.gradientWave.color)
     self.gradientWaveFrequency = data.gradientWave and data.gradientWave.frequency
     self.gradientWaveSpeed = data.gradientWave and data.gradientWave.speed
-end
-
-
-
----Updates the Text. You need to do this to make sure the time-dependent effects are working correctly.
----@param dt number Time delta, in seconds.
-function Text:update(dt)
-    self.time = self.time + dt
 end
 
 
@@ -60,6 +52,14 @@ function Text:setGradientWave(color, frequency, speed)
     self.gradientWaveColor = color
     self.gradientWaveFrequency = frequency
     self.gradientWaveSpeed = speed
+end
+
+
+
+---Updates the Text. You need to do this to make sure the time-dependent effects are working correctly.
+---@param dt number Time delta, in seconds.
+function Text:update(dt)
+    self.time = self.time + dt
 end
 
 

@@ -1,7 +1,6 @@
 _Utils = require("com.utils")
 
 local Vec2 = require("Vector2")
-local Color = require("Color")
 local MainCanvas = require("MainCanvas")
 local GridBackground = require("GridBackground")
 local Node = require("Node")
@@ -21,9 +20,8 @@ _BACKGROUND = GridBackground()
 
 
 
-function _LoadUI()
-	local data = _Utils.loadJson("ui.json")
-
+function _LoadUI(path)
+	local data = _Utils.loadJson(path)
 	return Node(data)
 end
 
@@ -31,7 +29,8 @@ end
 
 function love.load()
 	love.window.setMode(_WINDOW_SIZE.x, _WINDOW_SIZE.y)
-	_UI = _LoadUI()
+	_UI = _LoadUI("ui.json")
+	_EDITOR_UI = _LoadUI("editor_ui.json")
 end
 
 
@@ -39,6 +38,7 @@ end
 function love.update(dt)
 	_BACKGROUND:update(dt)
 	_UI:update(dt)
+	_EDITOR_UI:update(dt)
 end
 
 
@@ -51,5 +51,13 @@ function love.draw()
 	_CANVAS:draw()
 	local t2 = love.timer.getTime() - t
 	_DRAW_TIME = _DRAW_TIME * 0.95 + t2 * 0.05
-	love.graphics.print(string.format("Drawing took approximately %.1fms", _DRAW_TIME * 1000))
+	_EDITOR_UI:findChildByName("drawtime").widget.text = string.format("Drawing took approximately %.1fms", _DRAW_TIME * 1000)
+	_EDITOR_UI:draw()
+end
+
+
+
+function love.mousepressed(x, y, button)
+	if button == 1 then
+	end
 end

@@ -16,6 +16,7 @@ local Text = require("Text")
 function Node:new(data, parent)
     self.parent = parent
 
+    self.name = data.name
     self.pos = Vec2(data.pos)
     if data.type == "box" then
         self.widget = Box(data)
@@ -40,6 +41,23 @@ function Node:getGlobalPos()
         return self.parent:getGlobalPos() + self.pos
     end
     return self.pos
+end
+
+
+
+---Returns the first encountered child of the provided name, or `nil` if it is not found.
+---@param name string The name of the child to be found.
+---@return Node?
+function Node:findChildByName(name)
+    for i, child in ipairs(self.children) do
+        if child.name == name then
+            return child
+        end
+        local potentialResult = child:findChildByName(name)
+        if potentialResult then
+            return potentialResult
+        end
+    end
 end
 
 
