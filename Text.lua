@@ -1,7 +1,7 @@
 local class = require "com/class"
 
 ---@class Text
----@overload fun(font, text, pos, scale, color, shadow):Text
+---@overload fun(data):Text
 local Text = class:derive("Text")
 
 local Vec2 = require("Vector2")
@@ -10,35 +10,30 @@ local Color = require("Color")
 
 
 ---Creates a new Text.
----@param font love.Font Font to be used.
----@param text string The text to be displayed.
----@param pos Vector2 Where the Text should be displayed.
----@param scale number? The scale of the Text.
----@param color Color? The color of the Text, white by default.
----@param shadow boolean? Whether the Text should have a shadow.
-function Text:new(font, text, pos, scale, color, shadow)
-    self.font = font
-    self.text = text
-    self.pos = pos
-    self.scale = scale or 1
-    self.color = color or Color()
-    self.shadowOffset = shadow and Vec2(1)
+---@param data table The data to be used for this Text.
+function Text:new(data)
+    self.font = _FONTS[data.font]
+    self.text = data.text
+    self.scale = data.scale or 1
+    self.color = Color(data.color)
+    self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
 
     self.time = 0
+    self.size = Vec2()
 
-    self.waveAmplitude = nil
-    self.waveFrequency = nil
-    self.waveSpeed = nil
+    self.waveAmplitude = data.wave and data.wave.amplitude
+    self.waveFrequency = data.wave and data.wave.frequency
+    self.waveSpeed = data.wave and data.wave.speed
 
-    self.gradientWaveColor = nil
-    self.gradientWaveFrequency = nil
-    self.gradientWaveSpeed = nil
+    self.gradientWaveColor = data.gradientWave and Color(data.gradientWave.color)
+    self.gradientWaveFrequency = data.gradientWave and data.gradientWave.frequency
+    self.gradientWaveSpeed = data.gradientWave and data.gradientWave.speed
 end
 
 
 
 ---Updates the Text. You need to do this to make sure the time-dependent effects are working correctly.
----@param dt number Time delta in seconds.
+---@param dt number Time delta, in seconds.
 function Text:update(dt)
     self.time = self.time + dt
 end
@@ -70,7 +65,8 @@ end
 
 
 ---Draws the Text on the screen.
-function Text:draw()
+---@param pos Vector2 The position where this Text will be drawn.
+function Text:draw(pos)
     love.graphics.setFont(self.font)
     local x = 0
     for i = 1, #self.text do
@@ -87,12 +83,14 @@ function Text:draw()
 
         if self.shadowOffset then
             love.graphics.setColor(0, 0, 0, 0.5)
-            love.graphics.print(chr, math.floor(self.pos.x + self.shadowOffset.x + x + 0.5), math.floor(self.pos.y + self.shadowOffset.y + y + 0.5), 0, self.scale)
+            love.graphics.print(chr, math.floor(pos.x + self.shadowOffset.x + x + 0.5), math.floor(pos.y + self.shadowOffset.y + y + 0.5), 0, self.scale)
         end
         love.graphics.setColor(color.r, color.g, color.b)
-        love.graphics.print(chr, math.floor(self.pos.x + x + 0.5), math.floor(self.pos.y + y + 0.5), 0, self.scale)
+        love.graphics.print(chr, math.floor(pos.x + x + 0.5), math.floor(pos.y + y + 0.5), 0, self.scale)
         x = x + w
     end
+    self.size.x = x
+    self.size.y = self.font:getHeight() * self.scale
 end
 
 

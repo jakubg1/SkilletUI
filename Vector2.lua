@@ -18,11 +18,18 @@ local Vec2 = class:derive("Vec2")
 ---`Vec2(x)` will make a `(x, x)` vector.
 ---
 ---`Vec2(x, y)` will make a `(x, y)` vector.
+---
+---`Vec2({x: x, y: y})` will make a `(x, y)` vector.
 ---@param x number?
 ---@param y number?
 function Vec2:new(x, y)
-	self.x = x or 0
-	self.y = y or self.x
+	if type(x) == "table" then
+		self.x = x.x
+		self.y = x.y
+	else
+		self.x = x or 0
+		self.y = y or self.x
+	end
 end
 
 function Vec2.__tostring(o) return "(" .. tostring(o.x) .. ", " .. tostring(o.y) .. ")" end

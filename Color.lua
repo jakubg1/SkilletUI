@@ -18,10 +18,18 @@ local Color = class:derive("Color")
 ---`Color(x)` will make a `(x, x, x)` color (grayscale).
 ---
 ---`Color(r, g, b)` will make a `(r, g, b)` color.
+---
+---`Color({r: r, g: g, b: b})` will make a `(r, g, b)` color.
 function Color:new(r, g, b)
-	self.r = r or 1
-	self.g = g or self.r
-	self.b = b or self.r
+	if type(r) == "table" then
+		self.r = r.r
+		self.g = r.g
+		self.b = r.b
+	else
+		self.r = r or 1
+		self.g = g or self.r
+		self.b = b or self.r
+	end
 end
 
 function Color.__tostring(o) return "Color(" .. tostring(o.r) .. ", " .. tostring(o.g) .. ", " .. tostring(o.b) .. ")" end

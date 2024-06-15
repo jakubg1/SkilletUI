@@ -78,11 +78,11 @@ end
 
 function GridBackground:update(dt)
 	self.time = self.time + dt
-	self.speedMoveRot = self.speedMoveRot * 0.6 + ((love.math.noise(self.MOVE_ROT_BASE + self.time * 0.10) - 0.5) * 0.03) * 0.4
-	self.speedRot = self.speedRot * 0.6 + ((love.math.noise(self.ROT_BASE + self.time * 0.07) - 0.5) * 0.01) * 0.4
+	self.speedMoveRot = self.speedMoveRot * 0.6 + ((love.math.noise(self.MOVE_ROT_BASE + self.time * 0.05) - 0.5) * 0.015) * 0.4
+	self.speedRot = self.speedRot * 0.6 + ((love.math.noise(self.ROT_BASE + self.time * 0.035) - 0.5) * 0.005) * 0.4
     self.moveRot = self.moveRot + self.speedMoveRot
-    self.moveX = self.moveX + 0.05 * (math.cos(self.moveRot) - math.sin(self.moveRot))
-    self.moveY = self.moveY + 0.05 * (math.sin(self.moveRot) + math.cos(self.moveRot))
+    self.moveX = self.moveX + 0.025 * (math.cos(self.moveRot) - math.sin(self.moveRot))
+    self.moveY = self.moveY + 0.025 * (math.sin(self.moveRot) + math.cos(self.moveRot))
 	self.rot = self.rot + self.speedRot
 end
 

@@ -1,0 +1,68 @@
+{
+    "name": "root",
+    "pos": {
+        "x": 0,
+        "y": 0
+    },
+    "children": [
+        {
+            "name": "box",
+            "type": "box",
+            "pos": {
+                "x": 10,
+                "y": 10
+            },
+            "size": {
+                "x": 50,
+                "y": 5
+            },
+            "color": {
+                "r": 0.5,
+                "g": 1,
+                "b": 1
+            }
+        },
+        {
+            "name": "text",
+            "type": "text",
+            "font": "standard",
+            "text": "Let's write some code!",
+            "pos": {
+                "x": 50,
+                "y": 80
+            },
+            "shadow": 1,
+            "wave": {
+                "amplitude": 5,
+                "frequency": 80,
+                "speed": 60
+            }
+        },
+        {
+            "name": "text2",
+            "type": "text",
+            "font": "standard",
+            "text": "Chain Blast",
+            "pos": {
+                "x": 50,
+                "y": 20
+            },
+            "scale": 4,
+            "color": {
+                "r": 0.3,
+                "g": 1,
+                "b": 0.3
+            },
+            "shadow": 2,
+            "gradientWave": {
+                "color": {
+                    "r": 0.1,
+                    "g": 0.6,
+                    "b": 0.1
+                },
+                "frequency": 200,
+                "speed": 100
+            }
+        }
+    ]
+}
