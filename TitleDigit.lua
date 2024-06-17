@@ -15,8 +15,8 @@ function TitleDigit:new(data)
 
     self.SIZE = Vec2(6, 7)
     self.MAIN_COLOR = Color(1, 0.8, 0)
-    self.SECONDARY_COLOR = Color(0.7, 0.4, 0)
-    self.TERNARY_COLOR = Color(0.6, 0.3, 0)
+    self.SECONDARY_COLOR = Color(0.5, 0.2, 0)
+    self.TERNARY_COLOR = Color(0.7, 0.4, 0)
     self.SHADOW_COLOR = Color(0, 0, 0)
     self.CUBE_POSITIONS = {
                     Vec2(1, 0), Vec2(2, 0), Vec2(3, 0), Vec2(4, 0),

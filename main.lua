@@ -4,6 +4,7 @@ local Vec2 = require("Vector2")
 local NineImage = require("NineImage")
 local MainCanvas = require("MainCanvas")
 local GridBackground = require("GridBackground")
+local TransitionTest = require("TransitionTest")
 local Node = require("Node")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
@@ -24,6 +25,7 @@ _IMAGES = {
 
 _CANVAS = MainCanvas()
 _BACKGROUND = GridBackground()
+_TRANSITION = TransitionTest()
 
 
 
@@ -46,6 +48,7 @@ function love.update(dt)
 	_MOUSE_POS = Vec2(love.mouse.getPosition())
 	_MOUSE_CPOS = _CANVAS:posToPixel(_MOUSE_POS)
 	_BACKGROUND:update(dt)
+	_TRANSITION:update(dt)
 	_UI:update(dt)
 	_EDITOR_UI:update(dt)
 end
@@ -61,6 +64,7 @@ function love.draw()
 	if hover then
 		hover:drawHitbox()
 	end
+	_TRANSITION:draw()
 	_CANVAS:draw()
 	local t2 = love.timer.getTime() - t
 	_DRAW_TIME = _DRAW_TIME * 0.95 + t2 * 0.05
@@ -73,5 +77,10 @@ end
 
 function love.mousepressed(x, y, button)
 	if button == 1 then
+		if _TRANSITION.state then
+			_TRANSITION:hide()
+		else
+			_TRANSITION:show()
+		end
 	end
 end
