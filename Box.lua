@@ -18,6 +18,14 @@ end
 
 
 
+---Returns the size of this Box.
+---@return Vector2
+function Box:getSize()
+    return self.size
+end
+
+
+
 ---Updates the Box.
 ---@param dt number Time delta, in seconds.
 function Box:update(dt)
@@ -28,9 +36,10 @@ end
 
 ---Draws the Box on the screen.
 ---@param pos Vector2 The position where this Box will be drawn.
-function Box:draw(pos)
-    love.graphics.setColor(self.color.r, self.color.g, self.color.b)
-    love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, self.size.x - 1, self.size.y - 1)
+---@param alpha number The opacity of this Box.
+function Box:draw(pos, alpha)
+    love.graphics.setColor(self.color.r, self.color.g, self.color.b, alpha)
+    love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, self.size.x, self.size.y)
 end
 
 

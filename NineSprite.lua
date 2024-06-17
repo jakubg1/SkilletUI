@@ -5,7 +5,6 @@ local class = require "com.class"
 local NineSprite = class:derive("NineSprite")
 
 local Vec2 = require("Vector2")
-local Color = require("Color")
 
 
 
@@ -14,6 +13,14 @@ local Color = require("Color")
 function NineSprite:new(data)
     self.image = _IMAGES[data.image]
     self.size = Vec2(data.size)
+end
+
+
+
+---Returns the size of this NineSprite.
+---@return Vector2
+function NineSprite:getSize()
+    return self.size
 end
 
 
@@ -28,8 +35,9 @@ end
 
 ---Draws the NineSprite on the screen.
 ---@param pos Vector2 The position where this NineSprite will be drawn.
-function NineSprite:draw(pos)
-    love.graphics.setColor(1, 1, 1)
+---@param alpha number The opacity of this NineSprite.
+function NineSprite:draw(pos, alpha)
+    love.graphics.setColor(1, 1, 1, alpha)
     self.image:draw(pos, self.size)
 end
 

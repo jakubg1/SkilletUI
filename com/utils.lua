@@ -450,7 +450,7 @@ end
 ---@param bs Vector2 The size of the box.
 ---@return boolean
 function utils.isPointInsideBox(p, bp, bs)
-	return p.x >= bp.x and p.y >= bp.y and p.x <= (bp.x + bs.x) and p.y <= (bp.y + bs.y)
+	return p.x >= bp.x and p.y >= bp.y and p.x < (bp.x + bs.x) and p.y < (bp.y + bs.y)
 end
 
 

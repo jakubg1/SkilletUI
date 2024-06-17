@@ -15,6 +15,12 @@ end
 
 
 
+function MainCanvas:posToPixel(pos)
+    return (pos / _WINDOW_SIZE * self.SIZE):floor()
+end
+
+
+
 function MainCanvas:activate()
     love.graphics.setCanvas(self.canvas)
     love.graphics.setColor(0, 0, 0)

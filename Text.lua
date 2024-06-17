@@ -19,7 +19,6 @@ function Text:new(data)
     self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
 
     self.time = 0
-    self.size = Vec2()
 
     self.waveAmplitude = data.wave and data.wave.amplitude
     self.waveFrequency = data.wave and data.wave.frequency
@@ -56,6 +55,14 @@ end
 
 
 
+---Returns the size of this Text.
+---@return Vector2
+function Text:getSize()
+    return Vec2(self.font:getWidth(self.text) - 1, self.font:getHeight()) * self.scale
+end
+
+
+
 ---Updates the Text. You need to do this to make sure the time-dependent effects are working correctly.
 ---@param dt number Time delta, in seconds.
 function Text:update(dt)
@@ -66,7 +73,8 @@ end
 
 ---Draws the Text on the screen.
 ---@param pos Vector2 The position where this Text will be drawn.
-function Text:draw(pos)
+---@param alpha number The opacity of this Text.
+function Text:draw(pos, alpha)
     love.graphics.setFont(self.font)
     local x = 0
     for i = 1, #self.text do
@@ -82,15 +90,13 @@ function Text:draw(pos)
         end
 
         if self.shadowOffset then
-            love.graphics.setColor(0, 0, 0, 0.5)
+            love.graphics.setColor(0, 0, 0, alpha * 0.5)
             love.graphics.print(chr, math.floor(pos.x + self.shadowOffset.x + x + 0.5), math.floor(pos.y + self.shadowOffset.y + y + 0.5), 0, self.scale)
         end
-        love.graphics.setColor(color.r, color.g, color.b)
+        love.graphics.setColor(color.r, color.g, color.b, alpha)
         love.graphics.print(chr, math.floor(pos.x + x + 0.5), math.floor(pos.y + y + 0.5), 0, self.scale)
         x = x + w
     end
-    self.size.x = x
-    self.size.y = self.font:getHeight() * self.scale
 end
 
 

@@ -5,31 +5,124 @@
             "name": "box",
             "type": "box",
             "pos": {
-                "x": 10,
-                "y": 10
+                "x": 160,
+                "y": 180
             },
             "size": {
-                "x": 50,
-                "y": 5
+                "x": 320,
+                "y": 30
             },
+            "align": "bottom",
             "color": {
-                "r": 0.5,
-                "g": 1,
-                "b": 1
-            }
+                "r": 0.1,
+                "g": 0.6,
+                "b": 0.1
+            },
+            "alpha": 0.4,
+            "children": [
+                {
+                    "name": "box",
+                    "type": "box",
+                    "size": {
+                        "x": 320,
+                        "y": 1
+                    },
+                    "align": "top",
+                    "parentAlign": "top",
+                    "color": {
+                        "r": 0.1,
+                        "g": 0.6,
+                        "b": 0.1
+                    }
+                }
+            ]
         },
         {
             "name": "box2",
             "type": "9sprite",
             "image": "button",
             "pos": {
-                "x": 120,
-                "y": 10
+                "x": 160,
+                "y": 80
             },
+            "align": "middle",
             "size": {
-                "x": 50,
-                "y": 10
-            }
+                "x": 100,
+                "y": 14
+            },
+            "children": [
+                {
+                    "name": "#",
+                    "type": "text",
+                    "font": "standard",
+                    "text": "Play!",
+                    "pos": {
+                        "x": 0,
+                        "y": -1
+                    },
+                    "align": "middle",
+                    "parentAlign": "middle",
+                    "shadow": 1
+                }
+            ]
+        },
+        {
+            "name": "box2",
+            "type": "9sprite",
+            "image": "button",
+            "pos": {
+                "x": 160,
+                "y": 100
+            },
+            "align": "middle",
+            "size": {
+                "x": 100,
+                "y": 14
+            },
+            "children": [
+                {
+                    "name": "#",
+                    "type": "text",
+                    "font": "standard",
+                    "text": "New Game",
+                    "pos": {
+                        "x": 0,
+                        "y": -1
+                    },
+                    "align": "middle",
+                    "parentAlign": "middle",
+                    "shadow": 1
+                }
+            ]
+        },
+        {
+            "name": "box2",
+            "type": "9sprite",
+            "image": "button",
+            "pos": {
+                "x": 160,
+                "y": 120
+            },
+            "align": "middle",
+            "size": {
+                "x": 100,
+                "y": 14
+            },
+            "children": [
+                {
+                    "name": "#",
+                    "type": "text",
+                    "font": "standard",
+                    "text": "Hi-Scores",
+                    "pos": {
+                        "x": 0,
+                        "y": -1
+                    },
+                    "align": "middle",
+                    "parentAlign": "middle",
+                    "shadow": 1
+                }
+            ]
         },
         {
             "name": "text",
@@ -37,8 +130,8 @@
             "font": "standard",
             "text": "Let's write some code!",
             "pos": {
-                "x": 50,
-                "y": 80
+                "x": 220,
+                "y": 160
             },
             "shadow": 1,
             "wave": {
@@ -53,9 +146,10 @@
             "font": "standard",
             "text": "Chain Blast",
             "pos": {
-                "x": 50,
-                "y": 20
+                "x": 160,
+                "y": 40
             },
+            "align": "middle",
             "scale": 4,
             "color": {
                 "r": 0.3,
