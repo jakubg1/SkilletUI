@@ -8,6 +8,7 @@ local Vec2 = require("Vector2")
 local Box = require("Box")
 local NineSprite = require("NineSprite")
 local Text = require("Text")
+local TitleDigit = require("TitleDigit")
 
 
 
@@ -43,6 +44,8 @@ function Node:new(data, parent)
         self.widget = NineSprite(data)
     elseif data.type == "text" then
         self.widget = Text(data)
+    elseif data.type == "@titleDigit" then
+        self.widget = TitleDigit(data)
     end
 
     self.children = {}

@@ -50,6 +50,7 @@
                 "x": 100,
                 "y": 14
             },
+            "shadow": 1,
             "children": [
                 {
                     "name": "#",
@@ -79,6 +80,7 @@
                 "x": 100,
                 "y": 14
             },
+            "shadow": 1,
             "children": [
                 {
                     "name": "#",
@@ -108,6 +110,7 @@
                 "x": 100,
                 "y": 14
             },
+            "shadow": 1,
             "children": [
                 {
                     "name": "#",
@@ -141,13 +144,23 @@
             }
         },
         {
-            "name": "text2",
+            "name": "titleDigit",
+            "type": "@titleDigit",
+            "pos": {
+                "x": 162,
+                "y": 35
+            },
+            "align": "middle",
+            "shadow": 2
+        },
+        {
+            "name": "title",
             "type": "text",
             "font": "standard",
             "text": "Chain Blast",
             "pos": {
                 "x": 160,
-                "y": 40
+                "y": 35
             },
             "align": "middle",
             "scale": 4,
