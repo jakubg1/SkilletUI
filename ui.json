@@ -19,6 +19,19 @@
             }
         },
         {
+            "name": "box2",
+            "type": "9sprite",
+            "image": "button",
+            "pos": {
+                "x": 120,
+                "y": 10
+            },
+            "size": {
+                "x": 50,
+                "y": 10
+            }
+        },
+        {
             "name": "text",
             "type": "text",
             "font": "standard",

@@ -1,4 +1,4 @@
-local class = require "com/class"
+local class = require "com.class"
 
 ---@class Text
 ---@overload fun(data):Text

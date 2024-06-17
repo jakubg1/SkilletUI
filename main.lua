@@ -1,6 +1,7 @@
 _Utils = require("com.utils")
 
 local Vec2 = require("Vector2")
+local NineImage = require("NineImage")
 local MainCanvas = require("MainCanvas")
 local GridBackground = require("GridBackground")
 local Node = require("Node")
@@ -13,6 +14,9 @@ _DRAW_TIME = 0
 _FONT_CHARACTERS = " abcdefghijklmnopqrstuvwxyząćęłńóśźżABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ0123456789<>-+()[]_.,:;'!?@#$€%^&*\"/|\\"
 _FONTS = {
 	standard = love.graphics.newImageFont("standard.png", _FONT_CHARACTERS, 1)
+}
+_IMAGES = {
+	button = NineImage(love.graphics.newImage("button.png"), 2, 3, 3, 4)
 }
 
 _CANVAS = MainCanvas()

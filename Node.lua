@@ -1,4 +1,4 @@
-local class = require "com/class"
+local class = require "com.class"
 
 ---@class Node
 ---@overload fun(data, parent):Node
@@ -6,6 +6,7 @@ local Node = class:derive("Node")
 
 local Vec2 = require("Vector2")
 local Box = require("Box")
+local NineSprite = require("NineSprite")
 local Text = require("Text")
 
 
@@ -20,6 +21,8 @@ function Node:new(data, parent)
     self.pos = Vec2(data.pos)
     if data.type == "box" then
         self.widget = Box(data)
+    elseif data.type == "9sprite" then
+        self.widget = NineSprite(data)
     elseif data.type == "text" then
         self.widget = Text(data)
     end
