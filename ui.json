@@ -1,5 +1,14 @@
 {
     "name": "root",
+    "type": "",
+    "size": {
+        "x": 1280,
+        "y": 720
+    },
+    "canvasSize": {
+        "x": 320,
+        "y": 180
+    },
     "children": [
         {
             "name": "box",
@@ -38,10 +47,11 @@
             ]
         },
         {
-            "name": "box2",
+            "name": "btn1",
             "type": "9sprite",
             "image": "button",
             "hoverImage": "button_hover",
+            "clickImage": "button_click",
             "pos": {
                 "x": 160,
                 "y": 80
@@ -69,10 +79,11 @@
             ]
         },
         {
-            "name": "box2",
+            "name": "btn2",
             "type": "9sprite",
             "image": "button",
             "hoverImage": "button_hover",
+            "clickImage": "button_click",
             "pos": {
                 "x": 160,
                 "y": 100
@@ -100,10 +111,11 @@
             ]
         },
         {
-            "name": "box2",
+            "name": "btn3",
             "type": "9sprite",
             "image": "button",
             "hoverImage": "button_hover",
+            "clickImage": "button_click",
             "pos": {
                 "x": 160,
                 "y": 120

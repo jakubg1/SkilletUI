@@ -1,11 +1,12 @@
 local class = require "com.class"
 
 ---@class Node
----@overload fun(data, parent):Node
+---@overload fun(data, parent, useCpos):Node
 local Node = class:derive("Node")
 
 local Vec2 = require("Vector2")
 local Box = require("Box")
+local Canvas = require("Canvas")
 local NineSprite = require("NineSprite")
 local Text = require("Text")
 local TitleDigit = require("TitleDigit")
@@ -29,8 +30,10 @@ local ALIGNMENTS = {
 ---Creates a new UI Node.
 ---@param data table The node data.
 ---@param parent Node? The parent node.
-function Node:new(data, parent)
+---@param useCpos boolean? If set, this Node and all its children will take the upscaled mouse coordinates to match the main canvas.
+function Node:new(data, parent, useCpos)
     self.parent = parent
+    self.useCpos = useCpos
 
     self.name = data.name
     self.pos = Vec2(data.pos)
@@ -38,8 +41,17 @@ function Node:new(data, parent)
     self.parentAlign = data.parentAlign and ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
     self.alpha = data.alpha or 1
 
+    self.clicked = false
+    self.onClick = nil
+
     if data.type == "box" then
         self.widget = Box(self, data)
+    elseif data.type == "canvas" then
+        -- Not supported. Canvases have a few problems:
+        -- - Debug drawing
+        -- - Drawing stuff other than UI on such canvas would be a problem
+        self.isCanvas = true
+        self.widget = Canvas(self, data)
     elseif data.type == "9sprite" then
         self.widget = NineSprite(self, data)
     elseif data.type == "text" then
@@ -51,7 +63,7 @@ function Node:new(data, parent)
     self.children = {}
     if data.children then
     	for i, child in ipairs(data.children) do
-	    	table.insert(self.children, Node(child, self))
+	    	table.insert(self.children, Node(child, self, useCpos))
 	    end
     end
 end
@@ -83,7 +95,7 @@ end
 
 ---Returns whether this Node is hovered. (Currently works only for the upscaled UI)
 function Node:isHovered()
-    return self:hasPixel(_MOUSE_CPOS)
+    return self:hasPixel(self.useCpos and _MOUSE_CPOS or _MOUSE_POS)
 end
 
 
@@ -96,6 +108,14 @@ function Node:hasPixel(pos)
         return _Utils.isPointInsideBox(pos, self:getGlobalPos(), self:getSize())
     end
     return false
+end
+
+
+
+---Sets an on-click function (or resets it, if no argument is provided).
+---@param f function? The function to be executed if this Node is clicked.
+function Node:setOnClick(f)
+    self.onClick = f
 end
 
 
@@ -149,11 +169,20 @@ end
 
 ---Draws this Node's widget, if it exists, and all its children.
 function Node:draw()
-    if self.widget then
+    if not self.isCanvas then
+        if self.widget then
+            self.widget:draw()
+        end
+        for i, child in ipairs(self.children) do
+            child:draw()
+        end
+    else
+        -- Canvases are treated differently.
+        self.widget:activate()
+        for i, child in ipairs(self.children) do
+            child:draw()
+        end
         self.widget:draw()
-    end
-    for i, child in ipairs(self.children) do
-        child:draw()
     end
 end
 
@@ -190,6 +219,42 @@ function Node:drawSelected()
         love.graphics.setColor(1, 1, 1)
         love.graphics.line(pos.x - 1.5, pos.y + 0.5, pos.x + 2.5, pos.y + 0.5)
         love.graphics.line(pos.x + 0.5, pos.y - 1.5, pos.x + 0.5, pos.y + 2.5)
+    end
+end
+
+
+
+---Executed whenever a mouse button is pressed anywhere on the screen.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+---@param button integer The button that has been pressed.
+function Node:mousepressed(x, y, button)
+    if button == 1 and self:isHovered() then
+        self.clicked = true
+    end
+    for i, child in ipairs(self.children) do
+        child:mousepressed(x, y, button)
+    end
+end
+
+
+
+---Executed whenever a mouse button is released anywhere on the screen.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+---@param button integer The button that has been released.
+function Node:mousereleased(x, y, button)
+    if button == 1 and self.clicked then
+        self.clicked = false
+        -- We don't want the click function to occur if the cursor was released outside of the node.
+        if self:isHovered() then
+            if self.onClick then
+                self.onClick()
+            end
+        end
+    end
+    for i, child in ipairs(self.children) do
+        child:mousereleased(x, y, button)
     end
 end
 

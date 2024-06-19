@@ -22,7 +22,9 @@ _FONTS = {
 _IMAGES = {
 	button = NineImage(love.graphics.newImage("button.png"), 2, 3, 3, 4),
 	button_hover = NineImage(love.graphics.newImage("button_hover.png"), 2, 3, 3, 4),
-	ed_button = NineImage(love.graphics.newImage("ed_button.png"), 2, 3, 2, 3)
+	button_click = NineImage(love.graphics.newImage("button_click.png"), 2, 3, 3, 4),
+	ed_button = NineImage(love.graphics.newImage("ed_button.png"), 2, 3, 2, 3),
+	ed_button_click = NineImage(love.graphics.newImage("ed_button_click.png"), 2, 3, 2, 3)
 }
 
 _CANVAS = MainCanvas()
@@ -35,16 +37,23 @@ _SELECTED_NODE = nil
 
 
 
-function _LoadUI(path)
+function _LoadUI(path, useCpos)
 	local data = _Utils.loadJson(path)
-	return Node(data)
+	return Node(data, nil, useCpos)
 end
 
 
 
 function love.load()
 	love.window.setMode(_WINDOW_SIZE.x, _WINDOW_SIZE.y)
-	_UI = _LoadUI("ui.json")
+	_UI = _LoadUI("ui.json", true)
+	_UI:findChildByName("btn1"):setOnClick(function ()
+		if _TRANSITION.state then
+			_TRANSITION:hide()
+		else
+			_TRANSITION:show()
+		end
+	end)
 	_EDITOR_UI = _LoadUI("editor_ui.json")
 end
 
@@ -88,14 +97,17 @@ function love.mousepressed(x, y, button)
 	if button == 1 then
 		if _EDITOR_MODE then
 			_SELECTED_NODE = _HOVERED_NODE
-		else
-			if _TRANSITION.state then
-				_TRANSITION:hide()
-			else
-				_TRANSITION:show()
-			end
 		end
 	end
+	_UI:mousepressed(x, y, button)
+	_EDITOR_UI:mousepressed(x, y, button)
+end
+
+
+
+function love.mousereleased(x, y, button)
+	_UI:mousereleased(x, y, button)
+	_EDITOR_UI:mousereleased(x, y, button)
 end
 
 
