@@ -28,6 +28,8 @@ _IMAGES = {
 _CANVAS = MainCanvas()
 _BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
+
+_EDITOR_MODE = true
 _HOVERED_NODE = nil
 _SELECTED_NODE = nil
 
@@ -63,15 +65,15 @@ end
 function love.draw()
 	local t = love.timer.getTime()
 	_CANVAS:activate()
-	--_BACKGROUND:draw()
+	_BACKGROUND:draw()
 	_UI:draw()
-	if _HOVERED_NODE then
+	if _EDITOR_MODE and _HOVERED_NODE then
 		_HOVERED_NODE:drawHitbox()
 	end
-	if _SELECTED_NODE then
+	if _EDITOR_MODE and _SELECTED_NODE then
 		_SELECTED_NODE:drawSelected()
 	end
-	--_TRANSITION:draw()
+	_TRANSITION:draw()
 	_CANVAS:draw()
 	local t2 = love.timer.getTime() - t
 	_DRAW_TIME = _DRAW_TIME * 0.95 + t2 * 0.05
@@ -84,11 +86,22 @@ end
 
 function love.mousepressed(x, y, button)
 	if button == 1 then
-		if _TRANSITION.state then
-			_TRANSITION:hide()
+		if _EDITOR_MODE then
+			_SELECTED_NODE = _HOVERED_NODE
 		else
-			_TRANSITION:show()
+			if _TRANSITION.state then
+				_TRANSITION:hide()
+			else
+				_TRANSITION:show()
+			end
 		end
-		_SELECTED_NODE = _HOVERED_NODE
+	end
+end
+
+
+
+function love.keypressed(key)
+	if key == "tab" then
+		_EDITOR_MODE = not _EDITOR_MODE
 	end
 end
