@@ -20,12 +20,16 @@ _FONTS = {
 	standard = love.graphics.newImageFont("standard.png", _FONT_CHARACTERS, 1)
 }
 _IMAGES = {
-	button = NineImage(love.graphics.newImage("button.png"), 2, 3, 3, 4)
+	button = NineImage(love.graphics.newImage("button.png"), 2, 3, 3, 4),
+	button_hover = NineImage(love.graphics.newImage("button_hover.png"), 2, 3, 3, 4),
+	ed_button = NineImage(love.graphics.newImage("ed_button.png"), 2, 3, 2, 3)
 }
 
 _CANVAS = MainCanvas()
 _BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
+_HOVERED_NODE = nil
+_SELECTED_NODE = nil
 
 
 
@@ -47,6 +51,7 @@ end
 function love.update(dt)
 	_MOUSE_POS = Vec2(love.mouse.getPosition())
 	_MOUSE_CPOS = _CANVAS:posToPixel(_MOUSE_POS)
+	_HOVERED_NODE = _UI:findChildByPixel(_MOUSE_CPOS)
 	_BACKGROUND:update(dt)
 	_TRANSITION:update(dt)
 	_UI:update(dt)
@@ -58,13 +63,15 @@ end
 function love.draw()
 	local t = love.timer.getTime()
 	_CANVAS:activate()
-	_BACKGROUND:draw()
+	--_BACKGROUND:draw()
 	_UI:draw()
-	local hover = _UI:findChildByPixel(_MOUSE_CPOS)
-	if hover then
-		hover:drawHitbox()
+	if _HOVERED_NODE then
+		_HOVERED_NODE:drawHitbox()
 	end
-	_TRANSITION:draw()
+	if _SELECTED_NODE then
+		_SELECTED_NODE:drawSelected()
+	end
+	--_TRANSITION:draw()
 	_CANVAS:draw()
 	local t2 = love.timer.getTime() - t
 	_DRAW_TIME = _DRAW_TIME * 0.95 + t2 * 0.05
@@ -82,5 +89,6 @@ function love.mousepressed(x, y, button)
 		else
 			_TRANSITION:show()
 		end
+		_SELECTED_NODE = _HOVERED_NODE
 	end
 end

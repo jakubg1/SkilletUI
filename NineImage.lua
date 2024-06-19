@@ -44,22 +44,24 @@ end
 ---Draws this NineImage on the screen.
 ---@param pos Vector2 The position where this NineImage will be drawn.
 ---@param size Vector2 The size of this NineImage.
-function NineImage:draw(pos, size)
-    local x1 = pos.x + self.x1
-    local x2 = pos.x + size.x - self.brx
-    local y1 = pos.y + self.y1
-    local y2 = pos.y + size.y - self.bry
-    local centerStretchFactorX = (size.x - self.x1 - self.brx) / self.cx
-    local centerStretchFactorY = (size.y - self.y1 - self.bry) / self.cy
-    love.graphics.draw(self.image, self.pieces.top_left, pos.x, pos.y)
-    love.graphics.draw(self.image, self.pieces.top, x1, pos.y, 0, centerStretchFactorX, 1)
-    love.graphics.draw(self.image, self.pieces.top_right, x2, pos.y)
-    love.graphics.draw(self.image, self.pieces.left, pos.x, y1, 0, 1, centerStretchFactorY)
+---@param scale number? The scale of this NineImage. The final size will be unaffected.
+function NineImage:draw(pos, size, scale)
+    scale = scale or 1
+    local x1 = pos.x + self.x1 * scale
+    local x2 = pos.x + size.x - self.brx * scale
+    local y1 = pos.y + self.y1 * scale
+    local y2 = pos.y + size.y - self.bry * scale
+    local centerStretchFactorX = (size.x - (self.x1 + self.brx) * scale) / self.cx
+    local centerStretchFactorY = (size.y - (self.y1 + self.bry) * scale) / self.cy
+    love.graphics.draw(self.image, self.pieces.top_left, pos.x, pos.y, 0, scale, scale)
+    love.graphics.draw(self.image, self.pieces.top, x1, pos.y, 0, centerStretchFactorX, scale)
+    love.graphics.draw(self.image, self.pieces.top_right, x2, pos.y, 0, scale, scale)
+    love.graphics.draw(self.image, self.pieces.left, pos.x, y1, 0, scale, centerStretchFactorY)
     love.graphics.draw(self.image, self.pieces.center, x1, y1, 0, centerStretchFactorX, centerStretchFactorY)
-    love.graphics.draw(self.image, self.pieces.right, x2, y1, 0, 1, centerStretchFactorY)
-    love.graphics.draw(self.image, self.pieces.bottom_left, pos.x, y2)
-    love.graphics.draw(self.image, self.pieces.bottom, x1, y2, 0, centerStretchFactorX, 1)
-    love.graphics.draw(self.image, self.pieces.bottom_right, x2, y2)
+    love.graphics.draw(self.image, self.pieces.right, x2, y1, 0, scale, centerStretchFactorY)
+    love.graphics.draw(self.image, self.pieces.bottom_left, pos.x, y2, 0, scale, scale)
+    love.graphics.draw(self.image, self.pieces.bottom, x1, y2, 0, centerStretchFactorX, scale)
+    love.graphics.draw(self.image, self.pieces.bottom_right, x2, y2, 0, scale, scale)
 end
 
 

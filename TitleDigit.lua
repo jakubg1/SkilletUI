@@ -1,5 +1,7 @@
 local class = require "com.class"
 
+---@class TitleDigit
+---@overload fun(node, data):TitleDigit
 local TitleDigit = class:derive("TitleDigit")
 
 -- Place your imports here
@@ -9,8 +11,11 @@ local Color = require("Color")
 
 
 ---A hardcoded rotating "2" in the title screen.
+---@param node Node The Node that this digit is attached to.
 ---@param data table The data to be used for this Title Digit.
-function TitleDigit:new(data)
+function TitleDigit:new(node, data)
+    self.node = node
+
     self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
 
     self.SIZE = Vec2(6, 7)
@@ -126,9 +131,8 @@ end
 
 
 ---Draws the Title Digit.
----@param pos Vector2 The position to draw this Title Digit to.
----@param alpha number The opacity of the digit.
-function TitleDigit:draw(pos, alpha)
+function TitleDigit:draw()
+    local pos = self.node:getGlobalPos()
     local angle = self.time % (math.pi * 2)
     love.graphics.setColor(1, 1, 1)
     local u = (angle + math.pi / 2) % (math.pi * 2) - math.pi
@@ -138,14 +142,14 @@ function TitleDigit:draw(pos, alpha)
         for i, cubePos in ipairs(self.CUBE_POSITIONS) do
             local offsetX = cubePos.x - (self.SIZE.x - 1) / 2
             local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
-            self:drawCube(cubePos2, angle, alpha, true)
+            self:drawCube(cubePos2, angle, self.node.alpha, true)
         end
     end
     ]]
     for i, cubePos in ipairs(self.CUBE_POSITIONS) do
         local offsetX = cubePos.x - (self.SIZE.x - 1) / 2
         local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
-        self:drawCube(cubePos2, angle, alpha)
+        self:drawCube(cubePos2, angle, self.node.alpha)
     end
 end
 

@@ -1,7 +1,7 @@
 local class = require "com.class"
 
 ---@class Text
----@overload fun(data):Text
+---@overload fun(node, data):Text
 local Text = class:derive("Text")
 
 local Vec2 = require("Vector2")
@@ -10,8 +10,11 @@ local Color = require("Color")
 
 
 ---Creates a new Text.
+---@param node Node The Node that this Text is attached to.
 ---@param data table The data to be used for this Text.
-function Text:new(data)
+function Text:new(node, data)
+    self.node = node
+
     self.font = _FONTS[data.font]
     self.text = data.text or ""
     self.scale = data.scale or 1
@@ -72,9 +75,8 @@ end
 
 
 ---Draws the Text on the screen.
----@param pos Vector2 The position where this Text will be drawn.
----@param alpha number The opacity of this Text.
-function Text:draw(pos, alpha)
+function Text:draw()
+    local pos = self.node:getGlobalPos()
     love.graphics.setFont(self.font)
     local x = 0
     for i = 1, #self.text do
@@ -90,10 +92,10 @@ function Text:draw(pos, alpha)
         end
 
         if self.shadowOffset then
-            love.graphics.setColor(0, 0, 0, alpha * 0.5)
+            love.graphics.setColor(0, 0, 0, self.node.alpha * 0.5)
             love.graphics.print(chr, math.floor(pos.x + self.shadowOffset.x + x + 0.5), math.floor(pos.y + self.shadowOffset.y + y + 0.5), 0, self.scale)
         end
-        love.graphics.setColor(color.r, color.g, color.b, alpha)
+        love.graphics.setColor(color.r, color.g, color.b, self.node.alpha)
         love.graphics.print(chr, math.floor(pos.x + x + 0.5), math.floor(pos.y + y + 0.5), 0, self.scale)
         x = x + w
     end

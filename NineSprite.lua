@@ -1,7 +1,7 @@
 local class = require "com.class"
 
 ---@class NineSprite
----@overload fun(data):NineSprite
+---@overload fun(node, data):NineSprite
 local NineSprite = class:derive("NineSprite")
 
 local Vec2 = require("Vector2")
@@ -9,10 +9,15 @@ local Vec2 = require("Vector2")
 
 
 ---Creates a new NineSprite.
+---@param node Node The Node that this NineSprite is attached to.
 ---@param data table The data to be used for this NineSprite.
-function NineSprite:new(data)
+function NineSprite:new(node, data)
+    self.node = node
+
     self.image = _IMAGES[data.image]
+    self.hoverImage = data.hoverImage and _IMAGES[data.hoverImage]
     self.size = Vec2(data.size)
+    self.scale = data.scale or 1
     self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
 end
 
@@ -35,15 +40,15 @@ end
 
 
 ---Draws the NineSprite on the screen.
----@param pos Vector2 The position where this NineSprite will be drawn.
----@param alpha number The opacity of this NineSprite.
-function NineSprite:draw(pos, alpha)
+function NineSprite:draw()
+    local pos = self.node:getGlobalPos()
+    local image = self.node:isHovered() and self.hoverImage or self.image
     if self.shadowOffset then
-        love.graphics.setColor(0, 0, 0, alpha * 0.5)
-        self.image:draw(pos + self.shadowOffset, self.size)
+        love.graphics.setColor(0, 0, 0, self.node.alpha * 0.5)
+        image:draw(pos + self.shadowOffset, self.size, self.scale)
     end
-    love.graphics.setColor(1, 1, 1, alpha)
-    self.image:draw(pos, self.size)
+    love.graphics.setColor(1, 1, 1, self.node.alpha)
+    image:draw(pos, self.size, self.scale)
 end
 
 

@@ -17,7 +17,7 @@ local ALIGNMENTS = {
     top = Vec2(0.5, 0),
     topRight = Vec2(1, 0),
     left = Vec2(0, 0.5),
-    middle = Vec2(0.5, 0.5),
+    center = Vec2(0.5, 0.5),
     right = Vec2(1, 0.5),
     bottomLeft = Vec2(0, 1),
     bottom = Vec2(0.5, 1),
@@ -39,13 +39,13 @@ function Node:new(data, parent)
     self.alpha = data.alpha or 1
 
     if data.type == "box" then
-        self.widget = Box(data)
+        self.widget = Box(self, data)
     elseif data.type == "9sprite" then
-        self.widget = NineSprite(data)
+        self.widget = NineSprite(self, data)
     elseif data.type == "text" then
-        self.widget = Text(data)
+        self.widget = Text(self, data)
     elseif data.type == "@titleDigit" then
-        self.widget = TitleDigit(data)
+        self.widget = TitleDigit(self, data)
     end
 
     self.children = {}
@@ -77,6 +77,13 @@ function Node:getSize()
         return self.widget:getSize()
     end
     return Vec2()
+end
+
+
+
+---Returns whether this Node is hovered. (Currently works only for the upscaled UI)
+function Node:isHovered()
+    return self:hasPixel(_MOUSE_CPOS)
 end
 
 
@@ -143,7 +150,7 @@ end
 ---Draws this Node's widget, if it exists, and all its children.
 function Node:draw()
     if self.widget then
-        self.widget:draw(self:getGlobalPos(), self.alpha)
+        self.widget:draw()
     end
     for i, child in ipairs(self.children) do
         child:draw()
@@ -163,6 +170,24 @@ function Node:drawHitbox()
         love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 1, size.y - 1)
     else
         love.graphics.setColor(0.5, 0.5, 0.5)
+        love.graphics.line(pos.x - 1.5, pos.y + 0.5, pos.x + 2.5, pos.y + 0.5)
+        love.graphics.line(pos.x + 0.5, pos.y - 1.5, pos.x + 0.5, pos.y + 2.5)
+    end
+end
+
+
+
+---Draws this Node's bounding box in a different color (or a crosshair if this Node has no widget), and some indicators around.
+---The borders are all inclusive.
+function Node:drawSelected()
+    local pos = self:getGlobalPos()
+    love.graphics.setLineWidth(1)
+    if self.widget then
+        local size = self:getSize()
+        love.graphics.setColor(0, 1, 1)
+        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 1, size.y - 1)
+    else
+        love.graphics.setColor(1, 1, 1)
         love.graphics.line(pos.x - 1.5, pos.y + 0.5, pos.x + 2.5, pos.y + 0.5)
         love.graphics.line(pos.x + 0.5, pos.y - 1.5, pos.x + 0.5, pos.y + 2.5)
     end

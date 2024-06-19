@@ -41,11 +41,12 @@
             "name": "box2",
             "type": "9sprite",
             "image": "button",
+            "hoverImage": "button_hover",
             "pos": {
                 "x": 160,
                 "y": 80
             },
-            "align": "middle",
+            "align": "center",
             "size": {
                 "x": 100,
                 "y": 14
@@ -61,8 +62,8 @@
                         "x": 0,
                         "y": -1
                     },
-                    "align": "middle",
-                    "parentAlign": "middle",
+                    "align": "center",
+                    "parentAlign": "center",
                     "shadow": 1
                 }
             ]
@@ -71,11 +72,12 @@
             "name": "box2",
             "type": "9sprite",
             "image": "button",
+            "hoverImage": "button_hover",
             "pos": {
                 "x": 160,
                 "y": 100
             },
-            "align": "middle",
+            "align": "center",
             "size": {
                 "x": 100,
                 "y": 14
@@ -91,8 +93,8 @@
                         "x": 0,
                         "y": -1
                     },
-                    "align": "middle",
-                    "parentAlign": "middle",
+                    "align": "center",
+                    "parentAlign": "center",
                     "shadow": 1
                 }
             ]
@@ -101,11 +103,12 @@
             "name": "box2",
             "type": "9sprite",
             "image": "button",
+            "hoverImage": "button_hover",
             "pos": {
                 "x": 160,
                 "y": 120
             },
-            "align": "middle",
+            "align": "center",
             "size": {
                 "x": 100,
                 "y": 14
@@ -121,8 +124,8 @@
                         "x": 0,
                         "y": -1
                     },
-                    "align": "middle",
-                    "parentAlign": "middle",
+                    "align": "center",
+                    "parentAlign": "center",
                     "shadow": 1
                 }
             ]
@@ -150,7 +153,7 @@
                 "x": 162,
                 "y": 35
             },
-            "align": "middle",
+            "align": "center",
             "shadow": 2
         },
         {
@@ -162,7 +165,7 @@
                 "x": 160,
                 "y": 35
             },
-            "align": "middle",
+            "align": "center",
             "scale": 4,
             "color": {
                 "r": 0.3,
