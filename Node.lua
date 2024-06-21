@@ -70,6 +70,22 @@ end
 
 
 
+---Returns the local position of this Node, which is relative to its parent's position.
+---@return Vector2
+function Node:getPos()
+    return self.pos
+end
+
+
+
+---Sets the local position of this Node, which is relative to its parent's position.
+---@param pos Vector2 The new local position to be set.
+function Node:setPos(pos)
+    self.pos = pos
+end
+
+
+
 ---Returns the global position of this Node, i.e. the actual position after factoring in all parents' modifiers.
 ---@return Vector2
 function Node:getGlobalPos()
@@ -95,7 +111,7 @@ end
 
 ---Returns whether this Node is hovered. (Currently works only for the upscaled UI)
 function Node:isHovered()
-    return self:hasPixel(self.useCpos and _MOUSE_CPOS or _MOUSE_POS)
+    return self:hasPixel(self.useCpos and _MouseCPos or _MousePos)
 end
 
 

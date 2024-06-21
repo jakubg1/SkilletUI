@@ -23,6 +23,7 @@ local Vec2 = class:derive("Vec2")
 ---@param x number?
 ---@param y number?
 function Vec2:new(x, y)
+	_VEC2S_PER_FRAME = (_VEC2S_PER_FRAME or 0) + 1
 	if type(x) == "table" then
 		self.x = x.x
 		self.y = x.y

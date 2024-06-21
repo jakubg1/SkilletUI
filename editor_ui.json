@@ -20,13 +20,22 @@
             }
         },
         {
+            "name": "line3",
+            "type": "text",
+            "font": "standard",
+            "pos": {
+                "x": 0,
+                "y": 30
+            }
+        },
+        {
             "name": "testBtn",
             "type": "9sprite",
             "image": "ed_button",
             "clickImage": "ed_button_click",
             "pos": {
                 "x": 0,
-                "y": 30
+                "y": 45
             },
             "size": {
                 "x": 200,
