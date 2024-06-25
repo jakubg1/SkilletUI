@@ -41,16 +41,16 @@ _NodeDragSnap = false
 
 
 
-function _LoadUI(path, useCpos)
+function _LoadUI(path)
 	local data = _Utils.loadJson(path)
-	return Node(data, nil, useCpos)
+	return Node(data, nil)
 end
 
 
 
 function love.load()
 	love.window.setMode(_WINDOW_SIZE.x, _WINDOW_SIZE.y)
-	_UI = _LoadUI("ui.json", true)
+	_UI = _LoadUI("ui.json")
 	_UI:findChildByName("btn1"):setOnClick(function ()
 		if _TRANSITION.state then
 			_TRANSITION:hide()
@@ -109,6 +109,10 @@ function love.draw()
 	_EDITOR_UI:findChildByName("drawtime").widget.text = string.format("Drawing took approximately %.1fms", _DrawTime * 1000)
 	_EDITOR_UI:findChildByName("pos").widget.text = string.format("Mouse position: %s", _MouseCPos)
 	_EDITOR_UI:findChildByName("line3").widget.text = string.format("Vecs per frame: %s", _VEC2S_PER_FRAME)
+	_EDITOR_UI:findChildByName("selText").widget.text = ""
+	if _HoveredNode then
+		_EDITOR_UI:findChildByName("selText").widget.text = string.format("Hovered: %s (%s) pos: %s -> %s", _HoveredNode.name, _HoveredNode.type, _HoveredNode:getPos(), _HoveredNode:getGlobalPos())
+	end
 	_EDITOR_UI:draw()
 end
 

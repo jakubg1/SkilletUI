@@ -9,6 +9,7 @@
         "x": 320,
         "y": 180
     },
+    "inputScale": 4,
     "children": [
         {
             "name": "box",

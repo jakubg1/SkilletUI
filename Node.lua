@@ -1,7 +1,7 @@
 local class = require "com.class"
 
 ---@class Node
----@overload fun(data, parent, useCpos):Node
+---@overload fun(data, parent):Node
 local Node = class:derive("Node")
 
 local Vec2 = require("Vector2")
@@ -30,16 +30,16 @@ local ALIGNMENTS = {
 ---Creates a new UI Node.
 ---@param data table The node data.
 ---@param parent Node? The parent node.
----@param useCpos boolean? If set, this Node and all its children will take the upscaled mouse coordinates to match the main canvas.
-function Node:new(data, parent, useCpos)
+function Node:new(data, parent)
     self.parent = parent
-    self.useCpos = useCpos
 
     self.name = data.name
+    self.type = data.type
     self.pos = Vec2(data.pos)
     self.align = data.align and ALIGNMENTS[data.align] or Vec2(data.align)
     self.parentAlign = data.parentAlign and ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
     self.alpha = data.alpha or 1
+    self.inputScale = data.inputScale or 1
 
     self.clicked = false
     self.onClick = nil
@@ -63,7 +63,7 @@ function Node:new(data, parent, useCpos)
     self.children = {}
     if data.children then
     	for i, child in ipairs(data.children) do
-	    	table.insert(self.children, Node(child, self, useCpos))
+	    	table.insert(self.children, Node(child, self))
 	    end
     end
 end
@@ -109,9 +109,20 @@ end
 
 
 
+---Returns the input scale of this Node.
+---@return number
+function Node:getInputScale()
+    if self.parent then
+        return self.parent:getInputScale() * self.inputScale
+    end
+    return self.inputScale
+end
+
+
+
 ---Returns whether this Node is hovered. (Currently works only for the upscaled UI)
 function Node:isHovered()
-    return self:hasPixel(self.useCpos and _MouseCPos or _MousePos)
+    return self:hasPixel(_MousePos / self:getInputScale())
 end
 
 
