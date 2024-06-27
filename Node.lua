@@ -91,9 +91,29 @@ end
 function Node:getGlobalPos()
     local pos = self.pos - (self:getSize() * self.align):floor()
     if self.parent then
-        pos = pos + self.parent:getGlobalPos() + (self.parent:getSize() * self.parentAlign):floor()
+        pos = pos + self:getParentAlignPos()
     end
     return pos
+end
+
+
+
+---Returns the global position of this Node, which has not been adjusted for the local widget alignment.
+---@return Vector2
+function Node:getGlobalPosWithoutLocalAlign()
+    local pos = self.pos
+    if self.parent then
+        pos = pos + self:getParentAlignPos()
+    end
+    return pos
+end
+
+
+
+---Returns the Node's parent anchor.
+---@return Vector2
+function Node:getParentAlignPos()
+    return self.parent:getGlobalPos() + (self.parent:getSize() * self.parentAlign):floor()
 end
 
 
@@ -222,12 +242,11 @@ function Node:drawHitbox()
     love.graphics.setLineWidth(1)
     if self.widget then
         local size = self:getSize()
-        love.graphics.setColor(1, 0, 0)
+        love.graphics.setColor(1, 1, 0)
         love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 1, size.y - 1)
     else
         love.graphics.setColor(0.5, 0.5, 0.5)
-        love.graphics.line(pos.x - 1.5, pos.y + 0.5, pos.x + 2.5, pos.y + 0.5)
-        love.graphics.line(pos.x + 0.5, pos.y - 1.5, pos.x + 0.5, pos.y + 2.5)
+        self:drawCrosshair(pos, 2)
     end
 end
 
@@ -244,9 +263,30 @@ function Node:drawSelected()
         love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 1, size.y - 1)
     else
         love.graphics.setColor(1, 1, 1)
-        love.graphics.line(pos.x - 1.5, pos.y + 0.5, pos.x + 2.5, pos.y + 0.5)
-        love.graphics.line(pos.x + 0.5, pos.y - 1.5, pos.x + 0.5, pos.y + 2.5)
+        self:drawCrosshair(pos, 2)
     end
+    -- Draw local crosshair.
+    local localPos = self:getGlobalPosWithoutLocalAlign()
+    love.graphics.setColor(0, 0, 1)
+    self:drawCrosshair(localPos, 2)
+    -- Draw parent align crosshair.
+    local localPos2 = self:getParentAlignPos()
+    love.graphics.setColor(1, 0, 1)
+    self:drawCrosshair(localPos2, 2)
+    -- Draw a line between them.
+    love.graphics.setColor(0.5, 0, 1)
+    love.graphics.line(localPos.x, localPos.y, localPos2.x, localPos2.y)
+end
+
+
+
+---Internal function which draws a crosshair.
+---@param pos Vector2 The crosshair position.
+---@param size number The crosshair size, in pixels.
+function Node:drawCrosshair(pos, size)
+    pos = pos:floor() + 0.5
+    love.graphics.line(pos.x - size, pos.y, pos.x + size, pos.y)
+    love.graphics.line(pos.x, pos.y - size, pos.x, pos.y + size)
 end
 
 

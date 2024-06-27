@@ -20,6 +20,23 @@ end
 
 
 
+---Returns UI tree information.
+---@param node Node? The UI node of which the tree should be added to the list.
+---@param tab table? The table, used internally.
+---@param indent integer? The starting indentation.
+function Editor:getUITreeInfo(node, tab, indent)
+    node = node or _UI
+    tab = tab or {}
+    indent = indent or 0
+    table.insert(tab, {node = node, indent = indent})
+    for i, child in ipairs(node.children) do
+        self:getUITreeInfo(child, tab, indent + 1)
+    end
+    return tab
+end
+
+
+
 ---Initializes the UI for this Editor...needed?
 function Editor:load()
     self.UI = _LoadUI("editor_ui.json")
@@ -57,11 +74,25 @@ function Editor:draw()
 
     -- Other UI that will be hardcoded for now.
     love.graphics.setFont(_FONTS.default)
+
+    -- Hovered and selected node
     if self.hoveredNode then
-        self:drawShadowedText(string.format("Hovered: %s (%s) pos: %s -> %s", self.hoveredNode.name, self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()), 5, 90)
+        self:drawShadowedText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode.name, self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()), 5, 90, _COLORS.yellow)
     end
     if self.selectedNode then
-        self:drawShadowedText(string.format("Selected: %s (%s) pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()), 5, 105, _COLORS.cyan)
+        self:drawShadowedText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()), 5, 105, _COLORS.cyan)
+    end
+
+    -- Node tree
+    local treeInfo = self:getUITreeInfo()
+    for i, line in ipairs(treeInfo) do
+        local color = _COLORS.white
+        if line.node == self.selectedNode then
+            color = _COLORS.cyan
+        elseif line.node == self.hoveredNode then
+            color = _COLORS.yellow
+        end
+        self:drawShadowedText(string.format("%s {%s}", line.node.name, line.node.type), 5 + 30 * line.indent, 120 + 15 * i, color)
     end
 end
 

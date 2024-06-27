@@ -32,7 +32,8 @@ _IMAGES = {
 }
 _COLORS = {
 	white = Color(1, 1, 1),
-	cyan = Color(0, 1, 1)
+	cyan = Color(0, 1, 1),
+	yellow = Color(1, 1, 0)
 }
 
 _CANVAS = MainCanvas()
