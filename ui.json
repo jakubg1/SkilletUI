@@ -160,16 +160,6 @@
             }
         },
         {
-            "name": "titleDigit",
-            "type": "@titleDigit",
-            "pos": {
-                "x": 162,
-                "y": 35
-            },
-            "align": "center",
-            "shadow": 2
-        },
-        {
             "name": "title",
             "type": "text",
             "font": "standard",
@@ -195,6 +185,16 @@
                 "frequency": 200,
                 "speed": 100
             }
+        },
+        {
+            "name": "titleDigit",
+            "type": "@titleDigit",
+            "pos": {
+                "x": 162,
+                "y": 35
+            },
+            "align": "center",
+            "shadow": 2
         }
     ]
 }

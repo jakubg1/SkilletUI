@@ -201,6 +201,42 @@ end
 
 
 
+---Returns the first encountered child that contains the provided position (depth first), or `nil` if it is not found.
+---@param pos Vector2 The position to be checked.
+---@return Node?
+function Node:findChildByPixelDepthFirst(pos)
+    for i, child in ipairs(self.children) do
+        local potentialResult = child:findChildByPixelDepthFirst(pos)
+        if potentialResult then
+            return potentialResult
+        end
+        if child:hasPixel(pos) then
+            return child
+        end
+    end
+end
+
+
+
+---Returns the last encountered child that contains the provided position (depth first), or `nil` if it is not found.
+---@param pos Vector2 The position to be checked.
+---@return Node?
+function Node:findChildByPixelDepthFirstReverse(pos)
+    local result = nil
+    for i, child in ipairs(self.children) do
+        if child:hasPixel(pos) then
+            result = child
+        end
+        local potentialResult = child:findChildByPixelDepthFirst(pos)
+        if potentialResult then
+            result = potentialResult
+        end
+    end
+    return result
+end
+
+
+
 ---Updates this Node's widget, if it exists, and all its children.
 ---@param dt number Time delta, in seconds.
 function Node:update(dt)
@@ -214,19 +250,25 @@ end
 
 
 
----Draws this Node's widget, if it exists, and all its children.
+---Draws this Node's widget, if it exists, and all of its children.
+---The draw order is as follows:
+--- - First, the node itself is drawn.
+--- - Then, its children are drawn in *reverse* order (from bottom to the top), so that the first entry in the hierarchy is the topmost one.
+--- - If any child has its own children, draw them immediately after that child has been drawn.
 function Node:draw()
     if not self.isCanvas then
         if self.widget then
             self.widget:draw()
         end
-        for i, child in ipairs(self.children) do
+        for i = #self.children, 1, -1 do
+            local child = self.children[i]
             child:draw()
         end
     else
         -- Canvases are treated differently.
         self.widget:activate()
-        for i, child in ipairs(self.children) do
+        for i = #self.children, 1, -1 do
+            local child = self.children[i]
             child:draw()
         end
         self.widget:draw()

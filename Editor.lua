@@ -47,7 +47,7 @@ end
 ---Updates the Editor.
 ---@param dt number Time delta in seconds.
 function Editor:update(dt)
-	self.hoveredNode = _UI:findChildByPixel(_MouseCPos)
+	self.hoveredNode = _UI:findChildByPixelDepthFirst(_MouseCPos)
 	if self.selectedNode and self.nodeDragOrigin then
 		local movement = _MouseCPos - self.nodeDragOrigin
 		if self.nodeDragSnap then
