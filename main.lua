@@ -35,6 +35,17 @@ _COLORS = {
 	cyan = Color(0, 1, 1),
 	yellow = Color(1, 1, 0)
 }
+_ALIGNMENTS = {
+    topLeft = Vec2(0, 0),
+    top = Vec2(0.5, 0),
+    topRight = Vec2(1, 0),
+    left = Vec2(0, 0.5),
+    center = Vec2(0.5, 0.5),
+    right = Vec2(1, 0.5),
+    bottomLeft = Vec2(0, 1),
+    bottom = Vec2(0.5, 1),
+    bottomRight = Vec2(1, 1)
+}
 
 _CANVAS = MainCanvas()
 _BACKGROUND = GridBackground()

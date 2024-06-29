@@ -4,13 +4,40 @@ local class = require "com.class"
 ---@overload fun():Editor
 local Editor = class:derive("Editor")
 
+local Vec2 = require("Vector2")
+local Node = require("Node")
+
 
 
 ---Constructs a new UI Editor.
 function Editor:new()
     self.UI = nil
 
-    self.enabled = false
+    self.BUTTONS = {
+        self:button(0, 400, 100, "Delete", function() self:deleteSelectedNode() end),
+
+        self:button(100, 640, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
+        self:button(130, 640, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
+        self:button(160, 640, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
+        self:button(100, 660, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
+        self:button(130, 660, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
+        self:button(160, 660, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
+        self:button(100, 680, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(130, 680, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
+        self:button(160, 680, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
+
+        self:button(300, 640, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
+        self:button(330, 640, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
+        self:button(360, 640, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
+        self:button(300, 660, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
+        self:button(330, 660, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
+        self:button(360, 660, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
+        self:button(300, 680, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(330, 680, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
+        self:button(360, 680, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
+    }
+
+    self.enabled = true
     self.hoveredNode = nil
     self.selectedNode = nil
     self.nodeDragOrigin = nil
@@ -33,6 +60,78 @@ function Editor:getUITreeInfo(node, tab, indent)
         self:getUITreeInfo(child, tab, indent + 1)
     end
     return tab
+end
+
+
+
+---Moves the currently selected UI node by the given amount of pixels.
+---@param offset Vector2 The movement vector the selected UI node should be moved towards.
+function Editor:moveSelectedNode(offset)
+    if not self.selectedNode then
+        return
+    end
+    self.selectedNode:setPos(self.selectedNode:getPos() + offset)
+end
+
+
+
+---Sets a new alignment for the selected node.
+---@param align Vector2 The new alignment value.
+function Editor:setSelectedNodeAlign(align)
+    if not self.selectedNode then
+        return
+    end
+    self.selectedNode:setAlign(align)
+end
+
+
+
+---Sets a new parental alignment for the selected node.
+---@param parentAlign Vector2 The new parental alignment value.
+function Editor:setSelectedNodeParentAlign(parentAlign)
+    if not self.selectedNode then
+        return
+    end
+    self.selectedNode:setParentAlign(parentAlign)
+end
+
+
+
+---Deletes the currently selected UI node.
+function Editor:deleteSelectedNode()
+    if not self.selectedNode then
+        return
+    end
+    self.selectedNode:removeSelf()
+    self.selectedNode = nil
+end
+
+
+
+---Convenience function which creates an editor button. 
+---@param x number The X coordinate of the button position.
+---@param y number The Y coordinate of the button position.
+---@param w number The width of the button. Height is always 20.
+---@param text string The text that should be written on the button.
+---@param fn function? The function to be executed when this button is clicked.
+---@return Node
+function Editor:button(x, y, w, text, fn)
+    local button = Node({name = "", type = "9sprite", image = "ed_button", clickImage = "ed_button_click", pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = {r = 0, g = 0, b = 0}}}})
+    button:setOnClick(fn)
+    return button
+end
+
+
+
+---Returns whether an editor button (or any editor UI) is hovered.
+---@return boolean
+function Editor:isUIHovered()
+    for i, button in ipairs(self.BUTTONS) do
+        if button:isHovered() then
+            return true
+        end
+    end
+    return false
 end
 
 
@@ -60,12 +159,18 @@ function Editor:update(dt)
 	end
 
     self.UI:update(dt)
+    for i, button in ipairs(self.BUTTONS) do
+        button:update(dt)
+    end
 end
 
 
 
 ---Draws the Editor.
 function Editor:draw()
+    if not self.enabled then
+        return
+    end
 	self.UI:findChildByName("drawtime").widget.text = string.format("Drawing took approximately %.1fms", _DrawTime * 1000)
 	self.UI:findChildByName("pos").widget.text = string.format("Mouse position: %s", _MouseCPos)
 	self.UI:findChildByName("line3").widget.text = string.format("Vecs per frame: %s", _VEC2S_PER_FRAME)
@@ -93,6 +198,13 @@ function Editor:draw()
             color = _COLORS.yellow
         end
         self:drawShadowedText(string.format("%s {%s}", line.node.name, line.node.type), 5 + 30 * line.indent, 120 + 15 * i, color)
+    end
+
+    -- Buttons
+    self:drawShadowedText("Node Align", 100, 620)
+    self:drawShadowedText("Parent Align", 300, 620)
+    for i, button in ipairs(self.BUTTONS) do
+        button:draw()
     end
 end
 
@@ -130,17 +242,21 @@ end
 ---@param y integer The Y coordinate.
 ---@param button integer The button that has been pressed.
 function Editor:mousepressed(x, y, button)
-	if button == 1 then
-		if self.enabled then
-			self.selectedNode = self.hoveredNode
-			if self.selectedNode then
-				self.nodeDragOrigin = _MouseCPos
-				self.nodeDragOriginalPos = self.selectedNode:getPos()
-				self.nodeDragSnap = true
-			end
-		end
-	end
+    if not self.enabled then
+        return
+    end
     self.UI:mousepressed(x, y, button)
+    for i, btn in ipairs(self.BUTTONS) do
+        btn:mousepressed(x, y, button)
+    end
+	if button == 1 and not self:isUIHovered() then
+        self.selectedNode = self.hoveredNode
+        if self.selectedNode then
+            self.nodeDragOrigin = _MouseCPos
+            self.nodeDragOriginalPos = self.selectedNode:getPos()
+            self.nodeDragSnap = true
+        end
+	end
 end
 
 
@@ -151,6 +267,9 @@ end
 ---@param button integer The button that has been released.
 function Editor:mousereleased(x, y, button)
     self.UI:mousereleased(x, y, button)
+    for i, btn in ipairs(self.BUTTONS) do
+        btn:mousereleased(x, y, button)
+    end
     self.nodeDragOrigin = nil
     self.nodeDragOriginalPos = nil
     self.nodeDragSnap = false
@@ -163,6 +282,16 @@ end
 function Editor:keypressed(key)
 	if key == "tab" then
 		self.enabled = not self.enabled
+    elseif key == "delete" then
+        self:deleteSelectedNode()
+    elseif key == "up" then
+        self:moveSelectedNode(Vec2(0, -1))
+    elseif key == "down" then
+        self:moveSelectedNode(Vec2(0, 1))
+    elseif key == "left" then
+        self:moveSelectedNode(Vec2(-1, 0))
+    elseif key == "right" then
+        self:moveSelectedNode(Vec2(1, 0))
 	end
 end
 

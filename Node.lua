@@ -13,20 +13,6 @@ local TitleDigit = require("TitleDigit")
 
 
 
-local ALIGNMENTS = {
-    topLeft = Vec2(0, 0),
-    top = Vec2(0.5, 0),
-    topRight = Vec2(1, 0),
-    left = Vec2(0, 0.5),
-    center = Vec2(0.5, 0.5),
-    right = Vec2(1, 0.5),
-    bottomLeft = Vec2(0, 1),
-    bottom = Vec2(0.5, 1),
-    bottomRight = Vec2(1, 1)
-}
-
-
-
 ---Creates a new UI Node.
 ---@param data table The node data.
 ---@param parent Node? The parent node.
@@ -36,8 +22,8 @@ function Node:new(data, parent)
     self.name = data.name
     self.type = data.type
     self.pos = Vec2(data.pos)
-    self.align = data.align and ALIGNMENTS[data.align] or Vec2(data.align)
-    self.parentAlign = data.parentAlign and ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
+    self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
+    self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
     self.alpha = data.alpha or 1
     self.inputScale = data.inputScale or 1
 
@@ -89,7 +75,7 @@ end
 ---Returns the global position of this Node, i.e. the actual position after factoring in all parents' modifiers.
 ---@return Vector2
 function Node:getGlobalPos()
-    local pos = self.pos - (self:getSize() * self.align):floor()
+    local pos = self.pos - ((self:getSize() - 1) * self.align):ceil()
     if self.parent then
         pos = pos + self:getParentAlignPos()
     end
@@ -113,18 +99,18 @@ end
 ---Returns the Node's parent anchor.
 ---@return Vector2
 function Node:getParentAlignPos()
-    return self.parent:getGlobalPos() + (self.parent:getSize() * self.parentAlign):floor()
+    return self.parent:getGlobalPos() + ((self.parent:getSize() - 1) * self.parentAlign):ceil()
 end
 
 
 
----Returns the size of this Node's widget, or `(0, 0)` if it contains no widget.
+---Returns the size of this Node's widget, or `(1, 1)` if it contains no widget.
 ---@return Vector2
 function Node:getSize()
     if self.widget then
         return self.widget:getSize()
     end
-    return Vec2()
+    return Vec2(1)
 end
 
 
@@ -140,9 +126,65 @@ end
 
 
 
+---Sets the alignment of this Node.
+---@param align Vector2 The new Node alignment.
+--- - `(0, 0)` aligns to top left.
+--- - `(1, 1)` aligns to bottom right.
+--- - `(0.5, 0.5)` aligns to the center.
+--- - Any combination is available, including going out of bounds.
+function Node:setAlign(align)
+    self.align = align
+end
+
+
+
+---Sets the parental alignment of this Node.
+---@param parentAlign Vector2 The new Node alignment.
+--- - `(0, 0)` aligns to top left.
+--- - `(1, 1)` aligns to bottom right.
+--- - `(0.5, 0.5)` aligns to the center.
+--- - Any combination is available, including going out of bounds.
+function Node:setParentAlign(parentAlign)
+    self.parentAlign = parentAlign
+end
+
+
+
+---Sets an on-click function (or resets it, if no argument is provided).
+---@param f function? The function to be executed if this Node is clicked.
+function Node:setOnClick(f)
+    self.onClick = f
+end
+
+
+
 ---Returns whether this Node is hovered. (Currently works only for the upscaled UI)
 function Node:isHovered()
     return self:hasPixel(_MousePos / self:getInputScale())
+end
+
+
+
+---Removes a child Node by its reference.
+---@param node Node The node to be removed.
+function Node:removeChild(node)
+    for i, child in ipairs(self.children) do
+        if child == node then
+            table.remove(self.children, i)
+            return
+        end
+    end
+end
+
+
+
+---Removes itself from a parent Node.
+---If this Node has no parent, this function will fail.
+function Node:removeSelf()
+    if not self.parent then
+        return
+    end
+    self.parent:removeChild(self)
 end
 
 
@@ -155,14 +197,6 @@ function Node:hasPixel(pos)
         return _Utils.isPointInsideBox(pos, self:getGlobalPos(), self:getSize())
     end
     return false
-end
-
-
-
----Sets an on-click function (or resets it, if no argument is provided).
----@param f function? The function to be executed if this Node is clicked.
-function Node:setOnClick(f)
-    self.onClick = f
 end
 
 
