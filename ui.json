@@ -69,10 +69,6 @@
                     "type": "text",
                     "font": "standard",
                     "text": "Play!",
-                    "pos": {
-                        "x": 0,
-                        "y": -1
-                    },
                     "align": "center",
                     "parentAlign": "center",
                     "shadow": 1
@@ -101,10 +97,6 @@
                     "type": "text",
                     "font": "standard",
                     "text": "New Game",
-                    "pos": {
-                        "x": 0,
-                        "y": -1
-                    },
                     "align": "center",
                     "parentAlign": "center",
                     "shadow": 1
@@ -133,10 +125,6 @@
                     "type": "text",
                     "font": "standard",
                     "text": "Hi-Scores",
-                    "pos": {
-                        "x": 0,
-                        "y": -1
-                    },
                     "align": "center",
                     "parentAlign": "center",
                     "shadow": 1

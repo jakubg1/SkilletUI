@@ -230,6 +230,20 @@ end
 
 
 
+---Returns an index of the value in the provided table, or `nil` if the value does not exist in the table.
+---@param t table The table to be checked.
+---@param v any The value to be checked. The function will return an index of the first matching value from the `t` table.
+---@return any?
+function utils.getKeyInTable(t, v)
+	for i, n in pairs(t) do
+		if n == v then
+			return i
+		end
+	end
+end
+
+
+
 ---Returns an index of the provided weight list, randomly picked from that list.
 ---For example, providing `{1, 2, 3}` will return `0` 1/6 of the time, `1` 2/6 of the time and `2` 3/6 of the time.
 ---@param weights table A list of integers, which depict the weights.

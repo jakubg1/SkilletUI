@@ -165,6 +165,12 @@ end
 
 
 
+function Node:addChild(node, index)
+    --stub
+end
+
+
+
 ---Removes a child Node by its reference.
 ---@param node Node The node to be removed.
 function Node:removeChild(node)
@@ -185,6 +191,54 @@ function Node:removeSelf()
         return
     end
     self.parent:removeChild(self)
+end
+
+
+
+---Moves a child Node up in the hierarchy (to the front), by its reference.
+---@param node Node The node to be moved up.
+function Node:moveChildUp(node)
+    local i = _Utils.getKeyInTable(self.children, node)
+    if not i or i == 1 then
+        return
+    end
+    table.remove(self.children, i)
+    table.insert(self.children, i - 1, node)
+end
+
+
+
+---Moves itself up in the hierarchy of the parent Node.
+---If this Node has no parent, this function will fail.
+function Node:moveSelfUp()
+    if not self.parent then
+        return
+    end
+    self.parent:moveChildUp(self)
+end
+
+
+
+---Moves a child Node down in the hierarchy (to the back), by its reference.
+---@param node Node The node to be moved down.
+function Node:moveChildDown(node)
+    local i = _Utils.getKeyInTable(self.children, node)
+    if not i or i == #self.children then
+        return
+    end
+    table.remove(self.children, i)
+    table.insert(self.children, i + 1, node)
+end
+
+
+
+---Moves itself down in the hierarchy of the parent Node.
+---If this Node has no parent, this function will fail.
+function Node:moveSelfDown()
+    if not self.parent then
+        return
+    end
+    self.parent:moveChildDown(self)
 end
 
 

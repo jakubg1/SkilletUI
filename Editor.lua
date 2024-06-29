@@ -14,7 +14,9 @@ function Editor:new()
     self.UI = nil
 
     self.BUTTONS = {
-        self:button(0, 400, 100, "Delete", function() self:deleteSelectedNode() end),
+        self:button(0, 400, 150, "Delete [Del]", function() self:deleteSelectedNode() end),
+        self:button(0, 420, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end),
+        self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end),
 
         self:button(100, 640, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
         self:button(130, 640, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
@@ -97,6 +99,26 @@ end
 
 
 
+---Moves the selected node up in its parent's hierarchy.
+function Editor:moveSelectedNodeUp()
+    if not self.selectedNode then
+        return
+    end
+    self.selectedNode:moveSelfUp()
+end
+
+
+
+---Moves the selected node down in its parent's hierarchy.
+function Editor:moveSelectedNodeDown()
+    if not self.selectedNode then
+        return
+    end
+    self.selectedNode:moveSelfDown()
+end
+
+
+
 ---Deletes the currently selected UI node.
 function Editor:deleteSelectedNode()
     if not self.selectedNode then
@@ -147,6 +169,10 @@ end
 ---@param dt number Time delta in seconds.
 function Editor:update(dt)
 	self.hoveredNode = _UI:findChildByPixelDepthFirst(_MouseCPos)
+    if self:isUIHovered() then
+        self.hoveredNode = nil
+    end
+
 	if self.selectedNode and self.nodeDragOrigin then
 		local movement = _MouseCPos - self.nodeDragOrigin
 		if self.nodeDragSnap then
@@ -203,6 +229,7 @@ function Editor:draw()
     -- Buttons
     self:drawShadowedText("Node Align", 100, 620)
     self:drawShadowedText("Parent Align", 300, 620)
+    self:drawShadowedText("Ctrl+Click a node to make it a child of the currently selected node", 500, 620)
     for i, button in ipairs(self.BUTTONS) do
         button:draw()
     end
@@ -284,6 +311,10 @@ function Editor:keypressed(key)
 		self.enabled = not self.enabled
     elseif key == "delete" then
         self:deleteSelectedNode()
+    elseif key == "pageup" then
+        self:moveSelectedNodeUp()
+    elseif key == "pagedown" then
+        self:moveSelectedNodeDown()
     elseif key == "up" then
         self:moveSelectedNode(Vec2(0, -1))
     elseif key == "down" then

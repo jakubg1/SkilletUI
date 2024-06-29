@@ -52,13 +52,6 @@ _BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
 _EDITOR = Editor()
 
-_EditorMode = false
-_HoveredNode = nil
-_SelectedNode = nil
-_NodeDragOrigin = nil
-_NodeDragOriginalPos = nil
-_NodeDragSnap = false
-
 
 
 function _LoadUI(path)
@@ -102,7 +95,9 @@ function love.draw()
 	local t = love.timer.getTime()
 	_CANVAS:activate()
 	-- Start of main drawing routine
-	--_BACKGROUND:draw()
+	if not _EDITOR.enabled then
+		_BACKGROUND:draw()
+	end
 	_UI:draw()
 	_EDITOR:drawUIPass()
 	_TRANSITION:draw()
