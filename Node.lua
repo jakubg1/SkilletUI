@@ -165,8 +165,26 @@ end
 
 
 
+---Inserts the provided Node as a child of this Node.
+---If the provided Node is already integrated into another UI tree (has a parent), it is removed from that parent - the Node is effectively moved.
+---@param node Node The node to be added.
+---@param index number? The index specifying where in the hierarchy the Node should be located. By default, it is inserted as the last element (on the bottom).
 function Node:addChild(node, index)
-    --stub
+    if node:findChild(self) then
+        -- We cannot parent ourselves to our own child, or else we will get stuck in a loop!!!
+        return
+    end
+    -- Resolve linkages.
+    if node.parent then
+        node:removeSelf()
+    end
+    node.parent = self
+    -- Add as a child.
+    if index then
+        table.insert(self.children, index, node)
+    else
+        table.insert(self.children, node)
+    end
 end
 
 
@@ -247,10 +265,24 @@ end
 ---@param pos Vector2 The position to be checked.
 ---@return boolean
 function Node:hasPixel(pos)
-    if self.widget then
-        return _Utils.isPointInsideBox(pos, self:getGlobalPos(), self:getSize())
+    return _Utils.isPointInsideBox(pos, self:getGlobalPos(), self:getSize())
+end
+
+
+
+---Returns the first encountered child by reference, or `nil` if it is not found.
+---@param node Node The instance of the child to be found.
+---@return Node?
+function Node:findChild(node)
+    for i, child in ipairs(self.children) do
+        if child == node then
+            return child
+        end
+        local potentialResult = child:findChild(node)
+        if potentialResult then
+            return potentialResult
+        end
     end
-    return false
 end
 
 

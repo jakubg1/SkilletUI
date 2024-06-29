@@ -119,6 +119,17 @@ end
 
 
 
+---Parents the currently selected node to the currently hovered node.
+---The selected node becomes a child, and the hovered node becomes its parent.
+function Editor:parentSelectedNodeToHoveredNode()
+    if not self.selectedNode or not self.hoveredNode then
+        return
+    end
+    self.hoveredNode:addChild(self.selectedNode)
+end
+
+
+
 ---Deletes the currently selected UI node.
 function Editor:deleteSelectedNode()
     if not self.selectedNode then
@@ -229,7 +240,7 @@ function Editor:draw()
     -- Buttons
     self:drawShadowedText("Node Align", 100, 620)
     self:drawShadowedText("Parent Align", 300, 620)
-    self:drawShadowedText("Ctrl+Click a node to make it a child of the currently selected node", 500, 620)
+    self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 500, 620)
     for i, button in ipairs(self.BUTTONS) do
         button:draw()
     end
@@ -277,11 +288,16 @@ function Editor:mousepressed(x, y, button)
         btn:mousepressed(x, y, button)
     end
 	if button == 1 and not self:isUIHovered() then
-        self.selectedNode = self.hoveredNode
-        if self.selectedNode then
-            self.nodeDragOrigin = _MouseCPos
-            self.nodeDragOriginalPos = self.selectedNode:getPos()
-            self.nodeDragSnap = true
+        if love.keyboard.isDown("lctrl", "rctrl") then
+            -- Ctrl+Click parents the selected node instead.
+            self:parentSelectedNodeToHoveredNode()
+        else
+            self.selectedNode = self.hoveredNode
+            if self.selectedNode then
+                self.nodeDragOrigin = _MouseCPos
+                self.nodeDragOriginalPos = self.selectedNode:getPos()
+                self.nodeDragSnap = true
+            end
         end
 	end
 end
