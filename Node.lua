@@ -75,11 +75,7 @@ end
 ---Returns the global position of this Node, i.e. the actual position after factoring in all parents' modifiers.
 ---@return Vector2
 function Node:getGlobalPos()
-    local pos = self.pos - ((self:getSize() - 1) * self.align):ceil()
-    if self.parent then
-        pos = pos + self:getParentAlignPos()
-    end
-    return pos
+    return self.pos - ((self:getSize() - 1) * self.align):ceil() + self:getParentAlignPos()
 end
 
 
@@ -87,19 +83,18 @@ end
 ---Returns the global position of this Node, which has not been adjusted for the local widget alignment.
 ---@return Vector2
 function Node:getGlobalPosWithoutLocalAlign()
-    local pos = self.pos
-    if self.parent then
-        pos = pos + self:getParentAlignPos()
-    end
-    return pos
+    return self.pos + self:getParentAlignPos()
 end
 
 
 
----Returns the Node's parent anchor.
+---Returns the Node's parent anchor. If the Node does not have a parent, this function will return `(0, 0)`.
 ---@return Vector2
 function Node:getParentAlignPos()
-    return self.parent:getGlobalPos() + ((self.parent:getSize() - 1) * self.parentAlign):ceil()
+    if self.parent then
+        return self.parent:getGlobalPos() + ((self.parent:getSize() - 1) * self.parentAlign):ceil()
+    end
+    return Vec2()
 end
 
 

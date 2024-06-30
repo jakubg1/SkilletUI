@@ -38,21 +38,26 @@ function Editor:new()
         self:button(330, 680, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
         self:button(360, 680, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
     }
+    self.UI_TREE_POS = Vec2(5, 120)
 
     self.enabled = true
     self.hoveredNode = nil
+    self.isNodeHoverIndirect = false
     self.selectedNode = nil
     self.nodeDragOrigin = nil
     self.nodeDragOriginalPos = nil
     self.nodeDragSnap = false
+    self.uiTreeInfo = {}
 end
 
 
 
 ---Returns UI tree information.
+---This function should only be called internally. If you want to get the current UI tree info, fetch the `self.uiTreeInfo` field instead.
 ---@param node Node? The UI node of which the tree should be added to the list.
 ---@param tab table? The table, used internally.
 ---@param indent integer? The starting indentation.
+---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
 function Editor:getUITreeInfo(node, tab, indent)
     node = node or _UI
     tab = tab or {}
@@ -66,6 +71,30 @@ end
 
 
 
+---Returns the currently hovered Node.
+---This function also sets the value of the `self.isNodeHoverIndirect` field.
+---
+---This function should only be called internally. If you want to get the currently hovered node, fetch the `self.hoveredNode` field instead.
+---@return Node?
+function Editor:getHoveredNode()
+    self.isNodeHoverIndirect = false
+    -- Editor UI has hover precedence over actual UI.
+    if self:isUIHovered() then
+        return nil
+    end
+    -- Look whether we've hovered over any UI info entry.
+    for i, entry in ipairs(self.uiTreeInfo) do
+        if _Utils.isPointInsideBox(_MousePos, self.UI_TREE_POS + Vec2(0, 15 * i), Vec2(200, 15)) then
+            self.isNodeHoverIndirect = true
+            return entry.node
+        end
+    end
+    -- Finally, look if any node is directly hovered.
+	return _UI:findChildByPixelDepthFirst(_MouseCPos)
+end
+
+
+
 ---Moves the currently selected UI node by the given amount of pixels.
 ---@param offset Vector2 The movement vector the selected UI node should be moved towards.
 function Editor:moveSelectedNode(offset)
@@ -73,6 +102,41 @@ function Editor:moveSelectedNode(offset)
         return
     end
     self.selectedNode:setPos(self.selectedNode:getPos() + offset)
+end
+
+
+
+---Starts dragging the selected node, starting from the current mouse position.
+function Editor:startDraggingSelectedNode()
+    if not self.selectedNode then
+        return
+    end
+    self.nodeDragOrigin = _MouseCPos
+    self.nodeDragOriginalPos = self.selectedNode:getPos()
+    self.nodeDragSnap = true
+end
+
+
+
+---Finishes dragging the selected node.
+function Editor:finishDraggingSelectedNode()
+    if not self.selectedNode then
+        return
+    end
+    self.nodeDragOrigin = nil
+    self.nodeDragOriginalPos = nil
+    self.nodeDragSnap = false
+end
+
+
+
+---Restores the original selected node position and finishes the dragging process.
+function Editor:cancelDraggingSelectedNode()
+    if not self.selectedNode then
+        return
+    end
+    self.selectedNode:setPos(self.nodeDragOriginalPos)
+    self:finishDraggingSelectedNode()
 end
 
 
@@ -179,10 +243,8 @@ end
 ---Updates the Editor.
 ---@param dt number Time delta in seconds.
 function Editor:update(dt)
-	self.hoveredNode = _UI:findChildByPixelDepthFirst(_MouseCPos)
-    if self:isUIHovered() then
-        self.hoveredNode = nil
-    end
+    self.uiTreeInfo = self:getUITreeInfo()
+    self.hoveredNode = self:getHoveredNode()
 
 	if self.selectedNode and self.nodeDragOrigin then
 		local movement = _MouseCPos - self.nodeDragOrigin
@@ -226,15 +288,16 @@ function Editor:draw()
     end
 
     -- Node tree
-    local treeInfo = self:getUITreeInfo()
-    for i, line in ipairs(treeInfo) do
+    for i, line in ipairs(self.uiTreeInfo) do
+        local x = self.UI_TREE_POS.x + 30 * line.indent
+        local y = self.UI_TREE_POS.y + 15 * i
         local color = _COLORS.white
         if line.node == self.selectedNode then
             color = _COLORS.cyan
         elseif line.node == self.hoveredNode then
             color = _COLORS.yellow
         end
-        self:drawShadowedText(string.format("%s {%s}", line.node.name, line.node.type), 5 + 30 * line.indent, 120 + 15 * i, color)
+        self:drawShadowedText(string.format("%s {%s}", line.node.name, line.node.type), x, y, color)
     end
 
     -- Buttons
@@ -293,12 +356,14 @@ function Editor:mousepressed(x, y, button)
             self:parentSelectedNodeToHoveredNode()
         else
             self.selectedNode = self.hoveredNode
-            if self.selectedNode then
-                self.nodeDragOrigin = _MouseCPos
-                self.nodeDragOriginalPos = self.selectedNode:getPos()
-                self.nodeDragSnap = true
+            if self.selectedNode and not self.isNodeHoverIndirect then
+                -- Indirectly selected nodes (by clicking on the hierarchy tree) cannot be dragged.
+                self:startDraggingSelectedNode()
             end
         end
+    elseif button == 2 and self.nodeDragOrigin then
+        -- Cancel dragging if the right click is received.
+        self:cancelDraggingSelectedNode()
 	end
 end
 
@@ -313,9 +378,7 @@ function Editor:mousereleased(x, y, button)
     for i, btn in ipairs(self.BUTTONS) do
         btn:mousereleased(x, y, button)
     end
-    self.nodeDragOrigin = nil
-    self.nodeDragOriginalPos = nil
-    self.nodeDragSnap = false
+    self:finishDraggingSelectedNode()
 end
 
 
