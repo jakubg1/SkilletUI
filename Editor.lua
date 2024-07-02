@@ -9,6 +9,7 @@ local Node = require("Node")
 
 local CommandNodeMove = require("EditorCommandNodeMove")
 local CommandNodeDelete = require("EditorCommandNodeDelete")
+local CommandNodeSetAlign = require("EditorCommandNodeSetAlign")
 
 
 
@@ -172,10 +173,7 @@ end
 ---Sets a new alignment for the selected node.
 ---@param align Vector2 The new alignment value.
 function Editor:setSelectedNodeAlign(align)
-    if not self.selectedNode then
-        return
-    end
-    self.selectedNode:setAlign(align)
+    self:executeCommand(CommandNodeSetAlign(self.selectedNode, align))
 end
 
 
@@ -235,7 +233,7 @@ end
 ---Executes an editor command. Each command is an atomic action, which can be undone with a single press of the Undo button.
 ---If the command has been executed successfully, it is added to the command stack and can be undone using `:undoLastCommand()`.
 ---Returns `true` if the command has been executed successfully. Otherwise, returns `false`.
----@param command EditorCommandNodeDelete|EditorCommandNodeMove The command to be performed.
+---@param command EditorCommandNodeDelete|EditorCommandNodeMove|EditorCommandNodeSetAlign The command to be performed.
 ---@return boolean
 function Editor:executeCommand(command)
     local result = command:execute()
@@ -258,6 +256,7 @@ function Editor:undoLastCommand()
         return
     end
     local command = table.remove(self.commandHistory)
+    print("Removed from history: " .. command.NAME)
     command:undo()
     table.insert(self.undoCommandHistory, command)
 end
@@ -357,6 +356,12 @@ function Editor:draw()
             color = _COLORS.yellow
         end
         self:drawShadowedText(string.format("%s {%s}", line.node.name, line.node.type), x, y, color)
+    end
+
+    -- Command buffer
+    self:drawShadowedText("Command Buffer", 1100, 20)
+    for i, command in ipairs(self.commandHistory) do
+        self:drawShadowedText(command.NAME, 1100, 35 + 15 * i)
     end
 
     -- Buttons

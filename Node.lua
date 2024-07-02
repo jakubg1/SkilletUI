@@ -121,6 +121,14 @@ end
 
 
 
+---Returns the current alignment of the Node.
+---@return Vector2
+function Node:getAlign()
+    return self.align
+end
+
+
+
 ---Sets the alignment of this Node.
 ---@param align Vector2 The new Node alignment.
 --- - `(0, 0)` aligns to top left.
