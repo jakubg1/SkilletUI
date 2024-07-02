@@ -7,6 +7,34 @@ local Editor = class:derive("Editor")
 local Vec2 = require("Vector2")
 local Node = require("Node")
 
+local CommandNodeMove = require("EditorCommandNodeMove")
+local CommandNodeDelete = require("EditorCommandNodeDelete")
+
+
+
+--- Done:
+--- - Hovering nodes
+--- - Selecting nodes
+--- - Deleting nodes
+--- - Moving nodes around
+--- - Cancelling a node movement while it is being dragged
+--- - Changing nodes' anchor points
+--- - Changing nodes' parents
+--- - Reordering nodes
+--- - Node tree
+--- - Selecting via node tree
+---
+--- To Do:
+--- - Undo/Redo (rewrite to commands)
+--- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
+--- - Copy/Paste
+--- - Multi-selection(?)
+--- - Dragging entries around in the node tree
+--- - Widget manipulation (color, text, size, scale, etc.)
+--- - Loading/switching layouts
+--- - Saving layouts
+--- - Animations at some point
+
 
 
 ---Constructs a new UI Editor.
@@ -39,6 +67,9 @@ function Editor:new()
         self:button(360, 680, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
     }
     self.UI_TREE_POS = Vec2(5, 120)
+
+    self.commandHistory = {}
+    self.undoCommandHistory = {}
 
     self.enabled = true
     self.hoveredNode = nil
@@ -98,10 +129,7 @@ end
 ---Moves the currently selected UI node by the given amount of pixels.
 ---@param offset Vector2 The movement vector the selected UI node should be moved towards.
 function Editor:moveSelectedNode(offset)
-    if not self.selectedNode then
-        return
-    end
-    self.selectedNode:setPos(self.selectedNode:getPos() + offset)
+    self:executeCommand(CommandNodeMove(self.selectedNode, offset))
 end
 
 
@@ -196,11 +224,42 @@ end
 
 ---Deletes the currently selected UI node.
 function Editor:deleteSelectedNode()
-    if not self.selectedNode then
+    local result = self:executeCommand(CommandNodeDelete(self.selectedNode))
+    if result then
+        self.selectedNode = nil
+    end
+end
+
+
+
+---Executes an editor command. Each command is an atomic action, which can be undone with a single press of the Undo button.
+---If the command has been executed successfully, it is added to the command stack and can be undone using `:undoLastCommand()`.
+---Returns `true` if the command has been executed successfully. Otherwise, returns `false`.
+---@param command EditorCommandNodeDelete|EditorCommandNodeMove The command to be performed.
+---@return boolean
+function Editor:executeCommand(command)
+    local result = command:execute()
+    if result then
+        -- Purge the undo command stack if anything was there.
+        if #self.undoCommandHistory > 0 then
+            self.undoCommandHistory = {}
+        end
+        table.insert(self.commandHistory, command)
+        print("Added to history: " .. command.NAME)
+    end
+    return result
+end
+
+
+
+---Undoes the command that has been executed last and moves it to an undo command stack.
+function Editor:undoLastCommand()
+    if #self.commandHistory == 0 then
         return
     end
-    self.selectedNode:removeSelf()
-    self.selectedNode = nil
+    local command = table.remove(self.commandHistory)
+    command:undo()
+    table.insert(self.undoCommandHistory, command)
 end
 
 
@@ -402,6 +461,8 @@ function Editor:keypressed(key)
         self:moveSelectedNode(Vec2(-1, 0))
     elseif key == "right" then
         self:moveSelectedNode(Vec2(1, 0))
+    elseif key == "backspace" then
+        self:undoLastCommand()
 	end
 end
 

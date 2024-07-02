@@ -165,8 +165,8 @@ end
 ---@param node Node The node to be added.
 ---@param index number? The index specifying where in the hierarchy the Node should be located. By default, it is inserted as the last element (on the bottom).
 function Node:addChild(node, index)
-    if node:findChild(self) then
-        -- We cannot parent ourselves to our own child, or else we will get stuck in a loop!!!
+    if node == self or node:findChild(self) then
+        -- We cannot parent a node to itself or its own child, or else we will get stuck in a loop!!!
         return
     end
     -- Resolve linkages.
@@ -184,26 +184,29 @@ end
 
 
 
----Removes a child Node by its reference.
+---Removes a child Node by its reference. Returns `true` on success.
 ---@param node Node The node to be removed.
+---@return boolean
 function Node:removeChild(node)
     for i, child in ipairs(self.children) do
         if child == node then
             table.remove(self.children, i)
-            return
+            return true
         end
     end
+    return false
 end
 
 
 
----Removes itself from a parent Node.
----If this Node has no parent, this function will fail.
+---Removes itself from a parent Node. If succeeded, returns `true`.
+---If this Node has no parent, this function will fail and return `false`.
+---@return boolean
 function Node:removeSelf()
     if not self.parent then
-        return
+        return false
     end
-    self.parent:removeChild(self)
+    return self.parent:removeChild(self)
 end
 
 
