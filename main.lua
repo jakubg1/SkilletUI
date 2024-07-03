@@ -129,5 +129,8 @@ end
 
 
 function love.keypressed(key)
+	if not _EDITOR.enabled then
+		_UI:keypressed(key)
+	end
 	_EDITOR:keypressed(key)
 end

@@ -25,6 +25,7 @@ function Node:new(data, parent)
     self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
     self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
     self.alpha = data.alpha or 1
+    self.shortcut = data.shortcut
     self.inputScale = data.inputScale or 1
 
     self.clicked = false
@@ -490,6 +491,21 @@ function Node:mousereleased(x, y, button)
     end
     for i, child in ipairs(self.children) do
         child:mousereleased(x, y, button)
+    end
+end
+
+
+
+---Executed whenever a key is pressed on the keyboard.
+---@param key string Code of the key that has been pressed.
+function Node:keypressed(key)
+    if key == self.shortcut then
+        if self.onClick then
+            self.onClick()
+        end
+    end
+    for i, child in ipairs(self.children) do
+        child:keypressed(key)
     end
 end
 

@@ -43,9 +43,9 @@ function Editor:new()
     self.UI = nil
 
     self.BUTTONS = {
-        self:button(0, 400, 150, "Delete [Del]", function() self:deleteSelectedNode() end),
-        self:button(0, 420, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end),
-        self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end),
+        self:button(0, 400, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
+        self:button(0, 420, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
+        self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
 
         self:button(100, 640, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
         self:button(130, 640, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
@@ -269,9 +269,10 @@ end
 ---@param w number The width of the button. Height is always 20.
 ---@param text string The text that should be written on the button.
 ---@param fn function? The function to be executed when this button is clicked.
+---@param key string? The key which will activate this button.
 ---@return Node
-function Editor:button(x, y, w, text, fn)
-    local button = Node({name = "", type = "9sprite", image = "ed_button", clickImage = "ed_button_click", pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = {r = 0, g = 0, b = 0}}}})
+function Editor:button(x, y, w, text, fn, key)
+    local button = Node({name = "", type = "9sprite", image = "ed_button", clickImage = "ed_button_click", shortcut = key, pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = {r = 0, g = 0, b = 0}}}})
     button:setOnClick(fn)
     return button
 end
@@ -452,12 +453,6 @@ end
 function Editor:keypressed(key)
 	if key == "tab" then
 		self.enabled = not self.enabled
-    elseif key == "delete" then
-        self:deleteSelectedNode()
-    elseif key == "pageup" then
-        self:moveSelectedNodeUp()
-    elseif key == "pagedown" then
-        self:moveSelectedNodeDown()
     elseif key == "up" then
         self:moveSelectedNode(Vec2(0, -1))
     elseif key == "down" then
@@ -469,6 +464,9 @@ function Editor:keypressed(key)
     elseif key == "backspace" then
         self:undoLastCommand()
 	end
+    for i, btn in ipairs(self.BUTTONS) do
+        btn:keypressed(key)
+    end
 end
 
 
