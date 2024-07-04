@@ -143,6 +143,14 @@ end
 
 
 
+---Returns the current parental alignment of the Node.
+---@return Vector2
+function Node:getParentAlign()
+    return self.parentAlign
+end
+
+
+
 ---Sets the parental alignment of this Node.
 ---@param parentAlign Vector2 The new Node alignment.
 --- - `(0, 0)` aligns to top left.

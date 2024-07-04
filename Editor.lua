@@ -10,10 +10,11 @@ local Node = require("Node")
 local CommandNodeMove = require("EditorCommandNodeMove")
 local CommandNodeDelete = require("EditorCommandNodeDelete")
 local CommandNodeSetAlign = require("EditorCommandNodeSetAlign")
+local CommandNodeSetParentAlign = require("EditorCommandNodeSetParentAlign")
 local CommandNodeMoveUp = require("EditorCommandNodeMoveUp")
 local CommandNodeMoveDown = require("EditorCommandNodeMoveDown")
 
----@alias EditorCommand* EditorCommandNodeSetAlign|EditorCommandNodeMove|EditorCommandNodeDelete|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown
+---@alias EditorCommand* EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeMove|EditorCommandNodeDelete|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown
 
 
 
@@ -160,10 +161,7 @@ end
 ---Sets a new parental alignment for the selected node.
 ---@param parentAlign Vector2 The new parental alignment value.
 function Editor:setSelectedNodeParentAlign(parentAlign)
-    if not self.selectedNode then
-        return
-    end
-    self.selectedNode:setParentAlign(parentAlign)
+    self:executeCommand(CommandNodeSetParentAlign(self.selectedNode, parentAlign))
 end
 
 
@@ -217,22 +215,32 @@ function Editor:executeCommand(command)
             self.undoCommandHistory = {}
         end
         table.insert(self.commandHistory, command)
-        print("Added to history: " .. command.NAME)
     end
     return result
 end
 
 
 
----Undoes the command that has been executed last and moves it to an undo command stack.
+---Undoes the command that has been executed last and moves it to the undo command stack.
 function Editor:undoLastCommand()
     if #self.commandHistory == 0 then
         return
     end
     local command = table.remove(self.commandHistory)
-    print("Removed from history: " .. command.NAME)
     command:undo()
     table.insert(self.undoCommandHistory, command)
+end
+
+
+
+---Redoes the undone command and moves it back to the main command stack.
+function Editor:redoLastCommand()
+    if #self.undoCommandHistory == 0 then
+        return
+    end
+    local command = table.remove(self.undoCommandHistory)
+    command:execute()
+    table.insert(self.commandHistory, command)
 end
 
 
@@ -261,7 +269,7 @@ end
 
 
 
----Initializes the UI for this Editor...needed?
+---Initializes the UI for this Editor.
 function Editor:load()
     self.UI = _LoadUI("editor_ui.json")
     local buttons = {
@@ -449,6 +457,8 @@ function Editor:keypressed(key)
         self:moveSelectedNode(Vec2(1, 0))
     elseif key == "backspace" then
         self:undoLastCommand()
+    elseif key == "=" then
+        self:redoLastCommand()
 	end
 end
 
