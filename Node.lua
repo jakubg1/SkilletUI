@@ -53,6 +53,7 @@ function Node:new(data, parent)
 	    	table.insert(self.children, Node(child, self))
 	    end
     end
+    self.deleteIndex = nil
 end
 
 
@@ -212,11 +213,11 @@ end
 ---@param node Node The node to be removed.
 ---@return boolean
 function Node:removeChild(node)
-    for i, child in ipairs(self.children) do
-        if child == node then
-            table.remove(self.children, i)
-            return true
-        end
+    local index = self:getChildIndex(node)
+    if index then
+        table.remove(self.children, index)
+        node.deleteIndex = index
+        return true
     end
     return false
 end
@@ -231,6 +232,17 @@ function Node:removeSelf()
         return false
     end
     return self.parent:removeChild(self)
+end
+
+
+
+---Restores this Node to the tree after its deletion.
+function Node:restoreSelf()
+    if not self.deleteIndex then
+        return
+    end
+    self.parent:addChild(self, self.deleteIndex)
+    self.deleteIndex = nil
 end
 
 
@@ -287,6 +299,31 @@ function Node:moveSelfDown()
         return false
     end
     return self.parent:moveChildDown(self)
+end
+
+
+
+---Returns the index of a child contained in this Node. If the given node is not a child of this node, returns `nil`.
+---@param node Node The node to be looked for.
+---@return integer?
+function Node:getChildIndex(node)
+    for i, child in ipairs(self.children) do
+        if child == node then
+            return i
+        end
+    end
+    return nil
+end
+
+
+
+---Returns the index of this Node in its parent. If this Node has no parent, returns `nil`.
+---@return integer?
+function Node:getSelfIndex()
+    if not self.parent then
+        return nil
+    end
+    return self.parent:getChildIndex(self)
 end
 
 

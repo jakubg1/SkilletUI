@@ -28,7 +28,7 @@ end
 
 ---Undoes this command.
 function EditorCommandNodeDelete:undo()
-    -- TODO
+    self.node:restoreSelf()
 end
 
 
