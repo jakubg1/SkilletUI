@@ -10,6 +10,10 @@ local Node = require("Node")
 local CommandNodeMove = require("EditorCommandNodeMove")
 local CommandNodeDelete = require("EditorCommandNodeDelete")
 local CommandNodeSetAlign = require("EditorCommandNodeSetAlign")
+local CommandNodeMoveUp = require("EditorCommandNodeMoveUp")
+local CommandNodeMoveDown = require("EditorCommandNodeMoveDown")
+
+---@alias EditorCommand* EditorCommandNodeSetAlign|EditorCommandNodeMove|EditorCommandNodeDelete|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown
 
 
 
@@ -42,31 +46,6 @@ local CommandNodeSetAlign = require("EditorCommandNodeSetAlign")
 function Editor:new()
     self.UI = nil
 
-    self.BUTTONS = {
-        self:button(0, 400, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
-        self:button(0, 420, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
-        self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
-
-        self:button(100, 640, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
-        self:button(130, 640, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
-        self:button(160, 640, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
-        self:button(100, 660, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
-        self:button(130, 660, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
-        self:button(160, 660, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
-        self:button(100, 680, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(130, 680, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
-        self:button(160, 680, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
-
-        self:button(300, 640, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
-        self:button(330, 640, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
-        self:button(360, 640, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
-        self:button(300, 660, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
-        self:button(330, 660, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
-        self:button(360, 660, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
-        self:button(300, 680, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(330, 680, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
-        self:button(360, 680, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
-    }
     self.UI_TREE_POS = Vec2(5, 120)
 
     self.commandHistory = {}
@@ -191,20 +170,14 @@ end
 
 ---Moves the selected node up in its parent's hierarchy.
 function Editor:moveSelectedNodeUp()
-    if not self.selectedNode then
-        return
-    end
-    self.selectedNode:moveSelfUp()
+    self:executeCommand(CommandNodeMoveUp(self.selectedNode))
 end
 
 
 
 ---Moves the selected node down in its parent's hierarchy.
 function Editor:moveSelectedNodeDown()
-    if not self.selectedNode then
-        return
-    end
-    self.selectedNode:moveSelfDown()
+    self:executeCommand(CommandNodeMoveDown(self.selectedNode))
 end
 
 
@@ -223,6 +196,7 @@ end
 ---Deletes the currently selected UI node.
 function Editor:deleteSelectedNode()
     local result = self:executeCommand(CommandNodeDelete(self.selectedNode))
+    -- Unselect the selected node if it has been successfully deleted.
     if result then
         self.selectedNode = nil
     end
@@ -233,7 +207,7 @@ end
 ---Executes an editor command. Each command is an atomic action, which can be undone with a single press of the Undo button.
 ---If the command has been executed successfully, it is added to the command stack and can be undone using `:undoLastCommand()`.
 ---Returns `true` if the command has been executed successfully. Otherwise, returns `false`.
----@param command EditorCommandNodeDelete|EditorCommandNodeMove|EditorCommandNodeSetAlign The command to be performed.
+---@param command EditorCommand* The command to be performed.
 ---@return boolean
 function Editor:executeCommand(command)
     local result = command:execute()
@@ -282,12 +256,7 @@ end
 ---Returns whether an editor button (or any editor UI) is hovered.
 ---@return boolean
 function Editor:isUIHovered()
-    for i, button in ipairs(self.BUTTONS) do
-        if button:isHovered() then
-            return true
-        end
-    end
-    return false
+    return self.UI:isHoveredWithChildren()
 end
 
 
@@ -295,6 +264,34 @@ end
 ---Initializes the UI for this Editor...needed?
 function Editor:load()
     self.UI = _LoadUI("editor_ui.json")
+    local buttons = {
+        self:button(0, 400, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
+        self:button(0, 420, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
+        self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
+
+        self:button(100, 640, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
+        self:button(130, 640, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
+        self:button(160, 640, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
+        self:button(100, 660, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
+        self:button(130, 660, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
+        self:button(160, 660, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
+        self:button(100, 680, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(130, 680, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
+        self:button(160, 680, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
+
+        self:button(300, 640, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
+        self:button(330, 640, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
+        self:button(360, 640, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
+        self:button(300, 660, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
+        self:button(330, 660, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
+        self:button(360, 660, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
+        self:button(300, 680, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(330, 680, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
+        self:button(360, 680, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
+    }
+    for i, button in ipairs(buttons) do
+        self.UI:addChild(button)
+    end
 end
 
 
@@ -317,9 +314,6 @@ function Editor:update(dt)
 	end
 
     self.UI:update(dt)
-    for i, button in ipairs(self.BUTTONS) do
-        button:update(dt)
-    end
 end
 
 
@@ -369,9 +363,6 @@ function Editor:draw()
     self:drawShadowedText("Node Align", 100, 620)
     self:drawShadowedText("Parent Align", 300, 620)
     self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 500, 620)
-    for i, button in ipairs(self.BUTTONS) do
-        button:draw()
-    end
 end
 
 
@@ -412,9 +403,6 @@ function Editor:mousepressed(x, y, button)
         return
     end
     self.UI:mousepressed(x, y, button)
-    for i, btn in ipairs(self.BUTTONS) do
-        btn:mousepressed(x, y, button)
-    end
 	if button == 1 and not self:isUIHovered() then
         if love.keyboard.isDown("lctrl", "rctrl") then
             -- Ctrl+Click parents the selected node instead.
@@ -440,9 +428,6 @@ end
 ---@param button integer The button that has been released.
 function Editor:mousereleased(x, y, button)
     self.UI:mousereleased(x, y, button)
-    for i, btn in ipairs(self.BUTTONS) do
-        btn:mousereleased(x, y, button)
-    end
     self:finishDraggingSelectedNode()
 end
 
@@ -451,6 +436,7 @@ end
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string The key code.
 function Editor:keypressed(key)
+    self.UI:keypressed(key)
 	if key == "tab" then
 		self.enabled = not self.enabled
     elseif key == "up" then
@@ -464,9 +450,6 @@ function Editor:keypressed(key)
     elseif key == "backspace" then
         self:undoLastCommand()
 	end
-    for i, btn in ipairs(self.BUTTONS) do
-        btn:keypressed(key)
-    end
 end
 
 

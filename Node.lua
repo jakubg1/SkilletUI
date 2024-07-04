@@ -162,9 +162,24 @@ end
 
 
 
----Returns whether this Node is hovered. (Currently works only for the upscaled UI)
+---Returns whether this Node is hovered.
 function Node:isHovered()
     return self:hasPixel(_MousePos / self:getInputScale())
+end
+
+
+
+---Returns whether this Node or any of its children is hovered.
+function Node:isHoveredWithChildren()
+    if self:isHovered() then
+        return true
+    end
+    for i, child in ipairs(self.children) do
+        if child:isHoveredWithChildren() then
+            return true
+        end
+    end
+    return false
 end
 
 
@@ -221,49 +236,57 @@ end
 
 
 ---Moves a child Node up in the hierarchy (to the front), by its reference.
+---Returns `true` if the node has been successfully moved, `false` if the node could not be found or is already the frontmost node.
 ---@param node Node The node to be moved up.
+---@return boolean
 function Node:moveChildUp(node)
     local i = _Utils.getKeyInTable(self.children, node)
     if not i or i == 1 then
-        return
+        return false
     end
     table.remove(self.children, i)
     table.insert(self.children, i - 1, node)
+    return true
 end
 
 
 
 ---Moves itself up in the hierarchy of the parent Node.
----If this Node has no parent, this function will fail.
+---If this Node has no parent, this function will fail and return `false`. If the operation succeeds, returns `true`.
+---@return boolean
 function Node:moveSelfUp()
     if not self.parent then
-        return
+        return false
     end
-    self.parent:moveChildUp(self)
+    return self.parent:moveChildUp(self)
 end
 
 
 
 ---Moves a child Node down in the hierarchy (to the back), by its reference.
+---Returns `true` if the node has been successfully moved, `false` if the node could not be found or is already the backmost node.
 ---@param node Node The node to be moved down.
+---@return boolean
 function Node:moveChildDown(node)
     local i = _Utils.getKeyInTable(self.children, node)
     if not i or i == #self.children then
-        return
+        return false
     end
     table.remove(self.children, i)
     table.insert(self.children, i + 1, node)
+    return true
 end
 
 
 
 ---Moves itself down in the hierarchy of the parent Node.
----If this Node has no parent, this function will fail.
+---If this Node has no parent, this function will fail and return `false`. If the operation succeeds, returns `true`.
+---@return boolean
 function Node:moveSelfDown()
     if not self.parent then
-        return
+        return false
     end
-    self.parent:moveChildDown(self)
+    return self.parent:moveChildDown(self)
 end
 
 
