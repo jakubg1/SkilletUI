@@ -260,13 +260,11 @@ end
 ---@param node Node The node to be moved up.
 ---@return boolean
 function Node:moveChildUp(node)
-    local i = _Utils.getKeyInTable(self.children, node)
-    if not i or i == 1 then
+    local index = self:getChildIndex(node)
+    if not index then
         return false
     end
-    table.remove(self.children, i)
-    table.insert(self.children, i - 1, node)
-    return true
+    return self:moveChildToPosition(node, index - 1)
 end
 
 
@@ -288,13 +286,11 @@ end
 ---@param node Node The node to be moved down.
 ---@return boolean
 function Node:moveChildDown(node)
-    local i = _Utils.getKeyInTable(self.children, node)
-    if not i or i == #self.children then
+    local index = self:getChildIndex(node)
+    if not index then
         return false
     end
-    table.remove(self.children, i)
-    table.insert(self.children, i + 1, node)
-    return true
+    return self:moveChildToPosition(node, index + 1)
 end
 
 
@@ -311,16 +307,89 @@ end
 
 
 
+---Moves a child Node to the top of the hierarchy (to the front), by its reference.
+---Returns `true` if the node has been successfully moved, `false` if the node could not be found or is already the frontmost node.
+---@param node Node The node to be moved to the top.
+---@return boolean
+function Node:moveChildToTop(node)
+    return self:moveChildToPosition(node, 1)
+end
+
+
+
+---Moves itself to the top of the hierarchy of the parent Node.
+---If this Node has no parent, this function will fail and return `false`. If the operation succeeds, returns `true`.
+---@return boolean
+function Node:moveSelfToTop()
+    if not self.parent then
+        return false
+    end
+    return self.parent:moveChildToTop(self)
+end
+
+
+
+---Moves a child Node to the bottom of the hierarchy (to the front), by its reference.
+---Returns `true` if the node has been successfully moved, `false` if the node could not be found or is already the backmost node.
+---@param node Node The node to be moved to the bottom.
+---@return boolean
+function Node:moveChildToBottom(node)
+    return self:moveChildToPosition(node, #self.children)
+end
+
+
+
+---Moves itself to the bottom of the hierarchy of the parent Node.
+---If this Node has no parent, this function will fail and return `false`. If the operation succeeds, returns `true`.
+---@return boolean
+function Node:moveSelfToBottom()
+    if not self.parent then
+        return false
+    end
+    return self.parent:moveChildToBottom(self)
+end
+
+
+
+---Moves a child Node to the given position in the hierarchy by its reference.
+---Returns `true` if the node has been successfully moved, `false` if the node could not be found, is already at the given position or the position is out of bounds.
+---@param node Node The node to be moved.
+---@param position integer The new Node position. `1` is the top, `#self.children` is the bottom.
+---@return boolean
+function Node:moveChildToPosition(node, position)
+    -- Fail if the position is illegal.
+    if position < 1 or position > #self.children then
+        return false
+    end
+    local i = self:getChildIndex(node)
+    -- Fail if the given node is not our child or is already at the right position.
+    if not i or i == position then
+        return false
+    end
+    table.remove(self.children, i)
+    table.insert(self.children, position, node)
+    return true
+end
+
+
+
+---Moves itself to the given position if the hierarchy of the parent Node.
+---If this Node has no parent, this function will fail and return `false`. If the operation succeeds, returns `true`.
+---@return boolean
+function Node:moveSelfToPosition(position)
+    if not self.parent then
+        return false
+    end
+    return self.parent:moveChildToPosition(self, position)
+end
+
+
+
 ---Returns the index of a child contained in this Node. If the given node is not a child of this node, returns `nil`.
 ---@param node Node The node to be looked for.
 ---@return integer?
 function Node:getChildIndex(node)
-    for i, child in ipairs(self.children) do
-        if child == node then
-            return i
-        end
-    end
-    return nil
+    return _Utils.getKeyInTable(self.children, node)
 end
 
 
@@ -567,7 +636,7 @@ end
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string Code of the key that has been pressed.
 function Node:keypressed(key)
-    if key == self.shortcut then
+    if key == self.shortcut and not _IsCtrlPressed() and not _IsShiftPressed() then
         if self.onClick then
             self.onClick()
         end

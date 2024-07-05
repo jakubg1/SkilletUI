@@ -54,6 +54,18 @@ _EDITOR = Editor()
 
 
 
+function _IsCtrlPressed()
+	return love.keyboard.isDown("lctrl", "rctrl")
+end
+
+
+
+function _IsShiftPressed()
+	return love.keyboard.isDown("lshift", "rshift")
+end
+
+
+
 function _LoadUI(path)
 	local data = _Utils.loadJson(path)
 	return Node(data)

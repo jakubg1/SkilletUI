@@ -7,14 +7,17 @@ local Editor = class:derive("Editor")
 local Vec2 = require("Vector2")
 local Node = require("Node")
 
+local CommandNodeAdd = require("EditorCommandNodeAdd")
 local CommandNodeMove = require("EditorCommandNodeMove")
 local CommandNodeDelete = require("EditorCommandNodeDelete")
 local CommandNodeSetAlign = require("EditorCommandNodeSetAlign")
 local CommandNodeSetParentAlign = require("EditorCommandNodeSetParentAlign")
 local CommandNodeMoveUp = require("EditorCommandNodeMoveUp")
 local CommandNodeMoveDown = require("EditorCommandNodeMoveDown")
+local CommandNodeMoveToTop = require("EditorCommandNodeMoveToTop")
+local CommandNodeMoveToBottom = require("EditorCommandNodeMoveToBottom")
 
----@alias EditorCommand* EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeMove|EditorCommandNodeDelete|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown
+---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeMove|EditorCommandNodeDelete|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom
 
 
 
@@ -107,6 +110,14 @@ end
 
 
 
+---Adds the provided UI node to the currently selected node, or, if no node is selected, to the root node.
+---@param node Node The node to be added.
+function Editor:addNode(node)
+    self:executeCommand(CommandNodeAdd(node, self.selectedNode or _UI))
+end
+
+
+
 ---Moves the currently selected UI node by the given amount of pixels.
 ---@param offset Vector2 The movement vector the selected UI node should be moved towards.
 function Editor:moveSelectedNode(offset)
@@ -176,6 +187,20 @@ end
 ---Moves the selected node down in its parent's hierarchy.
 function Editor:moveSelectedNodeDown()
     self:executeCommand(CommandNodeMoveDown(self.selectedNode))
+end
+
+
+
+---Moves the selected node to the top in its parent's hierarchy.
+function Editor:moveSelectedNodeToTop()
+    self:executeCommand(CommandNodeMoveToTop(self.selectedNode))
+end
+
+
+
+---Moves the selected node to the bottom in its parent's hierarchy.
+function Editor:moveSelectedNodeToBottom()
+    self:executeCommand(CommandNodeMoveToBottom(self.selectedNode))
 end
 
 
@@ -276,6 +301,7 @@ function Editor:load()
         self:button(0, 400, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
         self:button(0, 420, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
         self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
+        self:button(0, 460, 150, "New Text Widget", function() self:addNode(Node({type = "text", font = "standard", text = "You can't change me!"})) end),
 
         self:button(100, 640, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
         self:button(130, 640, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
@@ -412,7 +438,7 @@ function Editor:mousepressed(x, y, button)
     end
     self.UI:mousepressed(x, y, button)
 	if button == 1 and not self:isUIHovered() then
-        if love.keyboard.isDown("lctrl", "rctrl") then
+        if _IsCtrlPressed() then
             -- Ctrl+Click parents the selected node instead.
             self:parentSelectedNodeToHoveredNode()
         else
@@ -455,6 +481,10 @@ function Editor:keypressed(key)
         self:moveSelectedNode(Vec2(-1, 0))
     elseif key == "right" then
         self:moveSelectedNode(Vec2(1, 0))
+    elseif key == "pageup" and _IsShiftPressed() then
+        self:moveSelectedNodeToTop()
+    elseif key == "pagedown" and _IsShiftPressed() then
+        self:moveSelectedNodeToBottom()
     elseif key == "backspace" then
         self:undoLastCommand()
     elseif key == "=" then
