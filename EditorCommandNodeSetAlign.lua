@@ -4,8 +4,6 @@ local class = require "com.class"
 ---@overload fun(node, align):EditorCommandNodeSetAlign
 local EditorCommandNodeSetAlign = class:derive("EditorCommandNodeSetAlign")
 
-
-
 ---Constructs a new Node Set Align command.
 ---@param node Node The node that will have its align point changed.
 ---@param align Vector2 The new alignment.
@@ -15,8 +13,6 @@ function EditorCommandNodeSetAlign:new(node, align)
     self.align = align
     self.oldAlign = nil
 end
-
-
 
 ---Executes this command. Returns `true` on success, `false` otherwise.
 ---@return boolean
@@ -32,13 +28,9 @@ function EditorCommandNodeSetAlign:execute()
     return true
 end
 
-
-
 ---Undoes this command.
 function EditorCommandNodeSetAlign:undo()
     self.node:setAlign(self.oldAlign)
 end
-
-
 
 return EditorCommandNodeSetAlign

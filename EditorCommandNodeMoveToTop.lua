@@ -4,8 +4,6 @@ local class = require "com.class"
 ---@overload fun(node):EditorCommandNodeMoveToTop
 local EditorCommandNodeMoveToTop = class:derive("EditorCommandNodeMoveToTop")
 
-
-
 ---Constructs a new Node Move To Top command.
 ---@param node Node The node that should be moved to the top in its hierarchy.
 function EditorCommandNodeMoveToTop:new(node)
@@ -13,8 +11,6 @@ function EditorCommandNodeMoveToTop:new(node)
     self.node = node
     self.previousIndex = nil
 end
-
-
 
 ---Executes this command. Returns `true` on success, `false` otherwise.
 ---@return boolean
@@ -26,13 +22,9 @@ function EditorCommandNodeMoveToTop:execute()
     return self.node:moveSelfToTop()
 end
 
-
-
 ---Undoes this command.
 function EditorCommandNodeMoveToTop:undo()
     self.node:moveSelfToPosition(self.previousIndex)
 end
-
-
 
 return EditorCommandNodeMoveToTop

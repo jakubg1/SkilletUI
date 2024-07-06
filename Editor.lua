@@ -21,6 +21,28 @@ local CommandNodeMoveToBottom = require("EditorCommandNodeMoveToBottom")
 
 
 
+-- Test. I'm not sure what I'll go towards in the end.
+local EDITOR_COMMANDS = {
+    nodeAdd = {
+        new = function(self, node, parent)
+            self.node = node
+            self.parent = parent
+        end,
+        execute = function(self)
+            if not self.node or not self.parent then
+                return false
+            end
+            self.parent:addChild(self.node)
+            return true
+        end,
+        undo = function(self)
+            self.parent:removeChild(self.node)
+        end
+    }
+}
+
+
+
 --- Done:
 --- - Hovering nodes
 --- - Selecting nodes
@@ -485,9 +507,9 @@ function Editor:keypressed(key)
         self:moveSelectedNodeToTop()
     elseif key == "pagedown" and _IsShiftPressed() then
         self:moveSelectedNodeToBottom()
-    elseif key == "backspace" then
+    elseif key == "z" and _IsCtrlPressed() then
         self:undoLastCommand()
-    elseif key == "=" then
+    elseif key == "y" and _IsCtrlPressed() then
         self:redoLastCommand()
 	end
 end

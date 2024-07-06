@@ -4,8 +4,6 @@ local class = require "com.class"
 ---@overload fun(node, parentAlign):EditorCommandNodeSetParentAlign
 local EditorCommandNodeSetParentAlign = class:derive("EditorCommandNodeSetParentAlign")
 
-
-
 ---Constructs a new Node Set Parent Align command.
 ---@param node Node The node that will have its parent align point changed.
 ---@param parentAlign Vector2 The new alignment.
@@ -15,8 +13,6 @@ function EditorCommandNodeSetParentAlign:new(node, parentAlign)
     self.parentAlign = parentAlign
     self.oldParentAlign = nil
 end
-
-
 
 ---Executes this command. Returns `true` on success, `false` otherwise.
 ---@return boolean
@@ -32,13 +28,9 @@ function EditorCommandNodeSetParentAlign:execute()
     return true
 end
 
-
-
 ---Undoes this command.
 function EditorCommandNodeSetParentAlign:undo()
     self.node:setParentAlign(self.oldParentAlign)
 end
-
-
 
 return EditorCommandNodeSetParentAlign
