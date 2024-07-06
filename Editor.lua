@@ -9,7 +9,9 @@ local Node = require("Node")
 
 local CommandNodeAdd = require("EditorCommandNodeAdd")
 local CommandNodeMove = require("EditorCommandNodeMove")
+local CommandNodeDrag = require("EditorCommandNodeDrag")
 local CommandNodeDelete = require("EditorCommandNodeDelete")
+local CommandNodeSetParent = require("EditorCommandNodeSetParent")
 local CommandNodeSetAlign = require("EditorCommandNodeSetAlign")
 local CommandNodeSetParentAlign = require("EditorCommandNodeSetParentAlign")
 local CommandNodeMoveUp = require("EditorCommandNodeMoveUp")
@@ -17,7 +19,7 @@ local CommandNodeMoveDown = require("EditorCommandNodeMoveDown")
 local CommandNodeMoveToTop = require("EditorCommandNodeMoveToTop")
 local CommandNodeMoveToBottom = require("EditorCommandNodeMoveToBottom")
 
----@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeMove|EditorCommandNodeDelete|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom
+---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom
 
 
 
@@ -54,9 +56,9 @@ local EDITOR_COMMANDS = {
 --- - Reordering nodes
 --- - Node tree
 --- - Selecting via node tree
+--- - Undo/Redo (rewrite to commands)
 ---
 --- To Do:
---- - Undo/Redo (rewrite to commands)
 --- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
 --- - Copy/Paste
 --- - Multi-selection(?)
@@ -160,11 +162,12 @@ end
 
 
 
----Finishes dragging the selected node.
+---Finishes dragging the selected node and pushes a command so that the movement can be undone.
 function Editor:finishDraggingSelectedNode()
-    if not self.selectedNode then
+    if not self.selectedNode or not self.nodeDragOriginalPos then
         return
     end
+    self:executeCommand(CommandNodeDrag(self.selectedNode, self.nodeDragOriginalPos))
     self.nodeDragOrigin = nil
     self.nodeDragOriginalPos = nil
     self.nodeDragSnap = false
@@ -174,7 +177,7 @@ end
 
 ---Restores the original selected node position and finishes the dragging process.
 function Editor:cancelDraggingSelectedNode()
-    if not self.selectedNode then
+    if not self.selectedNode or not self.nodeDragOriginalPos then
         return
     end
     self.selectedNode:setPos(self.nodeDragOriginalPos)
@@ -230,10 +233,7 @@ end
 ---Parents the currently selected node to the currently hovered node.
 ---The selected node becomes a child, and the hovered node becomes its parent.
 function Editor:parentSelectedNodeToHoveredNode()
-    if not self.selectedNode or not self.hoveredNode then
-        return
-    end
-    self.hoveredNode:addChild(self.selectedNode)
+    self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode))
 end
 
 
@@ -323,7 +323,9 @@ function Editor:load()
         self:button(0, 400, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
         self:button(0, 420, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
         self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
-        self:button(0, 460, 150, "New Text Widget", function() self:addNode(Node({type = "text", font = "standard", text = "You can't change me!"})) end),
+        self:button(0, 460, 150, "Undo [Ctrl+Z]", function() self:undoLastCommand() end),
+        self:button(0, 480, 150, "Redo [Ctrl+Y]", function() self:redoLastCommand() end),
+        self:button(0, 500, 150, "New Text Widget", function() self:addNode(Node({type = "text", font = "standard", text = "You can't change me!"})) end),
 
         self:button(100, 640, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
         self:button(130, 640, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
