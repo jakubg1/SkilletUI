@@ -21,14 +21,14 @@ _DrawTime = 0
 _FONT_CHARACTERS = " abcdefghijklmnopqrstuvwxyząćęłńóśźżABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ0123456789<>-+()[]_.,:;'!?@#$€%^&*\"/|\\"
 _FONTS = {
 	default = love.graphics.newFont(),
-	standard = love.graphics.newImageFont("standard.png", _FONT_CHARACTERS, 1)
+	standard = love.graphics.newImageFont("resources/standard.png", _FONT_CHARACTERS, 1)
 }
 _IMAGES = {
-	button = NineImage(love.graphics.newImage("button.png"), 2, 3, 3, 4),
-	button_hover = NineImage(love.graphics.newImage("button_hover.png"), 2, 3, 3, 4),
-	button_click = NineImage(love.graphics.newImage("button_click.png"), 2, 3, 3, 4),
-	ed_button = NineImage(love.graphics.newImage("ed_button.png"), 2, 3, 2, 3),
-	ed_button_click = NineImage(love.graphics.newImage("ed_button_click.png"), 2, 3, 2, 3)
+	button = NineImage(love.graphics.newImage("resources/button.png"), 2, 3, 3, 4),
+	button_hover = NineImage(love.graphics.newImage("resources/button_hover.png"), 2, 3, 3, 4),
+	button_click = NineImage(love.graphics.newImage("resources/button_click.png"), 2, 3, 3, 4),
+	ed_button = NineImage(love.graphics.newImage("resources/ed_button.png"), 2, 3, 2, 3),
+	ed_button_click = NineImage(love.graphics.newImage("resources/ed_button_click.png"), 2, 3, 2, 3)
 }
 _COLORS = {
 	white = Color(1, 1, 1),
