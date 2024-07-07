@@ -26,8 +26,7 @@ function EditorCommandNodeSetParent:execute()
     if self.parent == self.oldParent then
         return false
     end
-    self.parent:addChild(self.node)
-    return true
+    return self.parent:addChild(self.node)
 end
 
 ---Undoes this command.

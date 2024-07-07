@@ -195,12 +195,14 @@ end
 
 ---Inserts the provided Node as a child of this Node.
 ---If the provided Node is already integrated into another UI tree (has a parent), it is removed from that parent - the Node is effectively moved.
+---Returns `true` on success, `false` if the tree would form a cycle or when the widget would be parented to itself.
 ---@param node Node The node to be added.
 ---@param index number? The index specifying where in the hierarchy the Node should be located. By default, it is inserted as the last element (on the bottom).
+---@return boolean
 function Node:addChild(node, index)
     if node == self or node:findChild(self) then
         -- We cannot parent a node to itself or its own child, or else we will get stuck in a loop!!!
-        return
+        return false
     end
     -- Resolve linkages.
     if node.parent then
@@ -213,6 +215,7 @@ function Node:addChild(node, index)
     else
         table.insert(self.children, node)
     end
+    return true
 end
 
 
