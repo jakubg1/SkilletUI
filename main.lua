@@ -28,7 +28,9 @@ _IMAGES = {
 	button_hover = NineImage(love.graphics.newImage("resources/button_hover.png"), 2, 3, 3, 4),
 	button_click = NineImage(love.graphics.newImage("resources/button_click.png"), 2, 3, 3, 4),
 	ed_button = NineImage(love.graphics.newImage("resources/ed_button.png"), 2, 3, 2, 3),
-	ed_button_click = NineImage(love.graphics.newImage("resources/ed_button_click.png"), 2, 3, 2, 3)
+	ed_button_click = NineImage(love.graphics.newImage("resources/ed_button_click.png"), 2, 3, 2, 3),
+	ed_input = NineImage(love.graphics.newImage("resources/ed_input.png"), 2, 3, 2, 3),
+	ed_input_hover = NineImage(love.graphics.newImage("resources/ed_input_hover.png"), 2, 3, 2, 3)
 }
 _COLORS = {
 	white = Color(1, 1, 1),
@@ -145,4 +147,10 @@ function love.keypressed(key)
 		_UI:keypressed(key)
 	end
 	_EDITOR:keypressed(key)
+end
+
+
+
+function love.textinput(text)
+	_EDITOR:textinput(text)
 end

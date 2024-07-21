@@ -58,6 +58,21 @@ end
 
 
 
+---Returns the name of this Node.
+function Node:getName()
+    return self.name
+end
+
+
+
+---Renames this Node.
+---@param name string The new name.
+function Node:setName(name)
+    self.name = name
+end
+
+
+
 ---Returns the local position of this Node, which is relative to its parent's position.
 ---@return Vector2
 function Node:getPos()

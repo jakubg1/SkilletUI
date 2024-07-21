@@ -6,8 +6,10 @@ local Editor = class:derive("Editor")
 
 local Vec2 = require("Vector2")
 local Node = require("Node")
+local Input = require("Input")
 
 local CommandNodeAdd = require("EditorCommands.NodeAdd")
+local CommandNodeRename = require("EditorCommands.NodeRename")
 local CommandNodeMove = require("EditorCommands.NodeMove")
 local CommandNodeDrag = require("EditorCommands.NodeDrag")
 local CommandNodeDelete = require("EditorCommands.NodeDelete")
@@ -19,7 +21,7 @@ local CommandNodeMoveDown = require("EditorCommands.NodeMoveDown")
 local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 
----@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom
+---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom
 
 
 
@@ -73,6 +75,8 @@ local EDITOR_COMMANDS = {
 ---Constructs a new UI Editor.
 function Editor:new()
     self.UI = nil
+    self.UI_INPUTS = {}
+    self.INPUT_DIALOG = Input()
 
     self.UI_TREE_POS = Vec2(5, 120)
 
@@ -80,12 +84,14 @@ function Editor:new()
     self.undoCommandHistory = {}
 
     self.enabled = true
+    self.activeInput = nil
     self.hoveredNode = nil
     self.isNodeHoverIndirect = false
     self.selectedNode = nil
     self.nodeDragOrigin = nil
     self.nodeDragOriginalPos = nil
     self.nodeDragSnap = false
+
     self.uiTreeInfo = {}
 end
 
@@ -138,6 +144,14 @@ end
 ---@param node Node The node to be added.
 function Editor:addNode(node)
     self:executeCommand(CommandNodeAdd(node, self.selectedNode or _UI))
+end
+
+
+
+---Renames the currently selected UI node.
+---@param name string The new name.
+function Editor:renameSelectedNode(name)
+    self:executeCommand(CommandNodeRename(self.selectedNode, name))
 end
 
 
@@ -292,7 +306,7 @@ end
 
 
 
----Convenience function which creates an editor button. 
+---Convenience function which creates an editor button.
 ---@param x number The X coordinate of the button position.
 ---@param y number The Y coordinate of the button position.
 ---@param w number The width of the button. Height is always 20.
@@ -304,6 +318,59 @@ function Editor:button(x, y, w, text, fn, key)
     local button = Node({name = "", type = "9sprite", image = "ed_button", clickImage = "ed_button_click", shortcut = key, pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = {r = 0, g = 0, b = 0}}}})
     button:setOnClick(fn)
     return button
+end
+
+
+
+---Convenience function which creates an editor input field.
+---@param x number The X coordinate of the position.
+---@param y number The Y coordinate of the position.
+---@param w number The width of the input field. Height is always 20.
+---@param text string The text that should be written in the input field.
+---@param fn function The function that will be executed when the input has been changed. The parameter will be the new text.
+---@return Node
+function Editor:input(x, y, w, text, fn)
+    local input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = text, pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = {r = 1, g = 1, b = 1}}}})
+    input:setOnClick(function() self:askForInput(input) end)
+    input._onChange = fn
+    return input
+end
+
+
+
+---Returns the value of an editor input field.
+---@param node Node The editor input field.
+---@return string
+function Editor:inputGetValue(node)
+    return node:findChildByName("$text").widget.text
+end
+
+
+
+---Sets the value of an editor input field.
+---@param node Node The editor input field.
+---@param value string The value to be set.
+function Editor:inputSetValue(node, value)
+    node:findChildByName("$text").widget.text = value
+end
+
+
+
+---Executed when an editor input field has been clicked.
+---@param input Node The input node that has been clicked.
+function Editor:askForInput(input)
+    self.activeInput = input
+    self.INPUT_DIALOG:inputAsk("string", self:inputGetValue(input))
+end
+
+
+
+---Executed when an input has been submitted for a certain editor input field.
+---@param result string The value that has been submitted for this input.
+function Editor:onInputReceived(result)
+    self:inputSetValue(self.activeInput, result)
+    self.activeInput._onChange(result)
+    self.activeInput = nil
 end
 
 
@@ -325,30 +392,37 @@ function Editor:load()
         self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
         self:button(0, 460, 150, "Undo [Ctrl+Z]", function() self:undoLastCommand() end),
         self:button(0, 480, 150, "Redo [Ctrl+Y]", function() self:redoLastCommand() end),
-        self:button(0, 500, 150, "New Text Widget", function() self:addNode(Node({type = "text", font = "standard", text = "You can't change me!"})) end),
+        self:button(0, 500, 150, "New Text Widget", function() self:addNode(Node({name = "NewNode", type = "text", font = "standard", text = "You can't change me!"})) end),
 
-        self:button(100, 640, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
-        self:button(130, 640, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
-        self:button(160, 640, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
-        self:button(100, 660, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
-        self:button(130, 660, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
-        self:button(160, 660, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
-        self:button(100, 680, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(130, 680, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
-        self:button(160, 680, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
+        self:button(100, 630, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
+        self:button(130, 630, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
+        self:button(160, 630, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
+        self:button(100, 650, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
+        self:button(130, 650, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
+        self:button(160, 650, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
+        self:button(100, 670, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(130, 670, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
+        self:button(160, 670, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
 
-        self:button(300, 640, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
-        self:button(330, 640, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
-        self:button(360, 640, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
-        self:button(300, 660, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
-        self:button(330, 660, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
-        self:button(360, 660, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
-        self:button(300, 680, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(330, 680, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
-        self:button(360, 680, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
+        self:button(300, 630, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
+        self:button(330, 630, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
+        self:button(360, 630, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
+        self:button(300, 650, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
+        self:button(330, 650, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
+        self:button(360, 650, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
+        self:button(300, 670, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(330, 670, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
+        self:button(360, 670, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
     }
     for i, button in ipairs(buttons) do
         self.UI:addChild(button)
+    end
+    local inputs = {
+        nodeName = self:input(800, 608, 150, "", function(input) self:renameSelectedNode(input) end),
+    }
+    for inputN, input in pairs(inputs) do
+        self.UI:addChild(input)
+        self.UI_INPUTS[inputN] = input
     end
 end
 
@@ -418,9 +492,16 @@ function Editor:draw()
     end
 
     -- Buttons
-    self:drawShadowedText("Node Align", 100, 620)
-    self:drawShadowedText("Parent Align", 300, 620)
-    self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 500, 620)
+    self:drawShadowedText("Node Align", 100, 610)
+    self:drawShadowedText("Parent Align", 300, 610)
+    self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 100, 700)
+    
+    -- Widget properties
+    self:drawShadowedText("Node/Widget Properties", 600, 610)
+    self:drawShadowedText("Name:", 760, 610)
+
+    -- Input box
+    self.INPUT_DIALOG:draw()
 end
 
 
@@ -467,6 +548,7 @@ function Editor:mousepressed(x, y, button)
             self:parentSelectedNodeToHoveredNode()
         else
             self.selectedNode = self.hoveredNode
+            self:inputSetValue(self.UI_INPUTS.nodeName, self.selectedNode and self.selectedNode:getName() or "")
             if self.selectedNode and not self.isNodeHoverIndirect then
                 -- Indirectly selected nodes (by clicking on the hierarchy tree) cannot be dragged.
                 self:startDraggingSelectedNode()
@@ -494,7 +576,9 @@ end
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string The key code.
 function Editor:keypressed(key)
+    love.keyboard.setKeyRepeat(key == "backspace")
     self.UI:keypressed(key)
+    self.INPUT_DIALOG:keypressed(key)
 	if key == "tab" then
 		self.enabled = not self.enabled
     elseif key == "up" then
@@ -514,6 +598,14 @@ function Editor:keypressed(key)
     elseif key == "y" and _IsCtrlPressed() then
         self:redoLastCommand()
 	end
+end
+
+
+
+---Executed whenever a certain character has been typed on the keyboard.
+---@param text string The character.
+function Editor:textinput(text)
+    self.INPUT_DIALOG:textinput(text)
 end
 
 
