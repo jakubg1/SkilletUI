@@ -13,6 +13,10 @@ local Color = require("Color")
 ---@param node Node The Node that this Box is attached to.
 ---@param data table The data to be used for this Box.
 function Box:new(node, data)
+    self.PROPERTY_LIST = {
+        {name = "Color", key = "color", type = "color"}
+    }
+
     self.node = node
 
     self.size = Vec2(data.size)
@@ -25,6 +29,14 @@ end
 ---@return Vector2
 function Box:getSize()
     return self.size
+end
+
+
+
+---Returns the property list of this Box.
+---@return table
+function Box:getPropertyList()
+    return self.PROPERTY_LIST
 end
 
 

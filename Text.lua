@@ -13,6 +13,12 @@ local Color = require("Color")
 ---@param node Node The Node that this Text is attached to.
 ---@param data table The data to be used for this Text.
 function Text:new(node, data)
+    self.PROPERTY_LIST = {
+        {name = "Text", key = "text", type = "string"},
+        {name = "Scale", key = "scale", type = "number"},
+        {name = "Color", key = "color", type = "color"}
+    }
+
     self.node = node
 
     self.font = _FONTS[data.font]
@@ -62,6 +68,14 @@ end
 ---@return Vector2
 function Text:getSize()
     return Vec2(self.font:getWidth(self.text) - 1, self.font:getHeight()) * self.scale
+end
+
+
+
+---Returns the property list of this Text.
+---@return table
+function Text:getPropertyList()
+    return self.PROPERTY_LIST
 end
 
 

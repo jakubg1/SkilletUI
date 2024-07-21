@@ -6,8 +6,9 @@ local Input = class:derive("Input")
 
 
 function Input:new()
-	self.allowedInput = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.- "
-	
+	self.POS_X = (_WINDOW_SIZE.x - 400) / 2
+	self.POS_Y = (_WINDOW_SIZE.y - 150) / 2
+
 	self.font = love.graphics.newFont()
 	self.bigFont = love.graphics.newFont(18)
 	
@@ -37,26 +38,9 @@ end
 
 
 function Input:textinput(text)
-	if not self:isValidInput(text) then
-		return
-	end
-	
 	if self.inputType then
 		self.input = self.input .. text
 	end
-end
-
-
-
-
-
-function Input:isValidInput(text)
-	for i = 1, #self.allowedInput do
-		if self.allowedInput:sub(i, i) == text then
-			return true
-		end
-	end
-	return false
 end
 
 
@@ -101,7 +85,7 @@ function Input:isObstructing(x, y)
 		return false
 	end
 	
-	return x >= 200 and x < 600 and y >= 200 and y < 350
+	return x >= self.POS_X and x < self.POS_X + 400 and y >= self.POS_Y and y < self.POS_Y + 150
 end
 
 
@@ -115,14 +99,14 @@ function Input:draw()
 	
 	love.graphics.setLineWidth(3)
 	love.graphics.setColor(0, 0, 0)
-	love.graphics.rectangle("fill", 200, 200, 400, 150)
+	love.graphics.rectangle("fill", self.POS_X, self.POS_Y, 400, 150)
 	love.graphics.setColor(1, 1, 1)
-	love.graphics.rectangle("line", 200, 200, 400, 150)
-	love.graphics.rectangle("line", 220, 270, 360, 25)
+	love.graphics.rectangle("line", self.POS_X, self.POS_Y, 400, 150)
+	love.graphics.rectangle("line", self.POS_X + 20, self.POS_Y + 70, 360, 25)
 	love.graphics.setFont(self.bigFont)
-	love.graphics.print(string.format("Enter Variable type = %s", self.inputType), 210, 210)
-	love.graphics.print(string.format("%s_", self.input), 230, 270)
-	love.graphics.print("[ Enter ] = Confirm    [ Esc ] = Cancel", 220, 320)
+	love.graphics.print(string.format("Enter Variable type = %s", self.inputType), self.POS_X + 10, self.POS_Y + 10)
+	love.graphics.print(string.format("%s_", self.input), self.POS_X + 30, self.POS_Y + 70)
+	love.graphics.print("[ Enter ] = Confirm    [ Esc ] = Cancel", self.POS_X + 20, self.POS_Y + 120)
 	love.graphics.setFont(self.font)
 end
 

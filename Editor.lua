@@ -16,12 +16,13 @@ local CommandNodeDelete = require("EditorCommands.NodeDelete")
 local CommandNodeSetParent = require("EditorCommands.NodeSetParent")
 local CommandNodeSetAlign = require("EditorCommands.NodeSetAlign")
 local CommandNodeSetParentAlign = require("EditorCommands.NodeSetParentAlign")
+local CommandNodeSetWidgetProperty = require("EditorCommands.NodeSetWidgetProperty")
 local CommandNodeMoveUp = require("EditorCommands.NodeMoveUp")
 local CommandNodeMoveDown = require("EditorCommands.NodeMoveDown")
 local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 
----@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom
+---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom
 
 
 
@@ -140,6 +141,39 @@ end
 
 
 
+---Marks the provided node as selected and updates all UI in order to facilitate editing its properties.
+---@param node Node? The node to be selected. If not provided, all nodes will be deselected.
+function Editor:selectNode(node)
+    self.selectedNode = node
+    -- Update the name box.
+    self:inputSetValue(self.UI_INPUTS.nodeName, node and node:getName() or "")
+    -- Clear all properties.
+    local previousPropertiesUI = self.UI:findChildByName("properties")
+    if previousPropertiesUI then
+        previousPropertiesUI:removeSelf()
+    end
+    -- Make a new property list UI.
+    if node then
+        local widget = node.widget
+        if widget then
+            if widget.getPropertyList then
+                local propertiesUI = Node({name = "properties", pos = {x = 700, y = 628}})
+                local properties = widget:getPropertyList()
+                for i, property in ipairs(properties) do
+                    if property.type == "string" then
+                        local propertyUI = self:input(0, (i - 1) * 20, 200, widget[property.key], function(input) self:setSelectedNodeWidgetProperty(property.key, input) end)
+                        propertiesUI:addChild(propertyUI)
+                    end
+                    -- TODO: add more property types
+                end
+                self.UI:addChild(propertiesUI)
+            end
+        end
+    end
+end
+
+
+
 ---Adds the provided UI node to the currently selected node, or, if no node is selected, to the root node.
 ---@param node Node The node to be added.
 function Editor:addNode(node)
@@ -212,6 +246,15 @@ end
 ---@param parentAlign Vector2 The new parental alignment value.
 function Editor:setSelectedNodeParentAlign(parentAlign)
     self:executeCommand(CommandNodeSetParentAlign(self.selectedNode, parentAlign))
+end
+
+
+
+---Sets a new value for the selected node's widget property.
+---@param property string The property to be set.
+---@param value any? The value to be set for this property.
+function Editor:setSelectedNodeWidgetProperty(property, value)
+    self:executeCommand(CommandNodeSetWidgetProperty(self.selectedNode, property, value))
 end
 
 
@@ -499,6 +542,25 @@ function Editor:draw()
     -- Widget properties
     self:drawShadowedText("Node/Widget Properties", 600, 610)
     self:drawShadowedText("Name:", 760, 610)
+    if self.selectedNode then
+        local widget = self.selectedNode.widget
+        if widget then
+            if widget.getPropertyList then
+                local properties = widget:getPropertyList()
+                for i, property in ipairs(properties) do
+                    if property.type == "string" then
+                        self:drawShadowedText(string.format("%s", property.name), 600, 630 + (i - 1) * 20)
+                    else
+                        self:drawShadowedText(string.format("%s: %s", property.name, widget[property.key]), 600, 630 + (i - 1) * 20)
+                    end
+                end
+            else
+                self:drawShadowedText("This Widget does not support properties yet!", 600, 630)
+            end
+        else
+            self:drawShadowedText("This Node does not have a widget.", 600, 630)
+        end
+    end
 
     -- Input box
     self.INPUT_DIALOG:draw()
@@ -547,8 +609,7 @@ function Editor:mousepressed(x, y, button)
             -- Ctrl+Click parents the selected node instead.
             self:parentSelectedNodeToHoveredNode()
         else
-            self.selectedNode = self.hoveredNode
-            self:inputSetValue(self.UI_INPUTS.nodeName, self.selectedNode and self.selectedNode:getName() or "")
+            self:selectNode(self.hoveredNode)
             if self.selectedNode and not self.isNodeHoverIndirect then
                 -- Indirectly selected nodes (by clicking on the hierarchy tree) cannot be dragged.
                 self:startDraggingSelectedNode()
