@@ -163,8 +163,10 @@ function Editor:selectNode(node)
                     if property.type == "string" then
                         local propertyUI = self:input(0, (i - 1) * 20, 200, widget[property.key], function(input) self:setSelectedNodeWidgetProperty(property.key, input) end)
                         propertiesUI:addChild(propertyUI)
+                    elseif property.type == "color" then
+                        local propertyUI = self:colorInput(0, (i - 1) * 20, 200, widget[property.key], function(input) self:setSelectedNodeWidgetProperty(property.key, input) end)
+                        propertiesUI:addChild(propertyUI)
                     end
-                    -- TODO: add more property types
                 end
                 self.UI:addChild(propertiesUI)
             end
@@ -370,11 +372,11 @@ end
 ---@param y number The Y coordinate of the position.
 ---@param w number The width of the input field. Height is always 20.
 ---@param text string The text that should be written in the input field.
----@param fn function The function that will be executed when the input has been changed. The parameter will be the new text.
+---@param fn function The function that will be executed when the value has been changed. The parameter will be the new text.
 ---@return Node
 function Editor:input(x, y, w, text, fn)
     local input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = text, pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = {r = 1, g = 1, b = 1}}}})
-    input:setOnClick(function() self:askForInput(input) end)
+    input:setOnClick(function() self:askForInput(input, "string") end)
     input._onChange = fn
     return input
 end
@@ -399,19 +401,64 @@ end
 
 
 
+---Convenience function which creates an editor color input field.
+---@param x number The X coordinate of the position.
+---@param y number The Y coordinate of the position.
+---@param w number The width of the input field. Height is always 20.
+---@param color Color The color that should be initially in the input field.
+---@param fn function The function that will be executed when the value has been changed. The parameter will be the new color.
+---@return Node
+function Editor:colorInput(x, y, w, color, fn)
+    local input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$color", type = "box", color = color, pos = {x = 0, y = -1}, size = {x = w - 2, y = 18}, align = "center", parentAlign = "center"}}})
+    input:setOnClick(function() self:askForInput(input, "color") end)
+    input._onChange = fn
+    return input
+end
+
+
+
+---Returns the value of an editor color input field.
+---@param node Node The editor color input field.
+---@return Color
+function Editor:colorInputGetValue(node)
+    return node:findChildByName("$color").widget.color
+end
+
+
+
+---Sets the value of an editor color input field.
+---@param node Node The editor color input field.
+---@param value Color The value to be set.
+function Editor:colorInputSetValue(node, value)
+    node:findChildByName("$color").widget.color = value
+end
+
+
+
 ---Executed when an editor input field has been clicked.
 ---@param input Node The input node that has been clicked.
-function Editor:askForInput(input)
+---@param type string The input type. Can be `"string"` or `"color"`.
+function Editor:askForInput(input, type)
     self.activeInput = input
-    self.INPUT_DIALOG:inputAsk("string", self:inputGetValue(input))
+    local value
+    if type == "string" then
+        value = self:inputGetValue(input)
+    elseif type == "color" then
+        value = self:colorInputGetValue(input)
+    end
+    self.INPUT_DIALOG:inputAsk(type, value)
 end
 
 
 
 ---Executed when an input has been submitted for a certain editor input field.
----@param result string The value that has been submitted for this input.
+---@param result string|Color The value that has been submitted for this input.
 function Editor:onInputReceived(result)
-    self:inputSetValue(self.activeInput, result)
+    if type(result) == "string" then
+        self:inputSetValue(self.activeInput, result)
+    else
+        self:colorInputSetValue(self.activeInput, result)
+    end
     self.activeInput._onChange(result)
     self.activeInput = nil
 end
@@ -421,7 +468,7 @@ end
 ---Returns whether an editor button (or any editor UI) is hovered.
 ---@return boolean
 function Editor:isUIHovered()
-    return self.UI:isHoveredWithChildren()
+    return self.UI:isHoveredWithChildren() or self.INPUT_DIALOG:isHovered()
 end
 
 
@@ -489,6 +536,7 @@ function Editor:update(dt)
 	end
 
     self.UI:update(dt)
+    self.INPUT_DIALOG:update(dt)
 end
 
 
@@ -548,7 +596,7 @@ function Editor:draw()
             if widget.getPropertyList then
                 local properties = widget:getPropertyList()
                 for i, property in ipairs(properties) do
-                    if property.type == "string" then
+                    if property.type == "string" or property.type == "color" then
                         self:drawShadowedText(string.format("%s", property.name), 600, 630 + (i - 1) * 20)
                     else
                         self:drawShadowedText(string.format("%s: %s", property.name, widget[property.key]), 600, 630 + (i - 1) * 20)
@@ -604,6 +652,7 @@ function Editor:mousepressed(x, y, button)
         return
     end
     self.UI:mousepressed(x, y, button)
+    self.INPUT_DIALOG:mousepressed(x, y, button)
 	if button == 1 and not self:isUIHovered() then
         if _IsCtrlPressed() then
             -- Ctrl+Click parents the selected node instead.
@@ -629,6 +678,7 @@ end
 ---@param button integer The button that has been released.
 function Editor:mousereleased(x, y, button)
     self.UI:mousereleased(x, y, button)
+    self.INPUT_DIALOG:mousereleased(x, y, button)
     self:finishDraggingSelectedNode()
 end
 

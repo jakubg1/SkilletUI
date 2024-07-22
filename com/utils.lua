@@ -475,6 +475,24 @@ end
 
 
 
+function utils.interpolateClamped(a, b, t)
+	return utils.interpolate(a, b, math.min(math.max(t, 0), 1))
+end
+
+
+
+function utils.interpolate2(a, b, t1, t2, t)
+	return utils.interpolate(a, b, (t - t1) / (t2 - t1))
+end
+
+
+
+function utils.interpolate2Clamped(a, b, t1, t2, t)
+	return utils.interpolate(a, b, math.min(math.max((t - t1) / (t2 - t1), 0), 1))
+end
+
+
+
 function utils.getWavePoint(frequency, speed, offset, time)
 	return math.sin(((offset - speed * time) / frequency) % 1 * math.pi * 2)
 end

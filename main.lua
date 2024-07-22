@@ -117,9 +117,9 @@ function love.draw()
 	_TRANSITION:draw()
 	-- End of main drawing routine
 	_CANVAS:draw()
+	_EDITOR:draw()
 	local t2 = love.timer.getTime() - t
 	_DrawTime = _DrawTime * 0.95 + t2 * 0.05
-	_EDITOR:draw()
 end
 
 
