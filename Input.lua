@@ -293,7 +293,7 @@ function Input:draw()
 	love.graphics.print(string.format("Enter Variable type = %s", self.inputType), posX + 10, posY + 10)
 	if self.inputType == "string" then
 		love.graphics.rectangle("line", posX + 20, posY + 70, sizeX - 40, 25)
-		love.graphics.print(string.format("%s_", self.input), posX + 30, posY + 70)
+		love.graphics.print(string.format("%s_", self.inputText), posX + 30, posY + 70)
 	elseif self.inputType == "color" then
 		-- Main picker
 		love.graphics.draw(self.COLOR_MESH, posX + 20, posY + 50)
