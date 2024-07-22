@@ -25,6 +25,7 @@ function Input:new()
 	self.inputText = ""
 	self.inputColor = {x = 0, y = 0, z = 0.5}
 	self.colorDragging = nil
+	self.error = nil
 
 	self:updateSideColorPickerMeshes()
 end
@@ -53,6 +54,10 @@ function Input:mousepressed(x, y, button)
 			self.colorDragging = 1
 		elseif self:isSideColorMeshHovered() then
 			self.colorDragging = 2
+		elseif self:isConfirmButtonHovered() then
+			self:inputAccept()
+		elseif self:isCancelButtonHovered() then
+			self:inputCancel()
 		end
 	end
 end
@@ -69,14 +74,14 @@ end
 
 function Input:keypressed(key)
 	if key == "backspace" then
-		if self.inputType == "string" then
+		if self.inputType == "string" or self.inputType == "number" then
 			if #self.inputText > 0 then
 				self.inputText = self.inputText:sub(1, #self.inputText - 1)
+				self.error = nil
 			end
 		end
 	elseif key == "return" then
-		local result = self:inputAccept()
-		_EDITOR:onInputReceived(result)
+		self:inputAccept()
 	elseif key == "escape" then
 		self:inputCancel()
 	end
@@ -85,8 +90,9 @@ end
 
 
 function Input:textinput(text)
-	if self.inputType == "string" then
+	if self.inputType == "string" or self.inputType == "number" then
 		self.inputText = self.inputText .. text
+		self.error = nil
 	end
 end
 
@@ -99,6 +105,8 @@ function Input:inputAsk(type, value)
 	if value then
 		if type == "string" then
 			self.inputText = value
+		elseif type == "number" then
+			self.inputText = tostring(value)
 		elseif type == "color" then
 			self:setInputColor(value.r, value.g, value.b)
 		end
@@ -121,14 +129,18 @@ function Input:inputAccept()
 	
 	if self.inputType == "string" then
 		result = self.inputText
-	elseif self.inputType == "color" then
-		result = Color(self:getInputColor())
 	elseif self.inputType == "number" then
 		result = tonumber(self.inputText)
+		if not result then
+			self.error = "Invalid number. Please enter a valid number."
+			return
+		end
+	elseif self.inputType == "color" then
+		result = Color(self:getInputColor())
 	end
 	
+	_EDITOR:onInputReceived(result, self.inputType)
 	self:inputCancel()
-	return result
 end
 
 
@@ -231,7 +243,7 @@ end
 function Input:getSize()
 	if not self.inputType then
 		return 0, 0
-	elseif self.inputType == "string" then
+	elseif self.inputType == "string" or self.inputType == "number" then
 		return 400, 150
 	elseif self.inputType == "color" then
 		return 400, 300
@@ -274,6 +286,30 @@ end
 
 
 
+function Input:isConfirmButtonHovered()
+	if not self.inputType then
+		return false
+	end
+
+	local posX, posY = self:getPos()
+	local sizeX, sizeY = self:getSize()
+	return _MousePos.x >= posX + 20 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + 200 and _MousePos.y <= posY + sizeY - 10
+end
+
+
+
+function Input:isCancelButtonHovered()
+	if not self.inputType then
+		return false
+	end
+
+	local posX, posY = self:getPos()
+	local sizeX, sizeY = self:getSize()
+	return _MousePos.x >= posX + 220 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + 380 and _MousePos.y <= posY + sizeY - 10
+end
+
+
+
 
 
 function Input:draw()
@@ -291,8 +327,15 @@ function Input:draw()
 	love.graphics.rectangle("line", posX, posY, sizeX, sizeY)
 	love.graphics.setFont(self.bigFont)
 	love.graphics.print(string.format("Enter Variable type = %s", self.inputType), posX + 10, posY + 10)
-	if self.inputType == "string" then
+	if self.inputType == "string" or self.inputType == "number" then
+		if self.error then
+			love.graphics.setColor(1, 0, 0)
+			love.graphics.setFont(self.font)
+			love.graphics.print(self.error, posX + 20, posY + 100)
+		end
 		love.graphics.rectangle("line", posX + 20, posY + 70, sizeX - 40, 25)
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.setFont(self.bigFont)
 		love.graphics.print(string.format("%s_", self.inputText), posX + 30, posY + 70)
 	elseif self.inputType == "color" then
 		-- Main picker
@@ -326,7 +369,16 @@ function Input:draw()
 		--love.graphics.print(string.format("Y: %s", y), posX + 350, posY + 200)
 		--love.graphics.print(string.format("Z: %s", z), posX + 350, posY + 220)
 	end
-	love.graphics.print("[ Enter ] = Confirm    [ Esc ] = Cancel", posX + 20, posY + sizeY - 30)
+	love.graphics.setColor(1, 1, 1)
+	if self:isConfirmButtonHovered() then
+		love.graphics.setColor(0, 1, 1)
+	end
+	love.graphics.print("[ Enter ] = Confirm", posX + 20, posY + sizeY - 30)
+	love.graphics.setColor(1, 1, 1)
+	if self:isCancelButtonHovered() then
+		love.graphics.setColor(0, 1, 1)
+	end
+	love.graphics.print("[ Esc ] = Cancel", posX + 220, posY + sizeY - 30)
 end
 
 

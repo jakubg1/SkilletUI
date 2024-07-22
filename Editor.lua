@@ -60,15 +60,17 @@ local EDITOR_COMMANDS = {
 --- - Node tree
 --- - Selecting via node tree
 --- - Undo/Redo (rewrite to commands)
+--- - Widget manipulation (color, text, size, scale, etc.)
 ---
 --- To Do:
+--- - Resizing widgets like boxes
+--- - Saving layouts
+--- - Loading/switching layouts
+--- - Copy/Paste and widget duplication
 --- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
---- - Copy/Paste
+---   - tip: have a Button class as a controller for the children which have unchangeable names and references them directly by name in the constructor
 --- - Multi-selection(?)
 --- - Dragging entries around in the node tree
---- - Widget manipulation (color, text, size, scale, etc.)
---- - Loading/switching layouts
---- - Saving layouts
 --- - Animations at some point
 
 
@@ -146,7 +148,7 @@ end
 function Editor:selectNode(node)
     self.selectedNode = node
     -- Update the name box.
-    self:inputSetValue(self.UI_INPUTS.nodeName, node and node:getName() or "")
+    self:inputSetValue(self.UI_INPUTS.nodeName, "string", node and node:getName() or "")
     -- Clear all properties.
     local previousPropertiesUI = self.UI:findChildByName("properties")
     if previousPropertiesUI then
@@ -160,13 +162,8 @@ function Editor:selectNode(node)
                 local propertiesUI = Node({name = "properties", pos = {x = 700, y = 628}})
                 local properties = widget:getPropertyList()
                 for i, property in ipairs(properties) do
-                    if property.type == "string" then
-                        local propertyUI = self:input(0, (i - 1) * 20, 200, widget[property.key], function(input) self:setSelectedNodeWidgetProperty(property.key, input) end)
-                        propertiesUI:addChild(propertyUI)
-                    elseif property.type == "color" then
-                        local propertyUI = self:colorInput(0, (i - 1) * 20, 200, widget[property.key], function(input) self:setSelectedNodeWidgetProperty(property.key, input) end)
-                        propertiesUI:addChild(propertyUI)
-                    end
+                    local propertyUI = self:input(0, (i - 1) * 20, 200, property.type, widget[property.key], function(input) self:setSelectedNodeWidgetProperty(property.key, input) end)
+                    propertiesUI:addChild(propertyUI)
                 end
                 self.UI:addChild(propertiesUI)
             end
@@ -371,12 +368,18 @@ end
 ---@param x number The X coordinate of the position.
 ---@param y number The Y coordinate of the position.
 ---@param w number The width of the input field. Height is always 20.
----@param text string The text that should be written in the input field.
+---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
+---@param value string|number|Color The value that should be initially set in the input field.
 ---@param fn function The function that will be executed when the value has been changed. The parameter will be the new text.
 ---@return Node
-function Editor:input(x, y, w, text, fn)
-    local input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = text, pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = {r = 1, g = 1, b = 1}}}})
-    input:setOnClick(function() self:askForInput(input, "string") end)
+function Editor:input(x, y, w, type, value, fn)
+    local input
+    if type ~= "color" then
+        input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = tostring(value), pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = {r = 1, g = 1, b = 1}}}})
+    else
+        input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$color", type = "box", color = value, pos = {x = 0, y = -1}, size = {x = w - 2, y = 18}, align = "center", parentAlign = "center"}}})
+    end
+    input:setOnClick(function() self:askForInput(input, type) end)
     input._onChange = fn
     return input
 end
@@ -385,80 +388,52 @@ end
 
 ---Returns the value of an editor input field.
 ---@param node Node The editor input field.
----@return string
-function Editor:inputGetValue(node)
-    return node:findChildByName("$text").widget.text
+---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
+---@return string|number|Color?
+function Editor:inputGetValue(node, type)
+    if type == "string" then
+        return node:findChildByName("$text").widget.text
+    elseif type == "number" then
+        return tonumber(node:findChildByName("$text").widget.text)
+    elseif type == "color" then
+        return node:findChildByName("$color").widget.color
+    end
 end
 
 
 
 ---Sets the value of an editor input field.
 ---@param node Node The editor input field.
----@param value string The value to be set.
-function Editor:inputSetValue(node, value)
-    node:findChildByName("$text").widget.text = value
-end
-
-
-
----Convenience function which creates an editor color input field.
----@param x number The X coordinate of the position.
----@param y number The Y coordinate of the position.
----@param w number The width of the input field. Height is always 20.
----@param color Color The color that should be initially in the input field.
----@param fn function The function that will be executed when the value has been changed. The parameter will be the new color.
----@return Node
-function Editor:colorInput(x, y, w, color, fn)
-    local input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$color", type = "box", color = color, pos = {x = 0, y = -1}, size = {x = w - 2, y = 18}, align = "center", parentAlign = "center"}}})
-    input:setOnClick(function() self:askForInput(input, "color") end)
-    input._onChange = fn
-    return input
-end
-
-
-
----Returns the value of an editor color input field.
----@param node Node The editor color input field.
----@return Color
-function Editor:colorInputGetValue(node)
-    return node:findChildByName("$color").widget.color
-end
-
-
-
----Sets the value of an editor color input field.
----@param node Node The editor color input field.
----@param value Color The value to be set.
-function Editor:colorInputSetValue(node, value)
-    node:findChildByName("$color").widget.color = value
+---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
+---@param value string|number|Color The value to be set.
+function Editor:inputSetValue(node, type, value)
+    if type == "string" then
+        node:findChildByName("$text").widget.text = value
+    elseif type == "number" then
+        node:findChildByName("$text").widget.text = tostring(value)
+    elseif type == "color" then
+        node:findChildByName("$color").widget.color = value
+    end
 end
 
 
 
 ---Executed when an editor input field has been clicked.
 ---@param input Node The input node that has been clicked.
----@param type string The input type. Can be `"string"` or `"color"`.
+---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
 function Editor:askForInput(input, type)
     self.activeInput = input
-    local value
-    if type == "string" then
-        value = self:inputGetValue(input)
-    elseif type == "color" then
-        value = self:colorInputGetValue(input)
-    end
+    local value = self:inputGetValue(input, type)
     self.INPUT_DIALOG:inputAsk(type, value)
 end
 
 
 
 ---Executed when an input has been submitted for a certain editor input field.
----@param result string|Color The value that has been submitted for this input.
-function Editor:onInputReceived(result)
-    if type(result) == "string" then
-        self:inputSetValue(self.activeInput, result)
-    else
-        self:colorInputSetValue(self.activeInput, result)
-    end
+---@param result string|number|Color The value that has been submitted for this input.
+---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
+function Editor:onInputReceived(result, type)
+    self:inputSetValue(self.activeInput, type, result)
     self.activeInput._onChange(result)
     self.activeInput = nil
 end
@@ -482,7 +457,8 @@ function Editor:load()
         self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
         self:button(0, 460, 150, "Undo [Ctrl+Z]", function() self:undoLastCommand() end),
         self:button(0, 480, 150, "Redo [Ctrl+Y]", function() self:redoLastCommand() end),
-        self:button(0, 500, 150, "New Text Widget", function() self:addNode(Node({name = "NewNode", type = "text", font = "standard", text = "You can't change me!"})) end),
+        self:button(0, 530, 75, "Box", function() self:addNode(Node({name = "NewNode", type = "box", size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}})) end),
+        self:button(75, 530, 75, "Text", function() self:addNode(Node({name = "NewNode", type = "text", font = "standard", text = "You can't change me!"})) end),
 
         self:button(100, 630, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
         self:button(130, 630, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
@@ -508,7 +484,7 @@ function Editor:load()
         self.UI:addChild(button)
     end
     local inputs = {
-        nodeName = self:input(800, 608, 150, "", function(input) self:renameSelectedNode(input) end),
+        nodeName = self:input(800, 608, 150, "string", "", function(input) self:renameSelectedNode(input) end),
     }
     for inputN, input in pairs(inputs) do
         self.UI:addChild(input)
@@ -583,6 +559,7 @@ function Editor:draw()
     end
 
     -- Buttons
+    self:drawShadowedText("New Widget:", 5, 510)
     self:drawShadowedText("Node Align", 100, 610)
     self:drawShadowedText("Parent Align", 300, 610)
     self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 100, 700)
@@ -596,7 +573,7 @@ function Editor:draw()
             if widget.getPropertyList then
                 local properties = widget:getPropertyList()
                 for i, property in ipairs(properties) do
-                    if property.type == "string" or property.type == "color" then
+                    if property.type == "string" or property.type == "number" or property.type == "color" then
                         self:drawShadowedText(string.format("%s", property.name), 600, 630 + (i - 1) * 20)
                     else
                         self:drawShadowedText(string.format("%s: %s", property.name, widget[property.key]), 600, 630 + (i - 1) * 20)
