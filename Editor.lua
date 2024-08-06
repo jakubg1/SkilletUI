@@ -149,6 +149,7 @@ function Editor:selectNode(node)
     self.selectedNode = node
     -- Update the name box.
     self:inputSetValue(self.UI_INPUTS.nodeName, "string", node and node:getName() or "")
+    self:inputSetDisabled(self.UI_INPUTS.nodeName, not node or node:isControlled())
     -- Clear all properties.
     local previousPropertiesUI = self.UI:findChildByName("properties")
     if previousPropertiesUI then
@@ -162,7 +163,24 @@ function Editor:selectNode(node)
                 local propertiesUI = Node({name = "properties", pos = {x = 700, y = 628}})
                 local properties = widget:getPropertyList()
                 for i, property in ipairs(properties) do
-                    local propertyUI = self:input(0, (i - 1) * 20, 200, property.type, widget[property.key], function(input) self:setSelectedNodeWidgetProperty(property.key, input) end)
+                    local inputValue
+                    if property.nodeKeys then
+                        -- If we have multiple widgets attached to this property, fetch the value from the first one of them. Not elegant.
+                        -- TODO: Figure out a way to fetch from all of them and to signal somehow whether they are different (they shouldn't).
+                        inputValue = widget[property.nodeKeys[1]].widget[property.key]
+                    else
+                        inputValue = widget[property.key]
+                    end
+                    local inputFunction = function(input)
+                        if property.nodeKeys then
+                            for j, node in ipairs(property.nodeKeys) do
+                                self:setNodeWidgetProperty(widget[node], property.key, input)
+                            end
+                        else
+                            self:setSelectedNodeWidgetProperty(property.key, input)
+                        end
+                    end
+                    local propertyUI = self:input(0, (i - 1) * 20, 200, property.type, inputValue, inputFunction)
                     propertiesUI:addChild(propertyUI)
                 end
                 self.UI:addChild(propertiesUI)
@@ -254,6 +272,16 @@ end
 ---@param value any? The value to be set for this property.
 function Editor:setSelectedNodeWidgetProperty(property, value)
     self:executeCommand(CommandNodeSetWidgetProperty(self.selectedNode, property, value))
+end
+
+
+
+---Sets a new value for the given node's widget property.
+---@param node Node The node that will be 
+---@param property string The property to be set.
+---@param value any? The value to be set for this property.
+function Editor:setNodeWidgetProperty(node, property, value)
+    self:executeCommand(CommandNodeSetWidgetProperty(node, property, value))
 end
 
 
@@ -357,7 +385,7 @@ end
 ---@param key string? The key which will activate this button.
 ---@return Node
 function Editor:button(x, y, w, text, fn, key)
-    local button = Node({name = "", type = "9sprite", image = "ed_button", clickImage = "ed_button_click", shortcut = key, pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = {r = 0, g = 0, b = 0}}}})
+    local button = Node({name = "", type = "9sprite", image = "ed_button", clickImage = "ed_button_click", shortcut = key, pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = _COLORS.black}}})
     button:setOnClick(fn)
     return button
 end
@@ -375,9 +403,9 @@ end
 function Editor:input(x, y, w, type, value, fn)
     local input
     if type ~= "color" then
-        input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = tostring(value), pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = {r = 1, g = 1, b = 1}}}})
+        input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = tostring(value), pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = _COLORS.white}}})
     else
-        input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$color", type = "box", color = value, pos = {x = 0, y = -1}, size = {x = w - 2, y = 18}, align = "center", parentAlign = "center"}}})
+        input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$color", type = "box", color = value, pos = {x = 0, y = -1}, size = {x = w - 2, y = 18}, align = "center", parentAlign = "center"}}})
     end
     input:setOnClick(function() self:askForInput(input, type) end)
     input._onChange = fn
@@ -413,6 +441,19 @@ function Editor:inputSetValue(node, type, value)
         node:findChildByName("$text").widget.text = tostring(value)
     elseif type == "color" then
         node:findChildByName("$color").widget.color = value
+    end
+end
+
+
+
+---Sets whether an editor input field should be disabled.
+---@param node Node The editor input field.
+---@param disabled boolean Whether the field should be disabled.
+function Editor:inputSetDisabled(node, disabled)
+    node:setDisabled(disabled)
+    local textNode = node:findChildByName("$text")
+    if textNode then
+        textNode.widget.color = disabled and _COLORS.gray or _COLORS.white
     end
 end
 

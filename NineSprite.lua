@@ -17,6 +17,7 @@ function NineSprite:new(node, data)
     self.image = _IMAGES[data.image]
     self.hoverImage = data.hoverImage and _IMAGES[data.hoverImage]
     self.clickImage = data.clickImage and _IMAGES[data.clickImage]
+    self.disabledImage = data.disabledImage and _IMAGES[data.disabledImage]
     self.size = Vec2(data.size)
     self.scale = data.scale or 1
     self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
@@ -43,7 +44,15 @@ end
 ---Draws the NineSprite on the screen.
 function NineSprite:draw()
     local pos = self.node:getGlobalPos()
-    local image = self.node:isHovered() and (self.node.clicked and self.clickImage or self.hoverImage) or self.image
+    local image = self.image
+    if self.node:isDisabled() then
+        image = self.disabledImage or image
+    elseif self.node:isHovered() then
+        image = self.hoverImage or image
+        if self.node.clicked then
+            image = self.clickImage or image
+        end
+    end
     if self.shadowOffset then
         love.graphics.setColor(0, 0, 0, self.node.alpha * 0.5)
         image:draw(pos + self.shadowOffset, self.size, self.scale)

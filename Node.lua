@@ -6,6 +6,7 @@ local Node = class:derive("Node")
 
 local Vec2 = require("Vector2")
 local Box = require("Box")
+local Button = require("Button")
 local Canvas = require("Canvas")
 local NineSprite = require("NineSprite")
 local Text = require("Text")
@@ -30,9 +31,21 @@ function Node:new(data, parent)
 
     self.clicked = false
     self.onClick = nil
+    self.disabled = false
+
+    self.children = {}
+    if data.children then
+    	for i, child in ipairs(data.children) do
+	    	table.insert(self.children, Node(child, self))
+	    end
+    end
+    self.deleteIndex = nil
 
     if data.type == "box" then
         self.widget = Box(self, data)
+    elseif data.type == "button" then
+        self.isController = true
+        self.widget = Button(self, data)
     elseif data.type == "canvas" then
         -- Not supported. Canvases have a few problems:
         -- - Debug drawing
@@ -46,14 +59,6 @@ function Node:new(data, parent)
     elseif data.type == "@titleDigit" then
         self.widget = TitleDigit(self, data)
     end
-
-    self.children = {}
-    if data.children then
-    	for i, child in ipairs(data.children) do
-	    	table.insert(self.children, Node(child, self))
-	    end
-    end
-    self.deleteIndex = nil
 end
 
 
@@ -65,10 +70,16 @@ end
 
 
 
----Renames this Node.
+---Renames this Node. Returns `true` on success.
 ---@param name string The new name.
+---@return boolean
 function Node:setName(name)
+    -- Controlled Nodes cannot be renamed.
+    if self:isControlled() then
+        return false
+    end
     self.name = name
+    return true
 end
 
 
@@ -193,6 +204,25 @@ end
 
 
 
+---Sets whether this Node should be disabled.
+---@param disabled boolean Whether this Node should be disabled.
+function Node:setDisabled(disabled)
+    self.disabled = disabled
+end
+
+
+
+---Returns whether this Node is disabled.
+---
+---Disabled Nodes can still be hovered, but their `onClick` callbacks will not fire if the mouse button or a keyboard shortcut has been pressed.
+---They can have their own graphics used in Widgets.
+---@return boolean
+function Node:isDisabled()
+    return self.disabled
+end
+
+
+
 ---Returns whether this Node or any of its children is hovered.
 function Node:isHoveredWithChildren()
     if self:isHovered() then
@@ -208,6 +238,24 @@ end
 
 
 
+---Returns whether this Node is controlled.
+---By a Controlled Node we mean a Node of which at least one of their parents up the hierarchy is a Controller Node.
+---Controlled Nodes are limited: you cannot change their name, add children to them or move them outside of their current position in hierarchy.
+---These limits are not enforced by this class; instead, the Editor should provide sufficient safeguards so that this does not happen.
+---Renaming or changing the hierarchy of controlled Nodes will have unexpected consequences... mostly. You can expect that the program will crash!
+---@return boolean
+function Node:isControlled()
+    if not self.parent then
+        return false
+    end
+    if self.parent and self.parent.isController then
+        return true
+    end
+    return self.parent:isControlled()
+end
+
+
+
 ---Inserts the provided Node as a child of this Node.
 ---If the provided Node is already integrated into another UI tree (has a parent), it is removed from that parent - the Node is effectively moved.
 ---Returns `true` on success, `false` if the tree would form a cycle or when the widget would be parented to itself.
@@ -215,8 +263,12 @@ end
 ---@param index number? The index specifying where in the hierarchy the Node should be located. By default, it is inserted as the last element (on the bottom).
 ---@return boolean
 function Node:addChild(node, index)
+    -- We cannot parent a node to itself or its own child, or else we will get stuck in a loop!!!
     if node == self or node:findChild(self) then
-        -- We cannot parent a node to itself or its own child, or else we will get stuck in a loop!!!
+        return false
+    end
+    -- Controlled Nodes cannot have more Nodes than they already have. And we must not accept any Controlled Node that's trying to run away from their controller, either.
+    if self:isControlled() or node:isControlled() then
         return false
     end
     -- Resolve linkages.
@@ -239,6 +291,10 @@ end
 ---@param node Node The node to be removed.
 ---@return boolean
 function Node:removeChild(node)
+    -- Controlled Nodes cannot be removed.
+    if node:isControlled() then
+        return false
+    end
     local index = self:getChildIndex(node)
     if index then
         table.remove(self.children, index)
@@ -278,6 +334,10 @@ end
 ---@param node Node The node to be moved up.
 ---@return boolean
 function Node:moveChildUp(node)
+    -- Controlled Nodes cannot be moved in their hierarchy.
+    if node:isControlled() then
+        return false
+    end
     local index = self:getChildIndex(node)
     if not index then
         return false
@@ -304,6 +364,10 @@ end
 ---@param node Node The node to be moved down.
 ---@return boolean
 function Node:moveChildDown(node)
+    -- Controlled Nodes cannot be moved in their hierarchy.
+    if node:isControlled() then
+        return false
+    end
     local index = self:getChildIndex(node)
     if not index then
         return false
@@ -375,6 +439,10 @@ end
 ---@param position integer The new Node position. `1` is the top, `#self.children` is the bottom.
 ---@return boolean
 function Node:moveChildToPosition(node, position)
+    -- Controlled Nodes cannot be moved in their hierarchy.
+    if node:isControlled() then
+        return false
+    end
     -- Fail if the position is illegal.
     if position < 1 or position > #self.children then
         return false
@@ -620,7 +688,7 @@ end
 ---@param y integer The Y coordinate.
 ---@param button integer The button that has been pressed.
 function Node:mousepressed(x, y, button)
-    if button == 1 and self:isHovered() then
+    if button == 1 and self:isHovered() and not self.disabled then
         self.clicked = true
     end
     for i, child in ipairs(self.children) do

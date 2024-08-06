@@ -30,10 +30,13 @@ _IMAGES = {
 	ed_button = NineImage(love.graphics.newImage("resources/ed_button.png"), 2, 3, 2, 3),
 	ed_button_click = NineImage(love.graphics.newImage("resources/ed_button_click.png"), 2, 3, 2, 3),
 	ed_input = NineImage(love.graphics.newImage("resources/ed_input.png"), 2, 3, 2, 3),
-	ed_input_hover = NineImage(love.graphics.newImage("resources/ed_input_hover.png"), 2, 3, 2, 3)
+	ed_input_hover = NineImage(love.graphics.newImage("resources/ed_input_hover.png"), 2, 3, 2, 3),
+	ed_input_disabled = NineImage(love.graphics.newImage("resources/ed_input_disabled.png"), 2, 3, 2, 3)
 }
 _COLORS = {
 	white = Color(1, 1, 1),
+	gray = Color(0.5, 0.5, 0.5),
+	black = Color(0, 0, 0),
 	cyan = Color(0, 1, 1),
 	yellow = Color(1, 1, 0)
 }

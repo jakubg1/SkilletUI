@@ -48,6 +48,40 @@
             ]
         },
         {
+            "name": "btn0",
+            "type": "button",
+            "pos": {
+                "x": 80,
+                "y": 80
+            },
+            "align": "center",
+            "children": [
+                {
+                    "name": "text",
+                    "type": "text",
+                    "font": "standard",
+                    "text": "Play!",
+                    "align": "center",
+                    "parentAlign": "center",
+                    "shadow": 1
+                },
+                {
+                    "name": "sprite",
+                    "type": "9sprite",
+                    "image": "button",
+                    "hoverImage": "button_hover",
+                    "clickImage": "button_click",
+                    "align": "center",
+                    "parentAlign": "center",
+                    "size": {
+                        "x": 100,
+                        "y": 14
+                    },
+                    "shadow": 1
+                }
+            ]
+        },
+        {
             "name": "btn1",
             "type": "9sprite",
             "image": "button",

@@ -24,8 +24,7 @@ function EditorCommandNodeRename:execute()
     if self.name == self.oldName then
         return false
     end
-    self.node:setName(self.name)
-    return true
+    return self.node:setName(self.name)
 end
 
 ---Undoes this command.
