@@ -10,6 +10,7 @@ local Editor = require("Editor")
 local Node = require("Node")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
+love.graphics.setLineStyle("rough")
 
 -- Globals
 _VEC2S_PER_FRAME = 0
@@ -37,8 +38,12 @@ _COLORS = {
 	white = Color(1, 1, 1),
 	gray = Color(0.5, 0.5, 0.5),
 	black = Color(0, 0, 0),
+	blue = Color(0, 0, 1),
 	cyan = Color(0, 1, 1),
-	yellow = Color(1, 1, 0)
+	yellow = Color(1, 1, 0),
+	red = Color(1, 0, 0),
+	orange = Color(1, 0.4, 0),
+	lightOrange = Color(1, 0.7, 0.5)
 }
 _ALIGNMENTS = {
     topLeft = Vec2(0, 0),

@@ -21,30 +21,9 @@ local CommandNodeMoveUp = require("EditorCommands.NodeMoveUp")
 local CommandNodeMoveDown = require("EditorCommands.NodeMoveDown")
 local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
+local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
 
----@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom
-
-
-
--- Test. I'm not sure what I'll go towards in the end.
-local EDITOR_COMMANDS = {
-    nodeAdd = {
-        new = function(self, node, parent)
-            self.node = node
-            self.parent = parent
-        end,
-        execute = function(self)
-            if not self.node or not self.parent then
-                return false
-            end
-            self.parent:addChild(self.node)
-            return true
-        end,
-        undo = function(self)
-            self.parent:removeChild(self.node)
-        end
-    }
-}
+---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom|EditorCommandNodeMoveToIndex
 
 
 
@@ -61,6 +40,7 @@ local EDITOR_COMMANDS = {
 --- - Selecting via node tree
 --- - Undo/Redo (rewrite to commands)
 --- - Widget manipulation (color, text, size, scale, etc.)
+--- - Dragging entries around in the node tree
 ---
 --- To Do:
 --- - Resizing widgets like boxes
@@ -70,7 +50,6 @@ local EDITOR_COMMANDS = {
 --- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
 ---   - tip: have a Button class as a controller for the children which have unchangeable names and references them directly by name in the constructor
 --- - Multi-selection(?)
---- - Dragging entries around in the node tree
 --- - Animations at some point
 
 
@@ -85,6 +64,7 @@ function Editor:new()
 
     self.commandHistory = {}
     self.undoCommandHistory = {}
+    self.transactionMode = false
 
     self.enabled = true
     self.activeInput = nil
@@ -94,6 +74,10 @@ function Editor:new()
     self.nodeDragOrigin = nil
     self.nodeDragOriginalPos = nil
     self.nodeDragSnap = false
+    self.nodeTreeHoverTop = false
+    self.nodeTreeHoverBottom = false
+    self.nodeTreeDragOrigin = nil
+    self.nodeTreeDragSnap = false
 
     self.uiTreeInfo = {}
 end
@@ -120,12 +104,14 @@ end
 
 
 ---Returns the currently hovered Node.
----This function also sets the value of the `self.isNodeHoverIndirect` field.
+---This function also sets the values of the `self.isNodeHoverIndirect`, `self.nodeTreeHoverTop` and `self.nodeTreeHoverBottom` fields.
 ---
 ---This function should only be called internally. If you want to get the currently hovered node, fetch the `self.hoveredNode` field instead.
 ---@return Node?
 function Editor:getHoveredNode()
     self.isNodeHoverIndirect = false
+    self.nodeTreeHoverTop = false
+    self.nodeTreeHoverBottom = false
     -- Editor UI has hover precedence over actual UI.
     if self:isUIHovered() then
         return nil
@@ -134,6 +120,13 @@ function Editor:getHoveredNode()
     for i, entry in ipairs(self.uiTreeInfo) do
         if _Utils.isPointInsideBox(_MousePos, self.UI_TREE_POS + Vec2(0, 15 * i), Vec2(200, 15)) then
             self.isNodeHoverIndirect = true
+            -- Additional checks for specific parts of the entry. Used for node dragging so that you can drag in between the entries.
+            local MARGIN = 4
+            if _Utils.isPointInsideBox(_MousePos, self.UI_TREE_POS + Vec2(0, 15 * i), Vec2(200, MARGIN)) then
+                self.nodeTreeHoverTop = true
+            elseif _Utils.isPointInsideBox(_MousePos, self.UI_TREE_POS + Vec2(0, 15 * i + 15 - MARGIN), Vec2(200, MARGIN)) then
+                self.nodeTreeHoverBottom = true
+            end
             return entry.node
         end
     end
@@ -251,6 +244,78 @@ end
 
 
 
+---Starts dragging the selected node in the node tree.
+function Editor:startDraggingSelectedNodeInNodeTree()
+    if not self.selectedNode then
+        return
+    end
+    self.nodeTreeDragOrigin = _MousePos
+    self.nodeTreeDragSnap = true
+end
+
+
+
+---Finishes dragging the selected node in the node tree and pushes a command so that the movement can be undone.
+function Editor:finishDraggingSelectedNodeInNodeTree()
+    if not self.selectedNode or not self.nodeTreeDragOrigin then
+        return
+    end
+    if self.nodeTreeDragSnap then
+        -- We didn't break the snap (mouse not moved enough to initiate the movement process), so reset everything as if nothing has ever happened.
+        self:cancelDraggingSelectedNodeInNodeTree()
+        return
+    end
+    self:startCommandTransaction()
+    if self.nodeTreeHoverTop then
+        -- We've dropped the node above the hovered node.
+        -- First, make sure that our parent is correct.
+        if self.selectedNode.parent ~= self.hoveredNode.parent then
+            self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode.parent))
+        end
+        -- Now, reorder it so that the selected node is before the hovered node.
+        local index = self.hoveredNode:getSelfIndex()
+        if index > self.selectedNode:getSelfIndex() then
+            index = index - 1
+        end
+        self:executeCommand(CommandNodeMoveToIndex(self.selectedNode, index))
+    elseif self.nodeTreeHoverBottom then
+        -- We've dropped the node below the hovered node.
+        if self.hoveredNode:hasChildren() then
+            -- If we've done this on a node that has children, the selected node should become its first child.
+            self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode))
+            self:executeCommand(CommandNodeMoveToTop(self.selectedNode))
+        else
+            -- Otherwise, move on similarly to the top case.
+            -- First, make sure that our parent is correct.
+            if self.selectedNode.parent ~= self.hoveredNode.parent then
+                self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode.parent))
+            end
+            -- Now, reorder it so that the selected node is after the hovered node.
+            local index = self.hoveredNode:getSelfIndex() + 1
+            if index > self.selectedNode:getSelfIndex() then
+                index = index - 1
+            end
+            self:executeCommand(CommandNodeMoveToIndex(self.selectedNode, index))
+        end
+    else
+        -- We've dropped the node inside of another node: attach it as a parent.
+        self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode))
+    end
+    self:closeCommandTransaction()
+    self.nodeTreeDragOrigin = nil
+    self.nodeTreeDragSnap = false
+end
+
+
+
+---Cancels the drag of the selected node in the node tree.
+function Editor:cancelDraggingSelectedNodeInNodeTree()
+    self.nodeTreeDragOrigin = nil
+    self.nodeTreeDragSnap = false
+end
+
+
+
 ---Sets a new alignment for the selected node.
 ---@param align Vector2 The new alignment value.
 function Editor:setSelectedNodeAlign(align)
@@ -277,7 +342,7 @@ end
 
 
 ---Sets a new value for the given node's widget property.
----@param node Node The node that will be 
+---@param node Node The node that will have its widget property changed.
 ---@param property string The property to be set.
 ---@param value any? The value to be set for this property.
 function Editor:setNodeWidgetProperty(node, property, value)
@@ -345,9 +410,49 @@ function Editor:executeCommand(command)
         if #self.undoCommandHistory > 0 then
             self.undoCommandHistory = {}
         end
-        table.insert(self.commandHistory, command)
+        -- Add a command onto the stack, or into the transaction if one is open.
+        if self.transactionMode then
+            table.insert(self.commandHistory[#self.commandHistory], command)
+        else
+            table.insert(self.commandHistory, command)
+        end
     end
     return result
+end
+
+
+
+---Starts a command transaction.
+---Command transactions bundle a few commands into an atomic pack. It only can be undone as a whole.
+---
+---Each command transaction is saved as a subtable in the `self.commandHistory` table.
+---To close a command transaction, use `:closeCommandTransaction()`.
+function Editor:startCommandTransaction()
+    if self.transactionMode then
+        error("Cannot nest command transactions!")
+    end
+    self.transactionMode = true
+    table.insert(self.commandHistory, {})
+end
+
+
+
+---Closes a command transaction.
+---From this point, any new commands will be added separately, as usual.
+function Editor:closeCommandTransaction()
+    if not self.transactionMode then
+        error("Cannot close a command transaction when none is open!")
+    end
+    self.transactionMode = false
+    if #self.commandHistory[#self.commandHistory] == 0 then
+        -- Remove an empty transaction.
+        table.remove(self.commandHistory)
+    elseif #self.commandHistory[#self.commandHistory] == 1 then
+        -- Unwrap a transaction with just one command.
+        local command = self.commandHistory[#self.commandHistory][1]
+        table.remove(self.commandHistory)
+        table.insert(self.commandHistory, command)
+    end
 end
 
 
@@ -357,8 +462,20 @@ function Editor:undoLastCommand()
     if #self.commandHistory == 0 then
         return
     end
+    -- Undoing a command closes the transaction.
+    -- TODO: Redoing should open it back. Find a solution to this problem.
+    if self.transactionMode then
+        self:closeCommandTransaction()
+    end
     local command = table.remove(self.commandHistory)
-    command:undo()
+    if #command > 0 then    -- Both command groups and commands themselves are tables, so we cannot do `type(command) == "table"` here.
+        -- Undo the whole transaction at once.
+        for i = #command, 1, -1 do
+            command[i]:undo()
+        end
+    else
+        command:undo()
+    end
     table.insert(self.undoCommandHistory, command)
 end
 
@@ -370,7 +487,13 @@ function Editor:redoLastCommand()
         return
     end
     local command = table.remove(self.undoCommandHistory)
-    command:execute()
+    if #command > 0 then
+        for i = 1, #command do
+            command[i]:execute()
+        end
+    else
+        command:execute()
+    end
     table.insert(self.commandHistory, command)
 end
 
@@ -541,6 +664,7 @@ function Editor:update(dt)
     self.uiTreeInfo = self:getUITreeInfo()
     self.hoveredNode = self:getHoveredNode()
 
+    -- Handle the node dragging.
 	if self.selectedNode and self.nodeDragOrigin then
 		local movement = _MouseCPos - self.nodeDragOrigin
 		if self.nodeDragSnap then
@@ -551,6 +675,16 @@ function Editor:update(dt)
 			self.selectedNode:setPos(self.nodeDragOriginalPos + movement)
 		end
 	end
+
+    -- Handle the node dragging in the node tree.
+    if self.selectedNode and self.nodeTreeDragOrigin then
+        local movement = _MousePos - self.nodeTreeDragOrigin
+        if self.nodeTreeDragSnap then
+            if movement:len() > 5 then
+                self.nodeTreeDragSnap = false
+            end
+        end
+    end
 
     self.UI:update(dt)
     self.INPUT_DIALOG:update(dt)
@@ -589,14 +723,57 @@ function Editor:draw()
             color = _COLORS.cyan
         elseif line.node == self.hoveredNode then
             color = _COLORS.yellow
+        elseif line.node.isController then
+            color = _COLORS.orange
+        elseif line.node:isControlled() then
+            color = _COLORS.lightOrange
         end
         self:drawShadowedText(string.format("%s {%s}", line.node.name, line.node.type), x, y, color)
+        -- If dragged over, additional signs will be shown.
+        if self.nodeTreeDragOrigin and not self.nodeTreeDragSnap and line.node ~= self.selectedNode and line.node == self.hoveredNode then
+            if self.nodeTreeHoverTop then
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.setLineWidth(2)
+                love.graphics.line(x, y, self.UI_TREE_POS.x + 200, y)
+            elseif self.nodeTreeHoverBottom then
+                -- Indent the line if this node has children.
+                if line.node:hasChildren() then
+                    x = x + 30
+                end
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.setLineWidth(2)
+                love.graphics.line(x, y + 15, self.UI_TREE_POS.x + 200, y + 15)
+            else
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.rectangle("line", self.UI_TREE_POS.x, y, 200, 15)
+            end
+        end
+    end
+
+    -- Dragged element in node tree
+    if self.nodeTreeDragOrigin and not self.nodeTreeDragSnap then
+        self:drawShadowedText(string.format("%s {%s}", self.selectedNode.name, self.selectedNode.type), _MousePos.x + 10, _MousePos.y + 10, _COLORS.white, _COLORS.blue)
     end
 
     -- Command buffer
     self:drawShadowedText("Command Buffer", 1100, 20)
+    local y = 50
     for i, command in ipairs(self.commandHistory) do
-        self:drawShadowedText(command.NAME, 1100, 35 + 15 * i)
+        if #command > 0 then
+            self:drawShadowedText("Transaction {", 1100, y)
+            y = y + 15
+            for j, subcommand in ipairs(command) do
+                self:drawShadowedText(subcommand.NAME, 1130, y)
+                y = y + 15
+            end
+            if command ~= self.commandHistory[#self.commandHistory] or not self.transactionMode then
+                self:drawShadowedText("}", 1100, y)
+                y = y + 15
+            end
+        else
+            self:drawShadowedText(command.NAME, 1100, y)
+            y = y + 15
+        end
     end
 
     -- Buttons
@@ -651,8 +828,14 @@ end
 ---@param x number The X coordinate.
 ---@param y number The Y coordinate.
 ---@param color Color? The color to be used, white by default.
-function Editor:drawShadowedText(text, x, y, color)
+---@param backgroundColor Color? The background color to be used. No background by default.
+function Editor:drawShadowedText(text, x, y, color, backgroundColor)
     color = color or _COLORS.white
+    if backgroundColor then
+        local w = love.graphics.getFont():getWidth(text) + 2
+        love.graphics.setColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.5)
+        love.graphics.rectangle("fill", x, y, w, 15)
+    end
     love.graphics.setColor(0, 0, 0, 0.8)
     love.graphics.print(text, x + 2, y + 2)
     love.graphics.setColor(color.r, color.g, color.b)
@@ -677,14 +860,25 @@ function Editor:mousepressed(x, y, button)
             self:parentSelectedNodeToHoveredNode()
         else
             self:selectNode(self.hoveredNode)
-            if self.selectedNode and not self.isNodeHoverIndirect then
-                -- Indirectly selected nodes (by clicking on the hierarchy tree) cannot be dragged.
-                self:startDraggingSelectedNode()
+            if self.selectedNode then
+                if not self.isNodeHoverIndirect then
+                    -- Start dragging the actual node on the screen.
+                    self:startDraggingSelectedNode()
+                else
+                    -- Start dragging the node on the node tree list.
+                    self:startDraggingSelectedNodeInNodeTree()
+                end
             end
         end
-    elseif button == 2 and self.nodeDragOrigin then
-        -- Cancel dragging if the right click is received.
-        self:cancelDraggingSelectedNode()
+    elseif button == 2 then
+        if self.nodeDragOrigin then
+            -- Cancel dragging if the right click is received.
+            self:cancelDraggingSelectedNode()
+        end
+        if self.nodeTreeDragOrigin then
+            -- Cancel dragging if the right click is received.
+            self:cancelDraggingSelectedNodeInNodeTree()
+        end
 	end
 end
 
@@ -697,7 +891,10 @@ end
 function Editor:mousereleased(x, y, button)
     self.UI:mousereleased(x, y, button)
     self.INPUT_DIALOG:mousereleased(x, y, button)
-    self:finishDraggingSelectedNode()
+    if button == 1 then
+        self:finishDraggingSelectedNode()
+        self:finishDraggingSelectedNodeInNodeTree()
+    end
 end
 
 

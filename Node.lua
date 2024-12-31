@@ -267,8 +267,8 @@ function Node:addChild(node, index)
     if node == self or node:findChild(self) then
         return false
     end
-    -- Controlled Nodes cannot have more Nodes than they already have. And we must not accept any Controlled Node that's trying to run away from their controller, either.
-    if self:isControlled() or node:isControlled() then
+    -- Controller Nodes cannot have their structure changed. And we must not accept any Controlled Node that's trying to run away from their controller, either.
+    if self:isControlled() or self.isController or node:isControlled() then
         return false
     end
     -- Resolve linkages.
@@ -500,6 +500,14 @@ end
 
 
 
+---Returns `true` if this Node has at least one child.
+---@return boolean
+function Node:hasChildren()
+    return #self.children > 0
+end
+
+
+
 ---Returns the first encountered child by reference, or `nil` if it is not found.
 ---@param node Node The instance of the child to be found.
 ---@return Node?
@@ -677,8 +685,8 @@ end
 ---@param size number The crosshair size, in pixels.
 function Node:drawCrosshair(pos, size)
     pos = pos:floor() + 0.5
-    love.graphics.line(pos.x - size, pos.y, pos.x + size, pos.y)
-    love.graphics.line(pos.x, pos.y - size, pos.x, pos.y + size)
+    love.graphics.line(pos.x - size, pos.y, pos.x + size + 1, pos.y)
+    love.graphics.line(pos.x, pos.y - size, pos.x, pos.y + size + 1)
 end
 
 
