@@ -734,8 +734,9 @@ function Editor:update(dt)
 
     -- Handle the node resizing.
     if self.selectedNode and self.nodeResizeOrigin then
-        local movement = _MouseCPos - self.nodeResizeOrigin
-        self.selectedNode:setPos(((self.nodeResizeOriginalPos + movement * self.nodeResizeDirection * self.selectedNode:getAlign()) + 0.5):floor())
+        local movement = (_MouseCPos - self.nodeResizeOrigin):floor()
+        local posVector = ((self.nodeResizeDirection - 1) / 2 + self.selectedNode:getAlign()) * self.nodeResizeDirection
+        self.selectedNode:setPos(((self.nodeResizeOriginalPos + movement * posVector) + 0.5):floor())
         self.selectedNode:setSize(self.nodeResizeOriginalSize + movement * self.nodeResizeDirection)
     end
 
