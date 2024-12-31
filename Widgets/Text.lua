@@ -72,6 +72,22 @@ end
 
 
 
+---Sets the size of this Text. But you actually cannot set it. Don't even try :)
+---@param size Vector2 The new size of this Text.
+function Text:setSize(size)
+    error("Texts cannot be resized!")
+end
+
+
+
+---Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
+---@return boolean
+function Text:isResizable()
+    return false
+end
+
+
+
 ---Returns the property list of this Text.
 ---@return table
 function Text:getPropertyList()

@@ -33,6 +33,22 @@ end
 
 
 
+---Sets the size of this NineSprite.
+---@param size Vector2 The new size of this NineSprite.
+function NineSprite:setSize(size)
+    self.size = size
+end
+
+
+
+---Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
+---@return boolean
+function NineSprite:isResizable()
+    return true
+end
+
+
+
 ---Updates the NineSprite.
 ---@param dt number Time delta, in seconds.
 function NineSprite:update(dt)

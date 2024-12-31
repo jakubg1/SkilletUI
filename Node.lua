@@ -5,12 +5,12 @@ local class = require "com.class"
 local Node = class:derive("Node")
 
 local Vec2 = require("Vector2")
-local Box = require("Box")
-local Button = require("Button")
-local Canvas = require("Canvas")
-local NineSprite = require("NineSprite")
-local Text = require("Text")
-local TitleDigit = require("TitleDigit")
+local Box = require("Widgets.Box")
+local Button = require("Widgets.Button")
+local Canvas = require("Widgets.Canvas")
+local NineSprite = require("Widgets.NineSprite")
+local Text = require("Widgets.Text")
+local TitleDigit = require("Widgets.TitleDigit")
 
 
 
@@ -100,7 +100,7 @@ end
 
 
 
----Returns the global position of this Node, i.e. the actual position after factoring in all parents' modifiers.
+---Returns the global position of this Node, i.e. the actual position (top left corner) after factoring in all parents' modifiers.
 ---@return Vector2
 function Node:getGlobalPos()
     return self.pos - ((self:getSize() - 1) * self.align):ceil() + self:getParentAlignPos()
@@ -134,6 +134,55 @@ function Node:getSize()
         return self.widget:getSize()
     end
     return Vec2(1)
+end
+
+
+
+---Sets the size of this Node's widget. Not all widgets support resizing. Check `:isResizable()` to see if you can.
+---@param size Vector2 The new size of this Node's widget.
+function Node:setSize(size)
+    if self.widget then
+        self.widget:setSize(size)
+    end
+end
+
+
+
+---Returns whether this Node's widget is resizable. If so, squares will appear around it when selected.
+---@return boolean
+function Node:isResizable()
+    if self.widget then
+        return self.widget:isResizable()
+    end
+    return false
+end
+
+
+
+---Returns the position of the resize handle for this Node's widget.
+---@param id integer 1 to 8: top left, top middle, top right, middle left, middle right, bottom left, bottom middle, and you guessed it - bottom right.
+---@return Vector2
+function Node:getResizeHandlePos(id)
+    local pos = self:getGlobalPos()
+    local size = self:getSize()
+    if id == 1 then
+        return Vec2(pos.x - 4, pos.y - 4)
+    elseif id == 2 then
+        return Vec2(pos.x + size.x / 2 - 1, pos.y - 4)
+    elseif id == 3 then
+        return Vec2(pos.x + size.x + 1, pos.y - 4)
+    elseif id == 4 then
+        return Vec2(pos.x - 4, pos.y + size.y / 2 - 1)
+    elseif id == 5 then
+        return Vec2(pos.x + size.x + 1, pos.y + size.y / 2 - 1)
+    elseif id == 6 then
+        return Vec2(pos.x - 4, pos.y + size.y + 1)
+    elseif id == 7 then
+        return Vec2(pos.x + size.x / 2 - 1, pos.y + size.y + 1)
+    elseif id == 8 then
+        return Vec2(pos.x + size.x + 1, pos.y + size.y + 1)
+    end
+    error(string.format("Invalid resize handle ID: %s (expected 1..8)", id))
 end
 
 
@@ -200,6 +249,21 @@ end
 ---Returns whether this Node is hovered.
 function Node:isHovered()
     return self:hasPixel(_MousePos / self:getInputScale())
+end
+
+
+
+---Returns the ID of the hovered resize handle of this Node's widget, if any is hovered.
+---If none of the resize handles are hovered, returns `nil`.
+---@return integer?
+function Node:getHoveredResizeHandleID()
+    for i = 1, 8 do
+        local pos = self:getResizeHandlePos(i)
+        if _Utils.isPointInsideBox(_MousePos / self:getInputScale(), pos, Vec2(3)) then
+            return i
+        end
+    end
+    return nil
 end
 
 
@@ -676,6 +740,20 @@ function Node:drawSelected()
     -- Draw a line between them.
     love.graphics.setColor(0.5, 0, 1)
     love.graphics.line(localPos.x, localPos.y, localPos2.x, localPos2.y)
+    -- Draw resizing boxes if the widget can be resized.
+    if self:isResizable() then
+        local id = self:getHoveredResizeHandleID()
+        for i = 1, 8 do
+            if i == id then
+                -- This handle is hovered.
+                love.graphics.setColor(1, 1, 1)
+            else
+                love.graphics.setColor(0, 1, 1)
+            end
+            local p = self:getResizeHandlePos(i)
+            love.graphics.rectangle("fill", p.x, p.y, 3, 3)
+        end
+    end
 end
 
 

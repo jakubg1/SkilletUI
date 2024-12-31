@@ -12,6 +12,7 @@ local CommandNodeAdd = require("EditorCommands.NodeAdd")
 local CommandNodeRename = require("EditorCommands.NodeRename")
 local CommandNodeMove = require("EditorCommands.NodeMove")
 local CommandNodeDrag = require("EditorCommands.NodeDrag")
+local CommandNodeResize = require("EditorCommands.NodeResize")
 local CommandNodeDelete = require("EditorCommands.NodeDelete")
 local CommandNodeSetParent = require("EditorCommands.NodeSetParent")
 local CommandNodeSetAlign = require("EditorCommands.NodeSetAlign")
@@ -23,7 +24,7 @@ local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
 
----@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom|EditorCommandNodeMoveToIndex
+---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeResize|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom|EditorCommandNodeMoveToIndex
 
 
 
@@ -41,9 +42,9 @@ local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
 --- - Undo/Redo (rewrite to commands)
 --- - Widget manipulation (color, text, size, scale, etc.)
 --- - Dragging entries around in the node tree
+--- - Resizing widgets like boxes
 ---
 --- To Do:
---- - Resizing widgets like boxes
 --- - Saving layouts
 --- - Loading/switching layouts
 --- - Copy/Paste and widget duplication
@@ -62,6 +63,17 @@ function Editor:new()
 
     self.UI_TREE_POS = Vec2(5, 120)
 
+    self.NODE_RESIZE_DIRECTIONS = {
+        Vec2(-1, -1),
+        Vec2(0, -1),
+        Vec2(1, -1),
+        Vec2(-1, 0),
+        Vec2(1, 0),
+        Vec2(-1, 1),
+        Vec2(0, 1),
+        Vec2(1, 1)
+    }
+
     self.commandHistory = {}
     self.undoCommandHistory = {}
     self.transactionMode = false
@@ -74,6 +86,10 @@ function Editor:new()
     self.nodeDragOrigin = nil
     self.nodeDragOriginalPos = nil
     self.nodeDragSnap = false
+    self.nodeResizeOrigin = nil
+    self.nodeResizeOriginalPos = nil
+    self.nodeResizeOriginalSize = nil
+    self.nodeResizeDirection = nil
     self.nodeTreeHoverTop = false
     self.nodeTreeHoverBottom = false
     self.nodeTreeDragOrigin = nil
@@ -240,6 +256,46 @@ function Editor:cancelDraggingSelectedNode()
     end
     self.selectedNode:setPos(self.nodeDragOriginalPos)
     self:finishDraggingSelectedNode()
+end
+
+
+
+---Starts resizing the selected node, starting from the current mouse position.
+---@param handleID integer The ID of the resize handle that has been grabbed.
+function Editor:startResizingSelectedNode(handleID)
+    if not self.selectedNode then
+        return
+    end
+    self.nodeResizeOrigin = _MouseCPos
+    self.nodeResizeOriginalPos = self.selectedNode:getPos()
+    self.nodeResizeOriginalSize = self.selectedNode:getSize()
+    self.nodeResizeDirection = self.NODE_RESIZE_DIRECTIONS[handleID]
+end
+
+
+
+---Finishes resizing the selected node and pushes a command so that this process can be undone.
+function Editor:finishResizingSelectedNode()
+    if not self.selectedNode or not self.nodeResizeOriginalPos then
+        return
+    end
+    self:executeCommand(CommandNodeResize(self.selectedNode, self.nodeResizeOriginalPos, self.nodeResizeOriginalSize))
+    self.nodeResizeOrigin = nil
+    self.nodeResizeOriginalPos = nil
+    self.nodeResizeOriginalSize = nil
+    self.nodeResizeDirection = nil
+end
+
+
+
+---Restores the original selected node's positions and size and finishes the resizing process.
+function Editor:cancelResizingSelectedNode()
+    if not self.selectedNode or not self.nodeResizeOriginalPos then
+        return
+    end
+    self.selectedNode:setPos(self.nodeResizeOriginalPos)
+    self.selectedNode:setSize(self.nodeResizeOriginalSize)
+    self:finishResizingSelectedNode()
 end
 
 
@@ -676,6 +732,13 @@ function Editor:update(dt)
 		end
 	end
 
+    -- Handle the node resizing.
+    if self.selectedNode and self.nodeResizeOrigin then
+        local movement = _MouseCPos - self.nodeResizeOrigin
+        self.selectedNode:setPos(((self.nodeResizeOriginalPos + movement * self.nodeResizeDirection * self.selectedNode:getAlign()) + 0.5):floor())
+        self.selectedNode:setSize(self.nodeResizeOriginalSize + movement * self.nodeResizeDirection)
+    end
+
     -- Handle the node dragging in the node tree.
     if self.selectedNode and self.nodeTreeDragOrigin then
         local movement = _MousePos - self.nodeTreeDragOrigin
@@ -855,9 +918,13 @@ function Editor:mousepressed(x, y, button)
     self.UI:mousepressed(x, y, button)
     self.INPUT_DIALOG:mousepressed(x, y, button)
 	if button == 1 and not self:isUIHovered() then
+        local resizeHandleID = self.selectedNode and self.selectedNode:getHoveredResizeHandleID()
         if _IsCtrlPressed() then
             -- Ctrl+Click parents the selected node instead.
             self:parentSelectedNodeToHoveredNode()
+        elseif resizeHandleID then
+            -- We've grabbed a resize handle of the currently selected node!
+            self:startResizingSelectedNode(resizeHandleID)
         else
             self:selectNode(self.hoveredNode)
             if self.selectedNode then
@@ -871,12 +938,14 @@ function Editor:mousepressed(x, y, button)
             end
         end
     elseif button == 2 then
+        -- Cancel dragging if the right click is received.
         if self.nodeDragOrigin then
-            -- Cancel dragging if the right click is received.
             self:cancelDraggingSelectedNode()
         end
+        if self.nodeResizeOrigin then
+            self:cancelResizingSelectedNode()
+        end
         if self.nodeTreeDragOrigin then
-            -- Cancel dragging if the right click is received.
             self:cancelDraggingSelectedNodeInNodeTree()
         end
 	end
@@ -893,6 +962,7 @@ function Editor:mousereleased(x, y, button)
     self.INPUT_DIALOG:mousereleased(x, y, button)
     if button == 1 then
         self:finishDraggingSelectedNode()
+        self:finishResizingSelectedNode()
         self:finishDraggingSelectedNodeInNodeTree()
     end
 end

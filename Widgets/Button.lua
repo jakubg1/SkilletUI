@@ -35,6 +35,22 @@ end
 
 
 
+---Sets the size of this Button, except it doesn't. Don't even try!
+---@param size Vector2 The new size of this Button.
+function Button:setSize(size)
+    error("You cannot resize a Button!")
+end
+
+
+
+---Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
+---@return boolean
+function Button:isResizable()
+    return false
+end
+
+
+
 ---Returns the property list of this Button.
 ---@return table
 function Button:getPropertyList()

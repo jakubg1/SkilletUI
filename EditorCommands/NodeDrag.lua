@@ -8,7 +8,7 @@ local EditorCommandNodeDrag = class:derive("EditorCommandNodeDrag")
 ---@param node Node The node that has been dragged.
 ---@param startPos Vector2 The starting position of the Node.
 function EditorCommandNodeDrag:new(node, startPos)
-    self.NAME = "NodeMove"
+    self.NAME = "NodeDrag"
     self.node = node
     self.startPos = startPos
     self.targetPos = nil

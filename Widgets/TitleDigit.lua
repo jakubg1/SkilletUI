@@ -122,6 +122,22 @@ end
 
 
 
+---Sets the size of this TitleDigit. But you actually cannot set it. Don't even try :)
+---@param size Vector2 The new size of this TitleDigit.
+function TitleDigit:setSize(size)
+    error("TitleDigits cannot be resized!")
+end
+
+
+
+---Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
+---@return boolean
+function TitleDigit:isResizable()
+    return false
+end
+
+
+
 ---Updates the Title Digit.
 ---@param dt number Time delta, in seconds.
 function TitleDigit:update(dt)
