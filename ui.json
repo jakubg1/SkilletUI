@@ -63,7 +63,7 @@
                     "text": "Play!",
                     "align": "center",
                     "parentAlign": "center",
-                    "shadow": 1
+                    "shadowOffset": 1
                 },
                 {
                     "name": "sprite",
@@ -77,7 +77,7 @@
                         "x": 100,
                         "y": 14
                     },
-                    "shadow": 1
+                    "shadowOffset": 1
                 }
             ]
         },
@@ -96,7 +96,7 @@
                 "x": 100,
                 "y": 14
             },
-            "shadow": 1,
+            "shadowOffset": 1,
             "children": [
                 {
                     "name": "#",
@@ -105,7 +105,7 @@
                     "text": "Play!",
                     "align": "center",
                     "parentAlign": "center",
-                    "shadow": 1
+                    "shadowOffset": 1
                 }
             ]
         },
@@ -124,7 +124,7 @@
                 "x": 100,
                 "y": 14
             },
-            "shadow": 1,
+            "shadowOffset": 1,
             "children": [
                 {
                     "name": "#",
@@ -133,7 +133,7 @@
                     "text": "New Game",
                     "align": "center",
                     "parentAlign": "center",
-                    "shadow": 1
+                    "shadowOffset": 1
                 }
             ]
         },
@@ -152,7 +152,7 @@
                 "x": 100,
                 "y": 14
             },
-            "shadow": 1,
+            "shadowOffset": 1,
             "children": [
                 {
                     "name": "#",
@@ -161,7 +161,7 @@
                     "text": "Hi-Scores",
                     "align": "center",
                     "parentAlign": "center",
-                    "shadow": 1
+                    "shadowOffset": 1
                 }
             ]
         },
@@ -174,7 +174,7 @@
                 "x": 220,
                 "y": 160
             },
-            "shadow": 1,
+            "shadowOffset": 1,
             "wave": {
                 "amplitude": 5,
                 "frequency": 80,
@@ -197,7 +197,7 @@
                 "g": 1,
                 "b": 0.3
             },
-            "shadow": 2,
+            "shadowOffset": 2,
             "gradientWave": {
                 "color": {
                     "r": 0.1,
@@ -216,7 +216,7 @@
                 "y": 35
             },
             "align": "center",
-            "shadow": 2
+            "shadowOffset": 2
         }
     ]
 }

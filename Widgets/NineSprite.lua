@@ -12,6 +12,16 @@ local Vec2 = require("Vector2")
 ---@param node Node The Node that this NineSprite is attached to.
 ---@param data table The data to be used for this NineSprite.
 function NineSprite:new(node, data)
+    self.PROPERTY_LIST = {
+        {name = "Image", key = "image", type = "Image"},
+        {name = "Hover Image", key = "hoverImage", type = "Image"},
+        {name = "Click Image", key = "clickImage", type = "Image"},
+        {name = "Disabled Image", key = "disabledImage", type = "Image"},
+        {name = "Scale", key = "scale", type = "number"},
+        {name = "Shadow Offset", key = "shadowOffset", type = "Vector2"},
+        {name = "Shadow Alpha", key = "shadowAlpha", type = "number"}
+    }
+
     self.node = node
 
     self.image = _IMAGES[data.image]
@@ -20,7 +30,8 @@ function NineSprite:new(node, data)
     self.disabledImage = data.disabledImage and _IMAGES[data.disabledImage]
     self.size = Vec2(data.size)
     self.scale = data.scale or 1
-    self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
+    self.shadowOffset = data.shadowOffset and (type(data.shadowOffset) == "number" and Vec2(data.shadowOffset) or Vec2(data.shadowOffset.x, data.shadowOffset.y))
+    self.shadowAlpha = data.shadowAlpha or 0.5
 end
 
 
@@ -49,6 +60,14 @@ end
 
 
 
+---Returns the property list of this NineSprite.
+---@return table
+function NineSprite:getPropertyList()
+    return self.PROPERTY_LIST
+end
+
+
+
 ---Updates the NineSprite.
 ---@param dt number Time delta, in seconds.
 function NineSprite:update(dt)
@@ -70,7 +89,7 @@ function NineSprite:draw()
         end
     end
     if self.shadowOffset then
-        love.graphics.setColor(0, 0, 0, self.node.alpha * 0.5)
+        love.graphics.setColor(0, 0, 0, self.node.alpha * self.shadowAlpha)
         image:draw(pos + self.shadowOffset, self.size, self.scale)
     end
     love.graphics.setColor(1, 1, 1, self.node.alpha)

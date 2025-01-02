@@ -23,7 +23,6 @@ local CommandNodeMoveUp = require("EditorCommands.NodeMoveUp")
 local CommandNodeMoveDown = require("EditorCommands.NodeMoveDown")
 local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
-local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
 
 ---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeResize|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom|EditorCommandNodeMoveToIndex
 
@@ -48,6 +47,9 @@ local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
 --- To Do:
 --- - Saving layouts
 --- - Loading/switching layouts
+--- - Live editing of parameters
+--- - Vector support for parameters
+--- - Finish widget parameters
 --- - Copy/Paste and widget duplication
 --- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
 ---   - tip: have a Button class as a controller for the children which have unchangeable names and references them directly by name in the constructor
@@ -91,6 +93,42 @@ function Editor:new()
     self.nodeResizeDirection = nil
 
     self.uiTree = EditorUITree(self)
+    self.uiTreeInfo = {}
+end
+
+
+
+---Returns UI tree information.
+---This function should only be called internally. If you want to get the current UI tree info, fetch the `self.uiTreeInfo` field instead.
+---@param node Node? The UI node of which the tree should be added to the list.
+---@param tab table? The table, used internally.
+---@param indent integer? The starting indentation.
+---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
+function Editor:getUITreeInfo(node, tab, indent)
+    node = node or _UI
+    tab = tab or {}
+    indent = indent or 0
+    table.insert(tab, {node = node, indent = indent})
+    for i, child in ipairs(node.children) do
+        self:getUITreeInfo(child, tab, indent + 1)
+    end
+    return tab
+end
+
+
+
+---Prints the internal Editor UI tree to the console.
+function Editor:printInternalUITreeInfo()
+    -- Node tree
+    for i, line in ipairs(self:getUITreeInfo(self.UI)) do
+        local suffix = ""
+        if line.node.isController then
+            suffix = suffix .. " (controller)"
+        elseif line.node:isControlled() then
+            suffix = suffix .. " (controlled)"
+        end
+        print(string.rep("    ", line.indent) .. string.format("%s {%s}", (line.node.name ~= "" and line.node.name or "<unnamed>"), line.node.type) .. suffix)
+    end
 end
 
 
@@ -117,6 +155,15 @@ end
 
 
 
+---Returns `true` if the given Node Property is currently supported by the editor.
+---@param property table The property in its entirety, as an item of the `Widget:getPropertyList()` result table.
+---@return boolean
+function Editor:isNodePropertySupported(property)
+    return property.type == "string" or property.type == "number" or property.type == "color"
+end
+
+
+
 ---Marks the provided node as selected and updates all UI in order to facilitate editing its properties.
 ---@param node Node? The node to be selected. If not provided, all nodes will be deselected.
 function Editor:selectNode(node)
@@ -134,7 +181,7 @@ function Editor:selectNode(node)
         local widget = node.widget
         if widget then
             if widget.getPropertyList then
-                local propertiesUI = Node({name = "properties", pos = {x = 700, y = 648}})
+                local propertiesUI = Node({name = "properties", pos = {x = 600, y = 648}})
                 local properties = widget:getPropertyList()
                 for i, property in ipairs(properties) do
                     local inputValue
@@ -154,7 +201,12 @@ function Editor:selectNode(node)
                             self:setSelectedNodeWidgetProperty(property.key, input)
                         end
                     end
-                    local propertyUI = self:input(0, (i - 1) * 20, 200, property.type, inputValue, inputFunction)
+                    local propertyUI = Node({name = "input", type = "none", pos = {x = 0, y = (i - 1) * 20}})
+                    local propertyText = Node({name = "text", type = "text", font = "editor", text = string.format("%s", property.name), pos = {x = 0, y = 0}, shadowOffset = 2, shadowAlpha = 0.8})
+                    local propertyInput = self:input(150, 0, 200, property.type, inputValue, inputFunction)
+                    self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property))
+                    propertyUI:addChild(propertyText)
+                    propertyUI:addChild(propertyInput)
                     propertiesUI:addChild(propertyUI)
                 end
                 self.UI:addChild(propertiesUI)
@@ -261,78 +313,6 @@ function Editor:cancelResizingSelectedNode()
     self.selectedNode:setPos(self.nodeResizeOriginalPos)
     self.selectedNode:setSize(self.nodeResizeOriginalSize)
     self:finishResizingSelectedNode()
-end
-
-
-
----Starts dragging the selected node in the node tree.
-function Editor:startDraggingSelectedNodeInNodeTree()
-    if not self.selectedNode then
-        return
-    end
-    self.uiTree.dragOrigin = _MousePos
-    self.uiTree.dragSnap = true
-end
-
-
-
----Finishes dragging the selected node in the node tree and pushes a command so that the movement can be undone.
-function Editor:finishDraggingSelectedNodeInNodeTree()
-    if not self.selectedNode or not self.uiTree.dragOrigin then
-        return
-    end
-    if self.uiTree.dragSnap then
-        -- We didn't break the snap (mouse not moved enough to initiate the movement process), so reset everything as if nothing has ever happened.
-        self:cancelDraggingSelectedNodeInNodeTree()
-        return
-    end
-    self:startCommandTransaction()
-    if self.uiTree.hoverTop then
-        -- We've dropped the node above the hovered node.
-        -- First, make sure that our parent is correct.
-        if self.selectedNode.parent ~= self.hoveredNode.parent then
-            self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode.parent))
-        end
-        -- Now, reorder it so that the selected node is before the hovered node.
-        local index = self.hoveredNode:getSelfIndex()
-        if index > self.selectedNode:getSelfIndex() then
-            index = index - 1
-        end
-        self:executeCommand(CommandNodeMoveToIndex(self.selectedNode, index))
-    elseif self.uiTree.hoverBottom then
-        -- We've dropped the node below the hovered node.
-        if self.hoveredNode:hasChildren() then
-            -- If we've done this on a node that has children, the selected node should become its first child.
-            self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode))
-            self:executeCommand(CommandNodeMoveToTop(self.selectedNode))
-        else
-            -- Otherwise, move on similarly to the top case.
-            -- First, make sure that our parent is correct.
-            if self.selectedNode.parent ~= self.hoveredNode.parent then
-                self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode.parent))
-            end
-            -- Now, reorder it so that the selected node is after the hovered node.
-            local index = self.hoveredNode:getSelfIndex() + 1
-            if index > self.selectedNode:getSelfIndex() then
-                index = index - 1
-            end
-            self:executeCommand(CommandNodeMoveToIndex(self.selectedNode, index))
-        end
-    else
-        -- We've dropped the node inside of another node: attach it as a parent.
-        self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode))
-    end
-    self:closeCommandTransaction()
-    self.uiTree.dragOrigin = nil
-    self.uiTree.dragSnap = false
-end
-
-
-
----Cancels the drag of the selected node in the node tree.
-function Editor:cancelDraggingSelectedNodeInNodeTree()
-    self.uiTree.dragOrigin = nil
-    self.uiTree.dragSnap = false
 end
 
 
@@ -529,7 +509,7 @@ end
 ---@param key string? The key which will activate this button.
 ---@return Node
 function Editor:button(x, y, w, text, fn, key)
-    local button = Node({name = "", type = "9sprite", image = "ed_button", clickImage = "ed_button_click", shortcut = key, pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = _COLORS.black}}})
+    local button = Node({name = "btn_" .. text, type = "9sprite", image = "ed_button", clickImage = "ed_button_click", shortcut = key, pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "$text", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = _COLORS.black}}})
     button:setOnClick(fn)
     return button
 end
@@ -547,9 +527,9 @@ end
 function Editor:input(x, y, w, type, value, fn)
     local input
     if type ~= "color" then
-        input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = tostring(value), pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = _COLORS.white}}})
+        input = Node({name = "inp_" .. type, type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = tostring(value), pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = _COLORS.white}}})
     else
-        input = Node({name = "", type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$color", type = "box", color = value, pos = {x = 0, y = -1}, size = {x = w - 2, y = 18}, align = "center", parentAlign = "center"}}})
+        input = Node({name = "inp_" .. type, type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$color", type = "box", color = value, pos = {x = 0, y = -1}, size = {x = w - 2, y = 18}, align = "center", parentAlign = "center"}}})
     end
     input:setOnClick(function() self:askForInput(input, type) end)
     input._onChange = fn
@@ -675,7 +655,7 @@ function Editor:load()
         self.UI:addChild(button)
     end
     local inputs = {
-        nodeName = self:input(700, 628, 200, "string", "", function(input) self:renameSelectedNode(input) end),
+        nodeName = self:input(750, 628, 200, "string", "", function(input) self:renameSelectedNode(input) end),
     }
     self:inputSetDisabled(inputs.nodeName, true)
     for inputN, input in pairs(inputs) do
@@ -689,6 +669,7 @@ end
 ---Updates the Editor.
 ---@param dt number Time delta in seconds.
 function Editor:update(dt)
+    self.uiTreeInfo = self:getUITreeInfo()
     self.hoveredNode = self:getHoveredNode()
 
     -- Handle the node dragging.
@@ -727,19 +708,20 @@ function Editor:draw()
 	self.UI:findChildByName("drawtime").widget.text = string.format("Drawing took approximately %.1fms", _DrawTime * 1000)
 	self.UI:findChildByName("pos").widget.text = string.format("Mouse position: %s", _MouseCPos)
 	self.UI:findChildByName("line3").widget.text = string.format("Vecs per frame: %s", _VEC2S_PER_FRAME)
+	self.UI:findChildByName("hovText").widget.text = ""
 	self.UI:findChildByName("selText").widget.text = ""
+
+    -- Hovered and selected node
+    if self.hoveredNode then
+        self.UI:findChildByName("hovText").widget.text = string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode.name, self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos())
+    end
+    if self.selectedNode then
+        self.UI:findChildByName("selText").widget.text = string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos())
+    end
 	self.UI:draw()
 
     -- Other UI that will be hardcoded for now.
     love.graphics.setFont(_FONTS.editor)
-
-    -- Hovered and selected node
-    if self.hoveredNode then
-        self:drawShadowedText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode.name, self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()), 5, 90, _COLORS.yellow)
-    end
-    if self.selectedNode then
-        self:drawShadowedText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()), 5, 110, _COLORS.cyan)
-    end
 
     -- UI tree
     self.uiTree:draw()
@@ -779,16 +761,7 @@ function Editor:draw()
     if self.selectedNode then
         local widget = self.selectedNode.widget
         if widget then
-            if widget.getPropertyList then
-                local properties = widget:getPropertyList()
-                for i, property in ipairs(properties) do
-                    if property.type == "string" or property.type == "number" or property.type == "color" then
-                        self:drawShadowedText(string.format("%s", property.name), 600, 650 + (i - 1) * 20)
-                    else
-                        self:drawShadowedText(string.format("%s: %s", property.name, widget[property.key]), 600, 650 + (i - 1) * 20)
-                    end
-                end
-            else
+            if not widget.getPropertyList then
                 self:drawShadowedText("This Widget does not support properties yet!", 600, 650)
             end
         else
@@ -862,21 +835,15 @@ function Editor:mousepressed(x, y, button)
                     self:startDraggingSelectedNode()
                 else
                     -- Start dragging the node on the node tree list.
-                    self:startDraggingSelectedNodeInNodeTree()
+                    self.uiTree:startDraggingSelectedNodeInNodeTree()
                 end
             end
         end
     elseif button == 2 then
         -- Cancel dragging if the right click is received.
-        if self.nodeDragOrigin then
-            self:cancelDraggingSelectedNode()
-        end
-        if self.nodeResizeOrigin then
-            self:cancelResizingSelectedNode()
-        end
-        if self.uiTree.dragOrigin then
-            self:cancelDraggingSelectedNodeInNodeTree()
-        end
+        self:cancelDraggingSelectedNode()
+        self:cancelResizingSelectedNode()
+        self.uiTree:cancelDraggingSelectedNodeInNodeTree()
 	end
 end
 
@@ -892,7 +859,7 @@ function Editor:mousereleased(x, y, button)
     if button == 1 then
         self:finishDraggingSelectedNode()
         self:finishResizingSelectedNode()
-        self:finishDraggingSelectedNodeInNodeTree()
+        self.uiTree:finishDraggingSelectedNodeInNodeTree()
     end
 end
 
@@ -922,6 +889,8 @@ function Editor:keypressed(key)
         self:undoLastCommand()
     elseif key == "y" and _IsCtrlPressed() then
         self:redoLastCommand()
+    elseif key == "p" and _IsCtrlPressed() then
+        self:printInternalUITreeInfo()
 	end
 end
 

@@ -16,7 +16,9 @@ function Text:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Text", key = "text", type = "string"},
         {name = "Scale", key = "scale", type = "number"},
-        {name = "Color", key = "color", type = "color"}
+        {name = "Color", key = "color", type = "color"},
+        {name = "Shadow Offset", key = "shadowOffset", type = "Vector2"},
+        {name = "Shadow Alpha", key = "shadowAlpha", type = "number"}
     }
 
     self.node = node
@@ -25,7 +27,8 @@ function Text:new(node, data)
     self.text = data.text or ""
     self.scale = data.scale or 1
     self.color = Color(data.color)
-    self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
+    self.shadowOffset = data.shadowOffset and (type(data.shadowOffset) == "number" and Vec2(data.shadowOffset) or Vec2(data.shadowOffset.x, data.shadowOffset.y))
+    self.shadowAlpha = data.shadowAlpha or 0.5
 
     self.time = 0
 
@@ -122,7 +125,7 @@ function Text:draw()
         end
 
         if self.shadowOffset then
-            love.graphics.setColor(0, 0, 0, self.node.alpha * 0.5)
+            love.graphics.setColor(0, 0, 0, self.node.alpha * self.shadowAlpha)
             love.graphics.print(chr, math.floor(pos.x + self.shadowOffset.x + x + 0.5), math.floor(pos.y + self.shadowOffset.y + y + 0.5), 0, self.scale)
         end
         love.graphics.setColor(color.r, color.g, color.b, self.node.alpha)

@@ -60,18 +60,36 @@
             ]
         },
         {
-            "name": "selText",
+            "name": "hovText",
             "type": "text",
-            "font": "standard",
+            "font": "editor",
             "pos": {
                 "x": 0,
                 "y": 80
             },
             "color": {
+                "r": 1,
+                "g": 1,
+                "b": 0
+            },
+            "shadowOffset": 2,
+            "shadowAlpha": 0.8
+        },
+        {
+            "name": "selText",
+            "type": "text",
+            "font": "editor",
+            "pos": {
+                "x": 0,
+                "y": 100
+            },
+            "color": {
                 "r": 0,
                 "g": 1,
                 "b": 1
-            }
+            },
+            "shadowOffset": 2,
+            "shadowAlpha": 0.8
         }
     ]
 }

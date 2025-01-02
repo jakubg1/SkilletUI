@@ -7,6 +7,10 @@ local EditorUITree = class:derive("EditorUITree")
 -- Place your imports here
 local Vec2 = require("Vector2")
 
+local CommandNodeSetParent = require("EditorCommands.NodeSetParent")
+local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
+local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
+
 
 
 ---Constructs a new Editor UI Tree.
@@ -22,26 +26,6 @@ function EditorUITree:new(editor)
     self.hoverBottom = false
     self.dragOrigin = nil
     self.dragSnap = false
-    self.uiTreeInfo = {}
-end
-
-
-
----Returns UI tree information.
----This function should only be called internally. If you want to get the current UI tree info, fetch the `self.uiTreeInfo` field instead.
----@param node Node? The UI node of which the tree should be added to the list.
----@param tab table? The table, used internally.
----@param indent integer? The starting indentation.
----@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
-function EditorUITree:getUITreeInfo(node, tab, indent)
-    node = node or _UI
-    tab = tab or {}
-    indent = indent or 0
-    table.insert(tab, {node = node, indent = indent})
-    for i, child in ipairs(node.children) do
-        self:getUITreeInfo(child, tab, indent + 1)
-    end
-    return tab
 end
 
 
@@ -51,7 +35,7 @@ end
 function EditorUITree:getHoveredNode()
     self.hoverTop = false
     self.hoverBottom = false
-    for i, entry in ipairs(self.uiTreeInfo) do
+    for i, entry in ipairs(self.editor.uiTreeInfo) do
         if _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, self.ITEM_HEIGHT * i), Vec2(200, self.ITEM_HEIGHT)) then
             self.editor.isNodeHoverIndirect = true
             -- Additional checks for specific parts of the entry. Used for node dragging so that you can drag in between the entries.
@@ -67,11 +51,81 @@ end
 
 
 
+---Starts dragging the selected node in the node tree.
+function EditorUITree:startDraggingSelectedNodeInNodeTree()
+    if not self.editor.selectedNode then
+        return
+    end
+    self.dragOrigin = _MousePos
+    self.dragSnap = true
+end
+
+
+
+---Finishes dragging the selected node in the node tree and pushes a command so that the movement can be undone.
+function EditorUITree:finishDraggingSelectedNodeInNodeTree()
+    if not self.editor.selectedNode or not self.dragOrigin then
+        return
+    end
+    if self.dragSnap then
+        -- We didn't break the snap (mouse not moved enough to initiate the movement process), so reset everything as if nothing has ever happened.
+        self:cancelDraggingSelectedNodeInNodeTree()
+        return
+    end
+    self.editor:startCommandTransaction()
+    if self.hoverTop then
+        -- We've dropped the node above the hovered node.
+        -- First, make sure that our parent is correct.
+        if self.editor.selectedNode.parent ~= self.editor.hoveredNode.parent then
+            self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNode, self.editor.hoveredNode.parent))
+        end
+        -- Now, reorder it so that the selected node is before the hovered node.
+        local index = self.editor.hoveredNode:getSelfIndex()
+        if index > self.editor.selectedNode:getSelfIndex() then
+            index = index - 1
+        end
+        self.editor:executeCommand(CommandNodeMoveToIndex(self.editor.selectedNode, index))
+    elseif self.hoverBottom then
+        -- We've dropped the node below the hovered node.
+        if self.editor.hoveredNode:hasChildren() then
+            -- If we've done this on a node that has children, the selected node should become its first child.
+            self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNode, self.editor.hoveredNode))
+            self.editor:executeCommand(CommandNodeMoveToTop(self.editor.selectedNode))
+        else
+            -- Otherwise, move on similarly to the top case.
+            -- First, make sure that our parent is correct.
+            if self.editor.selectedNode.parent ~= self.editor.hoveredNode.parent then
+                self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNode, self.editor.hoveredNode.parent))
+            end
+            -- Now, reorder it so that the selected node is after the hovered node.
+            local index = self.editor.hoveredNode:getSelfIndex() + 1
+            if index > self.editor.selectedNode:getSelfIndex() then
+                index = index - 1
+            end
+            self.editor:executeCommand(CommandNodeMoveToIndex(self.editor.selectedNode, index))
+        end
+    else
+        -- We've dropped the node inside of another node: attach it as a parent.
+        self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNode, self.editor.hoveredNode))
+    end
+    self.editor:closeCommandTransaction()
+    self.dragOrigin = nil
+    self.dragSnap = false
+end
+
+
+
+---Cancels the drag of the selected node in the node tree.
+function EditorUITree:cancelDraggingSelectedNodeInNodeTree()
+    self.dragOrigin = nil
+    self.dragSnap = false
+end
+
+
+
 ---Updates the Editor UI Tree.
 ---@param dt number Time delta in seconds.
 function EditorUITree:update(dt)
-    self.uiTreeInfo = self:getUITreeInfo()
-
     -- Handle the node dragging in the node tree.
     if self.editor.selectedNode and self.dragOrigin then
         local movement = _MousePos - self.dragOrigin
@@ -88,7 +142,7 @@ end
 ---Draws the Editor UI tree.
 function EditorUITree:draw()
     -- Node tree
-    for i, line in ipairs(self.uiTreeInfo) do
+    for i, line in ipairs(self.editor.uiTreeInfo) do
         local x = self.POS.x + 30 * line.indent
         local y = self.POS.y + self.ITEM_HEIGHT * i
         local color = _COLORS.white
