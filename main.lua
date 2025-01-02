@@ -11,10 +11,13 @@ local Node = require("Node")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 love.graphics.setLineStyle("rough")
+love.graphics.setBackgroundColor(0.3, 0.5, 0.8)
 
 -- Globals
 _VEC2S_PER_FRAME = 0
-_WINDOW_SIZE = Vec2(1280, 720)
+_WINDOW_SIZE = Vec2(1600, 900)
+_CANVAS_SIZE = Vec2(960, 540)
+_CANVAS_OFFSET = Vec2(320, 40)
 _MousePos = Vec2()
 _MouseCPos = Vec2()
 
@@ -22,6 +25,7 @@ _DrawTime = 0
 _FONT_CHARACTERS = " abcdefghijklmnopqrstuvwxyząćęłńóśźżABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ0123456789<>-+()[]_.,:;'!?@#$€%^&*\"/|\\"
 _FONTS = {
 	default = love.graphics.newFont(),
+	editor = love.graphics.newFont(16),
 	standard = love.graphics.newImageFont("resources/standard.png", _FONT_CHARACTERS, 1)
 }
 _IMAGES = {
@@ -43,7 +47,9 @@ _COLORS = {
 	yellow = Color(1, 1, 0),
 	red = Color(1, 0, 0),
 	orange = Color(1, 0.4, 0),
-	lightOrange = Color(1, 0.7, 0.5)
+	lightOrange = Color(1, 0.7, 0.5),
+	purple = Color(0.4, 0, 1),
+	lightPurple = Color(0.7, 0.5, 1)
 }
 _ALIGNMENTS = {
     topLeft = Vec2(0, 0),

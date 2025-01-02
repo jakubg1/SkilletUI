@@ -16,7 +16,7 @@ end
 
 
 function MainCanvas:posToPixel(pos)
-    return (pos / _WINDOW_SIZE * self.SIZE):floor()
+    return ((pos - _CANVAS_OFFSET) / _CANVAS_SIZE * self.SIZE):floor()
 end
 
 
@@ -32,7 +32,7 @@ end
 function MainCanvas:draw()
     love.graphics.setColor(1, 1, 1)
     love.graphics.setCanvas()
-    love.graphics.draw(self.canvas, 0, 0, 0, _WINDOW_SIZE.x / self.SIZE.x, _WINDOW_SIZE.y / self.SIZE.y)
+    love.graphics.draw(self.canvas, _CANVAS_OFFSET.x, _CANVAS_OFFSET.y, 0, _CANVAS_SIZE.x / self.SIZE.x, _CANVAS_SIZE.y / self.SIZE.y)
 end
 
 

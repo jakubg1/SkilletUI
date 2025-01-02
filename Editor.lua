@@ -7,6 +7,7 @@ local Editor = class:derive("Editor")
 local Vec2 = require("Vector2")
 local Node = require("Node")
 local Input = require("Input")
+local EditorUITree = require("EditorUITree")
 
 local CommandNodeAdd = require("EditorCommands.NodeAdd")
 local CommandNodeRename = require("EditorCommands.NodeRename")
@@ -61,8 +62,6 @@ function Editor:new()
     self.UI_INPUTS = {}
     self.INPUT_DIALOG = Input()
 
-    self.UI_TREE_POS = Vec2(5, 120)
-
     self.NODE_RESIZE_DIRECTIONS = {
         Vec2(-1, -1),
         Vec2(0, -1),
@@ -90,31 +89,8 @@ function Editor:new()
     self.nodeResizeOriginalPos = nil
     self.nodeResizeOriginalSize = nil
     self.nodeResizeDirection = nil
-    self.nodeTreeHoverTop = false
-    self.nodeTreeHoverBottom = false
-    self.nodeTreeDragOrigin = nil
-    self.nodeTreeDragSnap = false
 
-    self.uiTreeInfo = {}
-end
-
-
-
----Returns UI tree information.
----This function should only be called internally. If you want to get the current UI tree info, fetch the `self.uiTreeInfo` field instead.
----@param node Node? The UI node of which the tree should be added to the list.
----@param tab table? The table, used internally.
----@param indent integer? The starting indentation.
----@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
-function Editor:getUITreeInfo(node, tab, indent)
-    node = node or _UI
-    tab = tab or {}
-    indent = indent or 0
-    table.insert(tab, {node = node, indent = indent})
-    for i, child in ipairs(node.children) do
-        self:getUITreeInfo(child, tab, indent + 1)
-    end
-    return tab
+    self.uiTree = EditorUITree(self)
 end
 
 
@@ -126,25 +102,14 @@ end
 ---@return Node?
 function Editor:getHoveredNode()
     self.isNodeHoverIndirect = false
-    self.nodeTreeHoverTop = false
-    self.nodeTreeHoverBottom = false
     -- Editor UI has hover precedence over actual UI.
     if self:isUIHovered() then
         return nil
     end
     -- Look whether we've hovered over any UI info entry.
-    for i, entry in ipairs(self.uiTreeInfo) do
-        if _Utils.isPointInsideBox(_MousePos, self.UI_TREE_POS + Vec2(0, 15 * i), Vec2(200, 15)) then
-            self.isNodeHoverIndirect = true
-            -- Additional checks for specific parts of the entry. Used for node dragging so that you can drag in between the entries.
-            local MARGIN = 4
-            if _Utils.isPointInsideBox(_MousePos, self.UI_TREE_POS + Vec2(0, 15 * i), Vec2(200, MARGIN)) then
-                self.nodeTreeHoverTop = true
-            elseif _Utils.isPointInsideBox(_MousePos, self.UI_TREE_POS + Vec2(0, 15 * i + 15 - MARGIN), Vec2(200, MARGIN)) then
-                self.nodeTreeHoverBottom = true
-            end
-            return entry.node
-        end
+    local hoveredNode = self.uiTree:getHoveredNode()
+    if hoveredNode then
+        return hoveredNode
     end
     -- Finally, look if any node is directly hovered.
 	return _UI:findChildByPixelDepthFirst(_MouseCPos)
@@ -169,7 +134,7 @@ function Editor:selectNode(node)
         local widget = node.widget
         if widget then
             if widget.getPropertyList then
-                local propertiesUI = Node({name = "properties", pos = {x = 700, y = 628}})
+                local propertiesUI = Node({name = "properties", pos = {x = 700, y = 648}})
                 local properties = widget:getPropertyList()
                 for i, property in ipairs(properties) do
                     local inputValue
@@ -305,24 +270,24 @@ function Editor:startDraggingSelectedNodeInNodeTree()
     if not self.selectedNode then
         return
     end
-    self.nodeTreeDragOrigin = _MousePos
-    self.nodeTreeDragSnap = true
+    self.uiTree.dragOrigin = _MousePos
+    self.uiTree.dragSnap = true
 end
 
 
 
 ---Finishes dragging the selected node in the node tree and pushes a command so that the movement can be undone.
 function Editor:finishDraggingSelectedNodeInNodeTree()
-    if not self.selectedNode or not self.nodeTreeDragOrigin then
+    if not self.selectedNode or not self.uiTree.dragOrigin then
         return
     end
-    if self.nodeTreeDragSnap then
+    if self.uiTree.dragSnap then
         -- We didn't break the snap (mouse not moved enough to initiate the movement process), so reset everything as if nothing has ever happened.
         self:cancelDraggingSelectedNodeInNodeTree()
         return
     end
     self:startCommandTransaction()
-    if self.nodeTreeHoverTop then
+    if self.uiTree.hoverTop then
         -- We've dropped the node above the hovered node.
         -- First, make sure that our parent is correct.
         if self.selectedNode.parent ~= self.hoveredNode.parent then
@@ -334,7 +299,7 @@ function Editor:finishDraggingSelectedNodeInNodeTree()
             index = index - 1
         end
         self:executeCommand(CommandNodeMoveToIndex(self.selectedNode, index))
-    elseif self.nodeTreeHoverBottom then
+    elseif self.uiTree.hoverBottom then
         -- We've dropped the node below the hovered node.
         if self.hoveredNode:hasChildren() then
             -- If we've done this on a node that has children, the selected node should become its first child.
@@ -358,16 +323,16 @@ function Editor:finishDraggingSelectedNodeInNodeTree()
         self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode))
     end
     self:closeCommandTransaction()
-    self.nodeTreeDragOrigin = nil
-    self.nodeTreeDragSnap = false
+    self.uiTree.dragOrigin = nil
+    self.uiTree.dragSnap = false
 end
 
 
 
 ---Cancels the drag of the selected node in the node tree.
 function Editor:cancelDraggingSelectedNodeInNodeTree()
-    self.nodeTreeDragOrigin = nil
-    self.nodeTreeDragSnap = false
+    self.uiTree.dragOrigin = nil
+    self.uiTree.dragSnap = false
 end
 
 
@@ -671,41 +636,48 @@ end
 ---Initializes the UI for this Editor.
 function Editor:load()
     self.UI = _LoadUI("editor_ui.json")
+    local UTILITY_X = 0
+    local UTILITY_Y = 700
+    local ALIGN_X = 200
+    local ALIGN_Y = 800
+    local PALIGN_X = 400
+    local PALIGN_Y = 800
     local buttons = {
-        self:button(0, 400, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
-        self:button(0, 420, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
-        self:button(0, 440, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
-        self:button(0, 460, 150, "Undo [Ctrl+Z]", function() self:undoLastCommand() end),
-        self:button(0, 480, 150, "Redo [Ctrl+Y]", function() self:redoLastCommand() end),
-        self:button(0, 530, 75, "Box", function() self:addNode(Node({name = "NewNode", type = "box", size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}})) end),
-        self:button(75, 530, 75, "Text", function() self:addNode(Node({name = "NewNode", type = "text", font = "standard", text = "You can't change me!"})) end),
+        self:button(UTILITY_X, UTILITY_Y, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
+        self:button(UTILITY_X, UTILITY_Y + 20, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
+        self:button(UTILITY_X, UTILITY_Y + 40, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
+        self:button(UTILITY_X, UTILITY_Y + 60, 150, "Undo [Ctrl+Z]", function() self:undoLastCommand() end),
+        self:button(UTILITY_X, UTILITY_Y + 80, 150, "Redo [Ctrl+Y]", function() self:redoLastCommand() end),
+        self:button(UTILITY_X, UTILITY_Y + 130, 75, "Box", function() self:addNode(Node({name = "NewNode", type = "box", size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}})) end),
+        self:button(UTILITY_X + 75, UTILITY_Y + 130, 75, "Text", function() self:addNode(Node({name = "NewNode", type = "text", font = "standard", text = "You can't change me!"})) end),
 
-        self:button(100, 630, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
-        self:button(130, 630, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
-        self:button(160, 630, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
-        self:button(100, 650, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
-        self:button(130, 650, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
-        self:button(160, 650, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
-        self:button(100, 670, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(130, 670, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
-        self:button(160, 670, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
+        self:button(ALIGN_X, ALIGN_Y, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
+        self:button(ALIGN_X + 30, ALIGN_Y, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
+        self:button(ALIGN_X + 60, ALIGN_Y, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
+        self:button(ALIGN_X, ALIGN_Y + 20, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
+        self:button(ALIGN_X + 30, ALIGN_Y + 20, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
+        self:button(ALIGN_X + 60, ALIGN_Y + 20, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
+        self:button(ALIGN_X, ALIGN_Y + 40, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(ALIGN_X + 30, ALIGN_Y + 40, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
+        self:button(ALIGN_X + 60, ALIGN_Y + 40, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
 
-        self:button(300, 630, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
-        self:button(330, 630, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
-        self:button(360, 630, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
-        self:button(300, 650, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
-        self:button(330, 650, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
-        self:button(360, 650, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
-        self:button(300, 670, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(330, 670, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
-        self:button(360, 670, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
+        self:button(PALIGN_X, PALIGN_Y, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
+        self:button(PALIGN_X + 30, PALIGN_Y, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
+        self:button(PALIGN_X + 60, PALIGN_Y, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
+        self:button(PALIGN_X, PALIGN_Y + 20, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
+        self:button(PALIGN_X + 30, PALIGN_Y + 20, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
+        self:button(PALIGN_X + 60, PALIGN_Y + 20, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
+        self:button(PALIGN_X, PALIGN_Y + 40, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(PALIGN_X + 30, PALIGN_Y + 40, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
+        self:button(PALIGN_X + 60, PALIGN_Y + 40, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
     }
     for i, button in ipairs(buttons) do
         self.UI:addChild(button)
     end
     local inputs = {
-        nodeName = self:input(800, 608, 150, "string", "", function(input) self:renameSelectedNode(input) end),
+        nodeName = self:input(700, 628, 200, "string", "", function(input) self:renameSelectedNode(input) end),
     }
+    self:inputSetDisabled(inputs.nodeName, true)
     for inputN, input in pairs(inputs) do
         self.UI:addChild(input)
         self.UI_INPUTS[inputN] = input
@@ -717,16 +689,15 @@ end
 ---Updates the Editor.
 ---@param dt number Time delta in seconds.
 function Editor:update(dt)
-    self.uiTreeInfo = self:getUITreeInfo()
     self.hoveredNode = self:getHoveredNode()
 
     -- Handle the node dragging.
 	if self.selectedNode and self.nodeDragOrigin then
 		local movement = _MouseCPos - self.nodeDragOrigin
 		if self.nodeDragSnap then
-			--if movement:len() > 2 then
+			if movement:len() >= 2 then
                 self.nodeDragSnap = false
-			--end
+			end
 		else
 			self.selectedNode:setPos(self.nodeDragOriginalPos + movement)
 		end
@@ -740,15 +711,7 @@ function Editor:update(dt)
         self.selectedNode:setSize(self.nodeResizeOriginalSize + movement * self.nodeResizeDirection)
     end
 
-    -- Handle the node dragging in the node tree.
-    if self.selectedNode and self.nodeTreeDragOrigin then
-        local movement = _MousePos - self.nodeTreeDragOrigin
-        if self.nodeTreeDragSnap then
-            if movement:len() > 5 then
-                self.nodeTreeDragSnap = false
-            end
-        end
-    end
+    self.uiTree:update(dt)
 
     self.UI:update(dt)
     self.INPUT_DIALOG:update(dt)
@@ -768,87 +731,51 @@ function Editor:draw()
 	self.UI:draw()
 
     -- Other UI that will be hardcoded for now.
-    love.graphics.setFont(_FONTS.default)
+    love.graphics.setFont(_FONTS.editor)
 
     -- Hovered and selected node
     if self.hoveredNode then
         self:drawShadowedText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode.name, self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()), 5, 90, _COLORS.yellow)
     end
     if self.selectedNode then
-        self:drawShadowedText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()), 5, 105, _COLORS.cyan)
+        self:drawShadowedText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()), 5, 110, _COLORS.cyan)
     end
 
-    -- Node tree
-    for i, line in ipairs(self.uiTreeInfo) do
-        local x = self.UI_TREE_POS.x + 30 * line.indent
-        local y = self.UI_TREE_POS.y + 15 * i
-        local color = _COLORS.white
-        if line.node == self.selectedNode then
-            color = _COLORS.cyan
-        elseif line.node == self.hoveredNode then
-            color = _COLORS.yellow
-        elseif line.node.isController then
-            color = _COLORS.orange
-        elseif line.node:isControlled() then
-            color = _COLORS.lightOrange
-        end
-        self:drawShadowedText(string.format("%s {%s}", line.node.name, line.node.type), x, y, color)
-        -- If dragged over, additional signs will be shown.
-        if self.nodeTreeDragOrigin and not self.nodeTreeDragSnap and line.node ~= self.selectedNode and line.node == self.hoveredNode then
-            if self.nodeTreeHoverTop then
-                love.graphics.setColor(1, 1, 1)
-                love.graphics.setLineWidth(2)
-                love.graphics.line(x, y, self.UI_TREE_POS.x + 200, y)
-            elseif self.nodeTreeHoverBottom then
-                -- Indent the line if this node has children.
-                if line.node:hasChildren() then
-                    x = x + 30
-                end
-                love.graphics.setColor(1, 1, 1)
-                love.graphics.setLineWidth(2)
-                love.graphics.line(x, y + 15, self.UI_TREE_POS.x + 200, y + 15)
-            else
-                love.graphics.setColor(1, 1, 1)
-                love.graphics.rectangle("line", self.UI_TREE_POS.x, y, 200, 15)
-            end
-        end
-    end
-
-    -- Dragged element in node tree
-    if self.nodeTreeDragOrigin and not self.nodeTreeDragSnap then
-        self:drawShadowedText(string.format("%s {%s}", self.selectedNode.name, self.selectedNode.type), _MousePos.x + 10, _MousePos.y + 10, _COLORS.white, _COLORS.blue)
-    end
+    -- UI tree
+    self.uiTree:draw()
 
     -- Command buffer
-    self:drawShadowedText("Command Buffer", 1100, 20)
+    local COMMAND_BUFFER_POS = Vec2(1400, 20)
+    local COMMAND_BUFFER_ITEM_HEIGHT = 20
+    self:drawShadowedText("Command Buffer", COMMAND_BUFFER_POS.x, COMMAND_BUFFER_POS.y)
     local y = 50
     for i, command in ipairs(self.commandHistory) do
         if #command > 0 then
-            self:drawShadowedText("Transaction {", 1100, y)
-            y = y + 15
+            self:drawShadowedText("Transaction {", COMMAND_BUFFER_POS.x, y)
+            y = y + COMMAND_BUFFER_ITEM_HEIGHT
             for j, subcommand in ipairs(command) do
-                self:drawShadowedText(subcommand.NAME, 1130, y)
-                y = y + 15
+                self:drawShadowedText(subcommand.NAME, COMMAND_BUFFER_POS.x + 30, y)
+                y = y + COMMAND_BUFFER_ITEM_HEIGHT
             end
             if command ~= self.commandHistory[#self.commandHistory] or not self.transactionMode then
-                self:drawShadowedText("}", 1100, y)
-                y = y + 15
+                self:drawShadowedText("}", COMMAND_BUFFER_POS.x, y)
+                y = y + COMMAND_BUFFER_ITEM_HEIGHT
             end
         else
-            self:drawShadowedText(command.NAME, 1100, y)
-            y = y + 15
+            self:drawShadowedText(command.NAME, COMMAND_BUFFER_POS.x, y)
+            y = y + COMMAND_BUFFER_ITEM_HEIGHT
         end
     end
 
     -- Buttons
-    self:drawShadowedText("New Widget:", 5, 510)
-    self:drawShadowedText("Node Align", 100, 610)
-    self:drawShadowedText("Parent Align", 300, 610)
-    self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 100, 700)
+    self:drawShadowedText("New Widget:", 5, 810)
+    self:drawShadowedText("Node Align", 200, 780)
+    self:drawShadowedText("Parent Align", 400, 780)
+    self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 200, 870)
     
     -- Widget properties
     self:drawShadowedText("Node/Widget Properties", 600, 610)
-    self:drawShadowedText("Name:", 760, 610)
+    self:drawShadowedText("Name:", 600, 630)
     if self.selectedNode then
         local widget = self.selectedNode.widget
         if widget then
@@ -856,16 +783,16 @@ function Editor:draw()
                 local properties = widget:getPropertyList()
                 for i, property in ipairs(properties) do
                     if property.type == "string" or property.type == "number" or property.type == "color" then
-                        self:drawShadowedText(string.format("%s", property.name), 600, 630 + (i - 1) * 20)
+                        self:drawShadowedText(string.format("%s", property.name), 600, 650 + (i - 1) * 20)
                     else
-                        self:drawShadowedText(string.format("%s: %s", property.name, widget[property.key]), 600, 630 + (i - 1) * 20)
+                        self:drawShadowedText(string.format("%s: %s", property.name, widget[property.key]), 600, 650 + (i - 1) * 20)
                     end
                 end
             else
-                self:drawShadowedText("This Widget does not support properties yet!", 600, 630)
+                self:drawShadowedText("This Widget does not support properties yet!", 600, 650)
             end
         else
-            self:drawShadowedText("This Node does not have a widget.", 600, 630)
+            self:drawShadowedText("This Node does not have a widget.", 600, 650)
         end
     end
 
@@ -896,9 +823,10 @@ end
 function Editor:drawShadowedText(text, x, y, color, backgroundColor)
     color = color or _COLORS.white
     if backgroundColor then
-        local w = love.graphics.getFont():getWidth(text) + 2
+        local w = love.graphics.getFont():getWidth(text)
+        local h = love.graphics.getFont():getHeight()
         love.graphics.setColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.5)
-        love.graphics.rectangle("fill", x, y, w, 15)
+        love.graphics.rectangle("fill", x - 2, y - 2, w + 4, h + 4)
     end
     love.graphics.setColor(0, 0, 0, 0.8)
     love.graphics.print(text, x + 2, y + 2)
@@ -946,7 +874,7 @@ function Editor:mousepressed(x, y, button)
         if self.nodeResizeOrigin then
             self:cancelResizingSelectedNode()
         end
-        if self.nodeTreeDragOrigin then
+        if self.uiTree.dragOrigin then
             self:cancelDraggingSelectedNodeInNodeTree()
         end
 	end
