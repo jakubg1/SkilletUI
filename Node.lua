@@ -35,7 +35,7 @@ function Node:new(data, parent)
     self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
     self.alpha = data.alpha or 1
     self.shortcut = data.shortcut
-    self.inputScale = data.inputScale or 1
+    self.canvasInputMode = data.canvasInputMode
 
     self.clicked = false
     self.onClick = nil
@@ -195,13 +195,13 @@ end
 
 
 
----Returns the input scale of this Node.
----@return number
-function Node:getInputScale()
+---Returns whether the canvas input mode is enabled on this Node or its hierarchy.
+---@return boolean
+function Node:isCanvasInputModeEnabled()
     if self.parent then
-        return self.parent:getInputScale() * self.inputScale
+        return self.parent:isCanvasInputModeEnabled()
     end
-    return self.inputScale
+    return self.canvasInputMode
 end
 
 
@@ -266,7 +266,7 @@ end
 
 ---Returns whether this Node is hovered.
 function Node:isHovered()
-    return self:hasPixel(_MousePos / self:getInputScale())
+    return self:hasPixel(self:isCanvasInputModeEnabled() and _MouseCPos or _MousePos)
 end
 
 
@@ -275,9 +275,12 @@ end
 ---If none of the resize handles are hovered, returns `nil`.
 ---@return integer?
 function Node:getHoveredResizeHandleID()
+    if not self:isResizable() then
+        return nil
+    end
     for i = 1, 8 do
         local pos = self:getResizeHandlePos(i)
-        if _Utils.isPointInsideBox(_MousePos / self:getInputScale(), pos, Vec2(3)) then
+        if _Utils.isPointInsideBox(self:isCanvasInputModeEnabled() and _MouseCPos or _MousePos, pos, Vec2(3)) then
             return i
         end
     end

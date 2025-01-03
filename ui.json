@@ -8,7 +8,7 @@
         "x": 320,
         "y": 180
     },
-    "inputScale": 4,
+    "canvasInputMode": true,
     "children": [
         {
             "name": "box",
