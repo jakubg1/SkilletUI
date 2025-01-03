@@ -20,6 +20,14 @@ local TitleDigit = require("Widgets.TitleDigit")
 function Node:new(data, parent)
     self.parent = parent
 
+    self.PROPERTY_LIST = {
+        {name = "Name", key = "name", type = "string", disabledIfControlled = true},
+        {name = "Position", key = "pos", type = "Vector2"},
+        {name = "Align", key = "align", type = "Vector2"},
+        {name = "Parent Align", key = "parentAlign", type = "Vector2"},
+        {name = "Alpha", key = "alpha", type = "number"}
+    }
+
     self.name = data.name
     self.type = data.type or "none"
     self.pos = Vec2(data.pos)
@@ -242,6 +250,16 @@ end
 ---@param f function? The function to be executed if this Node is clicked.
 function Node:setOnClick(f)
     self.onClick = f
+end
+
+
+
+---Returns the list of properties on this Node. This list is always the same.
+---This function does NOT return properties belonging to its Widget. For that, call `node.widget:getPropertyList()`.
+---Make sure to wrap this call as the node or the function might not exist!
+---@return table
+function Node:getPropertyList()
+    return self.PROPERTY_LIST
 end
 
 

@@ -18,13 +18,14 @@ local CommandNodeDelete = require("EditorCommands.NodeDelete")
 local CommandNodeSetParent = require("EditorCommands.NodeSetParent")
 local CommandNodeSetAlign = require("EditorCommands.NodeSetAlign")
 local CommandNodeSetParentAlign = require("EditorCommands.NodeSetParentAlign")
+local CommandNodeSetProperty = require("EditorCommands.NodeSetProperty")
 local CommandNodeSetWidgetProperty = require("EditorCommands.NodeSetWidgetProperty")
 local CommandNodeMoveUp = require("EditorCommands.NodeMoveUp")
 local CommandNodeMoveDown = require("EditorCommands.NodeMoveDown")
 local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 
----@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeResize|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom|EditorCommandNodeMoveToIndex
+---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeResize|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetAlign|EditorCommandNodeSetParentAlign|EditorCommandNodeSetProperty|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom|EditorCommandNodeMoveToIndex
 
 
 
@@ -61,7 +62,6 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 ---Constructs a new UI Editor.
 function Editor:new()
     self.UI = nil
-    self.UI_INPUTS = {}
     self.INPUT_DIALOG = Input()
 
     self.NODE_RESIZE_DIRECTIONS = {
@@ -168,9 +168,6 @@ end
 ---@param node Node? The node to be selected. If not provided, all nodes will be deselected.
 function Editor:selectNode(node)
     self.selectedNode = node
-    -- Update the name box.
-    self:inputSetValue(self.UI_INPUTS.nodeName, "string", node and node:getName() or "")
-    self:inputSetDisabled(self.UI_INPUTS.nodeName, not node or node:isControlled())
     -- Clear all properties.
     local previousPropertiesUI = self.UI:findChildByName("properties")
     if previousPropertiesUI then
@@ -178,11 +175,34 @@ function Editor:selectNode(node)
     end
     -- Make a new property list UI.
     if node then
+        local propertiesUI = Node({name = "properties", pos = {x = 1220, y = 60}})
+        local currentRow = 0
+        local nodeProperties = node:getPropertyList()
+        local propertyHeaderUI = self:label(0, currentRow * 20, "Node Properties")
+        currentRow = currentRow + 1
+        propertiesUI:addChild(propertyHeaderUI)
+        for i, property in ipairs(nodeProperties) do
+            local inputValue
+            inputValue = node[property.key]
+            local inputFunction = function(input)
+                self:setSelectedNodeProperty(property.key, input)
+            end
+            local propertyUI = Node({name = "input", pos = {x = 0, y = currentRow * 20}})
+            currentRow = currentRow + 1
+            local propertyText = self:label(0, 0, property.name)
+            local propertyInput = self:input(150, 0, 200, property.type, inputValue, inputFunction)
+            self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (node:isControlled() and property.disabledIfControlled))
+            propertyUI:addChild(propertyText)
+            propertyUI:addChild(propertyInput)
+            propertiesUI:addChild(propertyUI)
+        end
         local widget = node.widget
         if widget then
             if widget.getPropertyList then
-                local propertiesUI = Node({name = "properties", pos = {x = 1220, y = 60}})
                 local properties = widget:getPropertyList()
+                local propertyHeaderUI = self:label(0, currentRow * 20, "Widget Properties")
+                currentRow = currentRow + 1
+                propertiesUI:addChild(propertyHeaderUI)
                 for i, property in ipairs(properties) do
                     local inputValue
                     if property.nodeKeys then
@@ -201,17 +221,18 @@ function Editor:selectNode(node)
                             self:setSelectedNodeWidgetProperty(property.key, input)
                         end
                     end
-                    local propertyUI = Node({name = "input", pos = {x = 0, y = (i - 1) * 20}})
-                    local propertyText = Node({name = "text", type = "text", font = "editor", text = string.format("%s", property.name), pos = {x = 0, y = 0}, shadowOffset = 2, shadowAlpha = 0.8})
+                    local propertyUI = Node({name = "input", pos = {x = 0, y = currentRow * 20}})
+                    currentRow = currentRow + 1
+                    local propertyText = self:label(0, 0, property.name)
                     local propertyInput = self:input(150, 0, 200, property.type, inputValue, inputFunction)
                     self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property))
                     propertyUI:addChild(propertyText)
                     propertyUI:addChild(propertyInput)
                     propertiesUI:addChild(propertyUI)
                 end
-                self.UI:addChild(propertiesUI)
             end
         end
+        self.UI:addChild(propertiesUI)
     end
 end
 
@@ -329,6 +350,15 @@ end
 ---@param parentAlign Vector2 The new parental alignment value.
 function Editor:setSelectedNodeParentAlign(parentAlign)
     self:executeCommand(CommandNodeSetParentAlign(self.selectedNode, parentAlign))
+end
+
+
+
+---Sets a new value for the selected node property.
+---@param property string The property to be set.
+---@param value any? The value to be set for this property.
+function Editor:setSelectedNodeProperty(property, value)
+    self:executeCommand(CommandNodeSetProperty(self.selectedNode, property, value))
 end
 
 
@@ -500,6 +530,18 @@ end
 
 
 
+---Convenience function which creates an editor label.
+---@param x number The X coordinate of the label position.
+---@param y number The Y coordinate of the label position.
+---@param text string The text that should be written on the label.
+---@return Node
+function Editor:label(x, y, text)
+    local label = Node({name = "lb_" .. text, type = "text", font = "editor", text = text, pos = {x = x, y = y}, shadowOffset = 2, shadowAlpha = 0.8})
+    return label
+end
+
+
+
 ---Convenience function which creates an editor button.
 ---@param x number The X coordinate of the button position.
 ---@param y number The Y coordinate of the button position.
@@ -654,14 +696,6 @@ function Editor:load()
     for i, button in ipairs(buttons) do
         self.UI:addChild(button)
     end
-    local inputs = {
-        nodeName = self:input(750, 628, 200, "string", "", function(input) self:renameSelectedNode(input) end),
-    }
-    self:inputSetDisabled(inputs.nodeName, true)
-    for inputN, input in pairs(inputs) do
-        self.UI:addChild(input)
-        self.UI_INPUTS[inputN] = input
-    end
 end
 
 
@@ -727,10 +761,10 @@ function Editor:draw()
     self.uiTree:draw()
 
     -- Command buffer
-    local COMMAND_BUFFER_POS = Vec2(1400, 20)
+    local COMMAND_BUFFER_POS = Vec2(1220, 400)
     local COMMAND_BUFFER_ITEM_HEIGHT = 20
     self:drawShadowedText("Command Buffer", COMMAND_BUFFER_POS.x, COMMAND_BUFFER_POS.y)
-    local y = 50
+    local y = COMMAND_BUFFER_POS.y + 30
     for i, command in ipairs(self.commandHistory) do
         if #command > 0 then
             self:drawShadowedText("Transaction {", COMMAND_BUFFER_POS.x, y)
@@ -754,18 +788,16 @@ function Editor:draw()
     self:drawShadowedText("Node Align", 200, 780)
     self:drawShadowedText("Parent Align", 400, 780)
     self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 200, 870)
-    
+
     -- Widget properties
-    self:drawShadowedText("Node/Widget Properties", 600, 610)
-    self:drawShadowedText("Name:", 600, 630)
     if self.selectedNode then
         local widget = self.selectedNode.widget
         if widget then
             if not widget.getPropertyList then
-                self:drawShadowedText("This Widget does not support properties yet!", 600, 650)
+                self:drawShadowedText("This Widget does not support properties yet!", 1220, 30)
             end
         else
-            self:drawShadowedText("This Node does not have a widget.", 600, 650)
+            self:drawShadowedText("This Node does not have a widget.", 1220, 30)
         end
     end
 
