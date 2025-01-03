@@ -155,7 +155,23 @@ function EditorUITree:draw()
         elseif line.node:isControlled() then
             color = _COLORS.lightPurple
         end
-        self.editor:drawShadowedText(string.format("%s {%s}", line.node.name, line.node.type), x, y, color)
+        local image = _IMAGES.widget_none
+        if line.node.type == "box" then
+            image = _IMAGES.widget_box
+        elseif line.node.type == "button" then
+            image = _IMAGES.widget_button
+        elseif line.node.type == "canvas" then
+            image = _IMAGES.widget_canvas
+        elseif line.node.type == "9sprite" then
+            image = _IMAGES.widget_ninesprite
+        elseif line.node.type == "text" then
+            image = _IMAGES.widget_text
+        elseif line.node.type == "@titleDigit" then
+            image = _IMAGES.widget_titledigit
+        end
+        love.graphics.setColor(1, 1, 1)
+        image:draw(Vec2(x, y))
+        self.editor:drawShadowedText(line.node.name, x + 25, y, color)
         -- If dragged over, additional signs will be shown.
         if self.dragOrigin and not self.dragSnap and line.node ~= self.editor.selectedNode and line.node == self.editor.hoveredNode then
             if self.hoverTop then

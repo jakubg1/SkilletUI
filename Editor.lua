@@ -181,7 +181,7 @@ function Editor:selectNode(node)
         local widget = node.widget
         if widget then
             if widget.getPropertyList then
-                local propertiesUI = Node({name = "properties", pos = {x = 600, y = 648}})
+                local propertiesUI = Node({name = "properties", pos = {x = 1220, y = 60}})
                 local properties = widget:getPropertyList()
                 for i, property in ipairs(properties) do
                     local inputValue
@@ -201,7 +201,7 @@ function Editor:selectNode(node)
                             self:setSelectedNodeWidgetProperty(property.key, input)
                         end
                     end
-                    local propertyUI = Node({name = "input", type = "none", pos = {x = 0, y = (i - 1) * 20}})
+                    local propertyUI = Node({name = "input", pos = {x = 0, y = (i - 1) * 20}})
                     local propertyText = Node({name = "text", type = "text", font = "editor", text = string.format("%s", property.name), pos = {x = 0, y = 0}, shadowOffset = 2, shadowAlpha = 0.8})
                     local propertyInput = self:input(150, 0, 200, property.type, inputValue, inputFunction)
                     self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property))

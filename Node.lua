@@ -21,7 +21,7 @@ function Node:new(data, parent)
     self.parent = parent
 
     self.name = data.name
-    self.type = data.type
+    self.type = data.type or "none"
     self.pos = Vec2(data.pos)
     self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
     self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)

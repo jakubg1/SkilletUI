@@ -2,6 +2,7 @@ _Utils = require("com.utils")
 
 local Vec2 = require("Vector2")
 local Color = require("Color")
+local Image = require("Image")
 local NineImage = require("NineImage")
 local MainCanvas = require("MainCanvas")
 local GridBackground = require("GridBackground")
@@ -17,7 +18,7 @@ love.graphics.setBackgroundColor(0.3, 0.5, 0.8)
 _VEC2S_PER_FRAME = 0
 _WINDOW_SIZE = Vec2(1600, 900)
 _CANVAS_SIZE = Vec2(960, 540)
-_CANVAS_OFFSET = Vec2(320, 40)
+_CANVAS_OFFSET = Vec2(220, 40)
 _MousePos = Vec2()
 _MouseCPos = Vec2()
 
@@ -36,7 +37,14 @@ _IMAGES = {
 	ed_button_click = NineImage(love.graphics.newImage("resources/ed_button_click.png"), 2, 3, 2, 3),
 	ed_input = NineImage(love.graphics.newImage("resources/ed_input.png"), 2, 3, 2, 3),
 	ed_input_hover = NineImage(love.graphics.newImage("resources/ed_input_hover.png"), 2, 3, 2, 3),
-	ed_input_disabled = NineImage(love.graphics.newImage("resources/ed_input_disabled.png"), 2, 3, 2, 3)
+	ed_input_disabled = NineImage(love.graphics.newImage("resources/ed_input_disabled.png"), 2, 3, 2, 3),
+	widget_box = Image(love.graphics.newImage("resources/widget_box.png")),
+	widget_button = Image(love.graphics.newImage("resources/widget_button.png")),
+	widget_canvas = Image(love.graphics.newImage("resources/widget_canvas.png")),
+	widget_ninesprite = Image(love.graphics.newImage("resources/widget_ninesprite.png")),
+	widget_none = Image(love.graphics.newImage("resources/widget_none.png")),
+	widget_text = Image(love.graphics.newImage("resources/widget_text.png")),
+	widget_titledigit = Image(love.graphics.newImage("resources/widget_titledigit.png"))
 }
 _COLORS = {
 	white = Color(1, 1, 1),
