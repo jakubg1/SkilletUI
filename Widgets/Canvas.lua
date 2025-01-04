@@ -73,4 +73,17 @@ end
 
 
 
+---Returns the Canvas's data to be used for loading later.
+---@return table
+function Canvas:serialize()
+    local data = {}
+
+    data.size = {x = self.size.x, y = self.size.y}
+    data.canvasSize = {x = self.canvasSize.x, y = self.canvasSize.y}
+
+    return data
+end
+
+
+
 return Canvas

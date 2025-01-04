@@ -27,18 +27,19 @@ function Text:new(node, data)
     self.text = data.text or ""
     self.scale = data.scale or 1
     self.color = Color(data.color)
-    self.shadowOffset = data.shadowOffset and (type(data.shadowOffset) == "number" and Vec2(data.shadowOffset) or Vec2(data.shadowOffset.x, data.shadowOffset.y))
+    local so = data.shadowOffset
+    self.shadowOffset = so and (type(so) == "number" and Vec2(so) or Vec2(so.x, so.y))
     self.shadowAlpha = data.shadowAlpha or 0.5
 
+    self.waveAmplitude = data.waveAmplitude
+    self.waveFrequency = data.waveFrequency
+    self.waveSpeed = data.waveSpeed
+
+    self.gradientWaveColor = data.gradientWaveColor and Color(data.gradientWaveColor)
+    self.gradientWaveFrequency = data.gradientWaveFrequency
+    self.gradientWaveSpeed = data.gradientWaveSpeed
+
     self.time = 0
-
-    self.waveAmplitude = data.wave and data.wave.amplitude
-    self.waveFrequency = data.wave and data.wave.frequency
-    self.waveSpeed = data.wave and data.wave.speed
-
-    self.gradientWaveColor = data.gradientWave and Color(data.gradientWave.color)
-    self.gradientWaveFrequency = data.gradientWave and data.gradientWave.frequency
-    self.gradientWaveSpeed = data.gradientWave and data.gradientWave.speed
 end
 
 
@@ -132,6 +133,31 @@ function Text:draw()
         love.graphics.print(chr, math.floor(pos.x + x + 0.5), math.floor(pos.y + y + 0.5), 0, self.scale)
         x = x + w
     end
+end
+
+
+
+---Returns the Text's data to be used for loading later.
+---@return table
+function Text:serialize()
+    local data = {}
+
+    data.font = _FONT_LOOKUP[self.font]
+    data.text = self.text
+    data.scale = self.scale
+    data.color = {r = self.color.r, g = self.color.g, b = self.color.b}
+    data.shadowOffset = self.shadowOffset and {x = self.shadowOffset.x, y = self.shadowOffset.y}
+    data.shadowAlpha = self.shadowAlpha
+
+    data.waveAmplitude = self.waveAmplitude
+    data.waveFrequency = self.waveFrequency
+    data.waveSpeed = self.waveSpeed
+
+    data.gradientWaveColor = self.gradientWaveColor and {r = self.gradientWaveColor.r, g = self.gradientWaveColor.g, b = self.gradientWaveColor.b}
+    data.gradientWaveFrequency = self.gradientWaveFrequency
+    data.gradientWaveSpeed = self.gradientWaveSpeed
+
+    return data
 end
 
 

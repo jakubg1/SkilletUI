@@ -1,15 +1,16 @@
 local class = require "com.class"
 
 ---@class Image
----@overload fun(image):Image
+---@overload fun(path):Image
 local Image = class:derive("Image")
 
 
 
 ---Creates a new Image.
----@param image love.Texture The image to be used for this Image.
-function Image:new(image)
-    self.image = image
+---@param path string The path to the image to be used for this Image.
+function Image:new(path)
+    self.path = path
+    self.image = love.graphics.newImage(path)
 end
 
 

@@ -530,13 +530,21 @@ end
 
 
 
+---Saves the current scene to a file.
+---@param name string The file name.
+function Editor:save(name)
+    _Utils.saveJson(name .. ".json", _UI:serialize())
+end
+
+
+
 ---Convenience function which creates an editor label.
 ---@param x number The X coordinate of the label position.
 ---@param y number The Y coordinate of the label position.
 ---@param text string The text that should be written on the label.
 ---@return Node
 function Editor:label(x, y, text)
-    local label = Node({name = "lb_" .. text, type = "text", font = "editor", text = text, pos = {x = x, y = y}, shadowOffset = 2, shadowAlpha = 0.8})
+    local label = Node({name = "lb_" .. text, type = "text", widget = {font = "editor", text = text, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x = x, y = y}})
     return label
 end
 
@@ -551,7 +559,7 @@ end
 ---@param key string? The key which will activate this button.
 ---@return Node
 function Editor:button(x, y, w, text, fn, key)
-    local button = Node({name = "btn_" .. text, type = "9sprite", image = "ed_button", clickImage = "ed_button_click", shortcut = key, pos = {x = x, y = y}, size = {x = w, y = 20}, scale = 2, children = {{name = "$text", type = "text", font = "default", text = text, pos = {x = 0, y = -1}, align = "center", parentAlign = "center", color = _COLORS.black}}})
+    local button = Node({name = "btn_" .. text, type = "9sprite", widget = {image = "ed_button", clickImage = "ed_button_click", size = {x = w, y = 20}, scale = 2}, shortcut = key, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = text, color = _COLORS.black}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
     button:setOnClick(fn)
     return button
 end
@@ -569,9 +577,9 @@ end
 function Editor:input(x, y, w, type, value, fn)
     local input
     if type ~= "color" then
-        input = Node({name = "inp_" .. type, type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$text", type = "text", font = "default", text = tostring(value), pos = {x = 4, y = -1}, align = "left", parentAlign = "left", color = _COLORS.white}}})
+        input = Node({name = "inp_" .. type, type = "9sprite", widget = {image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", size = {x = w, y = 20}}, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = tostring(value), color = _COLORS.white}, pos = {x = 4, y = -1}, align = "left", parentAlign = "left"}}})
     else
-        input = Node({name = "inp_" .. type, type = "9sprite", image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", pos = {x = x, y = y}, size = {x = w, y = 20}, children = {{name = "$color", type = "box", color = value, pos = {x = 0, y = -1}, size = {x = w - 2, y = 18}, align = "center", parentAlign = "center"}}})
+        input = Node({name = "inp_" .. type, type = "9sprite", widget = {image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", size = {x = w, y = 20}}, pos = {x = x, y = y}, children = {{name = "$color", type = "box", widget = {color = value, size = {x = w - 2, y = 18}}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
     end
     input:setOnClick(function() self:askForInput(input, type) end)
     input._onChange = fn
@@ -670,8 +678,8 @@ function Editor:load()
         self:button(UTILITY_X, UTILITY_Y + 40, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
         self:button(UTILITY_X, UTILITY_Y + 60, 150, "Undo [Ctrl+Z]", function() self:undoLastCommand() end),
         self:button(UTILITY_X, UTILITY_Y + 80, 150, "Redo [Ctrl+Y]", function() self:redoLastCommand() end),
-        self:button(UTILITY_X, UTILITY_Y + 130, 75, "Box", function() self:addNode(Node({name = "NewNode", type = "box", size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}})) end),
-        self:button(UTILITY_X + 75, UTILITY_Y + 130, 75, "Text", function() self:addNode(Node({name = "NewNode", type = "text", font = "standard", text = "You can't change me!"})) end),
+        self:button(UTILITY_X, UTILITY_Y + 130, 75, "Box", function() self:addNode(Node({name = "NewNode", type = "box", widget = {size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}}})) end),
+        self:button(UTILITY_X + 75, UTILITY_Y + 130, 75, "Text", function() self:addNode(Node({name = "NewNode", type = "text", widget = {font = "standard", text = "You can't change me!"}})) end),
 
         self:button(ALIGN_X, ALIGN_Y, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
         self:button(ALIGN_X + 30, ALIGN_Y, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
@@ -710,7 +718,7 @@ function Editor:update(dt)
 	if self.selectedNode and self.nodeDragOrigin then
 		local movement = _MouseCPos - self.nodeDragOrigin
 		if self.nodeDragSnap then
-			if movement:len() >= 2 then
+			if movement:len() >= 5 then
                 self.nodeDragSnap = false
 			end
 		else
@@ -917,6 +925,8 @@ function Editor:keypressed(key)
         self:moveSelectedNodeToTop()
     elseif key == "pagedown" and _IsShiftPressed() then
         self:moveSelectedNodeToBottom()
+    elseif key == "s" and _IsCtrlPressed() then
+        self:save("ui_test")
     elseif key == "z" and _IsCtrlPressed() then
         self:undoLastCommand()
     elseif key == "y" and _IsCtrlPressed() then

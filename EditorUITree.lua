@@ -19,6 +19,7 @@ function EditorUITree:new(editor)
     self.editor = editor
 
     self.POS = Vec2(5, 120)
+    self.SIZE = Vec2(200, 350)
     self.ITEM_HEIGHT = 20
     self.ITEM_MARGIN = 8
 
@@ -30,18 +31,28 @@ end
 
 
 
+---Returns the Y coordinate of the n-th entry in the tree (starting from 1) on the screen. Does not take the position of the tree itself!
+---@param n integer The item index.
+---@return number
+function EditorUITree:getItemY(n)
+    return self.ITEM_HEIGHT * (n - 1) + 5
+end
+
+
+
 ---Returns the hovered UI node in the tree, if one exists.
 ---@return Node?
 function EditorUITree:getHoveredNode()
     self.hoverTop = false
     self.hoverBottom = false
     for i, entry in ipairs(self.editor.uiTreeInfo) do
-        if _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, self.ITEM_HEIGHT * i), Vec2(200, self.ITEM_HEIGHT)) then
+        local y = self:getItemY(i)
+        if _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, y), Vec2(self.SIZE.x, self.ITEM_HEIGHT)) then
             self.editor.isNodeHoverIndirect = true
             -- Additional checks for specific parts of the entry. Used for node dragging so that you can drag in between the entries.
-            if _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, self.ITEM_HEIGHT * i), Vec2(200, self.ITEM_MARGIN)) then
+            if _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, y), Vec2(self.SIZE.x, self.ITEM_MARGIN)) then
                 self.hoverTop = true
-            elseif _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, self.ITEM_HEIGHT * i + self.ITEM_HEIGHT - self.ITEM_MARGIN), Vec2(200, self.ITEM_MARGIN)) then
+            elseif _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, y + self.ITEM_HEIGHT - self.ITEM_MARGIN), Vec2(self.SIZE.x, self.ITEM_MARGIN)) then
                 self.hoverBottom = true
             end
             return entry.node
@@ -141,10 +152,16 @@ end
 
 ---Draws the Editor UI tree.
 function EditorUITree:draw()
+    -- Background
+    love.graphics.setColor(0, 0, 0, 0.3)
+    love.graphics.rectangle("fill", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
+    love.graphics.setColor(0.5, 0.75, 1)
+    love.graphics.rectangle("line", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
+
     -- Node tree
     for i, line in ipairs(self.editor.uiTreeInfo) do
         local x = self.POS.x + 30 * line.indent
-        local y = self.POS.y + self.ITEM_HEIGHT * i
+        local y = self.POS.y + self:getItemY(i)
         local color = _COLORS.white
         if line.node == self.editor.selectedNode then
             color = _COLORS.cyan
@@ -177,7 +194,7 @@ function EditorUITree:draw()
             if self.hoverTop then
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.setLineWidth(2)
-                love.graphics.line(x, y, self.POS.x + 200, y)
+                love.graphics.line(x, y, self.POS.x + self.SIZE.x, y)
             elseif self.hoverBottom then
                 -- Indent the line if this node has children.
                 if line.node:hasChildren() then
@@ -185,11 +202,11 @@ function EditorUITree:draw()
                 end
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.setLineWidth(2)
-                love.graphics.line(x, y + self.ITEM_HEIGHT, self.POS.x + 200, y + self.ITEM_HEIGHT)
+                love.graphics.line(x, y + self.ITEM_HEIGHT, self.POS.x + self.SIZE.x, y + self.ITEM_HEIGHT)
             else
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.setLineWidth(2)
-                love.graphics.rectangle("line", self.POS.x, y, 200, self.ITEM_HEIGHT)
+                love.graphics.rectangle("line", self.POS.x, y, self.SIZE.x, self.ITEM_HEIGHT)
             end
         end
     end

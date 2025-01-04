@@ -1,19 +1,20 @@
 local class = require "com.class"
 
 ---@class NineImage
----@overload fun(image, x1, x2, y1, y2):NineImage
+---@overload fun(path, x1, x2, y1, y2):NineImage
 local NineImage = class:derive("NineImage")
 
 
 
 ---Creates a new NineImage.
----@param image love.Texture The image to be used as a base for this NineImage.
+---@param path string The path to the image to be used as a base for this NineImage.
 ---@param x1 number The first vertical bar position, in pixels.
 ---@param x2 number The second vertical bar position, in pixels.
 ---@param y1 number The first horizontal bar position, in pixels.
 ---@param y2 number The second horizontal bar position, in pixels.
-function NineImage:new(image, x1, x2, y1, y2)
-    self.image = image
+function NineImage:new(path, x1, x2, y1, y2)
+    self.path = path
+    self.image = love.graphics.newImage(path)
     self.x1 = x1
     self.x2 = x2
     self.y1 = y1
@@ -23,19 +24,19 @@ function NineImage:new(image, x1, x2, y1, y2)
     self.cx = x2 - x1
     self.cy = y2 - y1
     -- Size of bottom right piece
-    self.brx = image:getWidth() - x2
-    self.bry = image:getHeight() - y2
+    self.brx = self.image:getWidth() - x2
+    self.bry = self.image:getHeight() - y2
 
     self.pieces = {
-        top_left = love.graphics.newQuad(0, 0, x1, y1, image),
-        top = love.graphics.newQuad(x1, 0, self.cx, y1, image),
-        top_right = love.graphics.newQuad(x2, 0, self.brx, y1, image),
-        left = love.graphics.newQuad(0, y1, x1, self.cy, image),
-        center = love.graphics.newQuad(x1, y1, self.cx, self.cy, image),
-        right = love.graphics.newQuad(x2, y1, self.brx, self.cy, image),
-        bottom_left = love.graphics.newQuad(0, y2, x1, self.bry, image),
-        bottom = love.graphics.newQuad(x1, y2, self.cx, self.bry, image),
-        bottom_right = love.graphics.newQuad(x2, y2, self.brx, self.bry, image)
+        top_left = love.graphics.newQuad(0, 0, x1, y1, self.image),
+        top = love.graphics.newQuad(x1, 0, self.cx, y1, self.image),
+        top_right = love.graphics.newQuad(x2, 0, self.brx, y1, self.image),
+        left = love.graphics.newQuad(0, y1, x1, self.cy, self.image),
+        center = love.graphics.newQuad(x1, y1, self.cx, self.cy, self.image),
+        right = love.graphics.newQuad(x2, y1, self.brx, self.cy, self.image),
+        bottom_left = love.graphics.newQuad(0, y2, x1, self.bry, self.image),
+        bottom = love.graphics.newQuad(x1, y2, self.cx, self.bry, self.image),
+        bottom_right = love.graphics.newQuad(x2, y2, self.brx, self.bry, self.image)
     }
 end
 

@@ -12,7 +12,7 @@ local Node = require("Node")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 love.graphics.setLineStyle("rough")
-love.graphics.setBackgroundColor(0.3, 0.5, 0.8)
+love.graphics.setBackgroundColor(0.2, 0.5, 0.9)
 
 -- Globals
 _VEC2S_PER_FRAME = 0
@@ -29,23 +29,25 @@ _FONTS = {
 	editor = love.graphics.newFont(16),
 	standard = love.graphics.newImageFont("resources/standard.png", _FONT_CHARACTERS, 1)
 }
+_FONT_LOOKUP = {}
 _IMAGES = {
-	button = NineImage(love.graphics.newImage("resources/button.png"), 2, 3, 3, 4),
-	button_hover = NineImage(love.graphics.newImage("resources/button_hover.png"), 2, 3, 3, 4),
-	button_click = NineImage(love.graphics.newImage("resources/button_click.png"), 2, 3, 3, 4),
-	ed_button = NineImage(love.graphics.newImage("resources/ed_button.png"), 2, 3, 2, 3),
-	ed_button_click = NineImage(love.graphics.newImage("resources/ed_button_click.png"), 2, 3, 2, 3),
-	ed_input = NineImage(love.graphics.newImage("resources/ed_input.png"), 2, 3, 2, 3),
-	ed_input_hover = NineImage(love.graphics.newImage("resources/ed_input_hover.png"), 2, 3, 2, 3),
-	ed_input_disabled = NineImage(love.graphics.newImage("resources/ed_input_disabled.png"), 2, 3, 2, 3),
-	widget_box = Image(love.graphics.newImage("resources/widget_box.png")),
-	widget_button = Image(love.graphics.newImage("resources/widget_button.png")),
-	widget_canvas = Image(love.graphics.newImage("resources/widget_canvas.png")),
-	widget_ninesprite = Image(love.graphics.newImage("resources/widget_ninesprite.png")),
-	widget_none = Image(love.graphics.newImage("resources/widget_none.png")),
-	widget_text = Image(love.graphics.newImage("resources/widget_text.png")),
-	widget_titledigit = Image(love.graphics.newImage("resources/widget_titledigit.png"))
+	button = NineImage("resources/button.png", 2, 3, 3, 4),
+	button_hover = NineImage("resources/button_hover.png", 2, 3, 3, 4),
+	button_click = NineImage("resources/button_click.png", 2, 3, 3, 4),
+	ed_button = NineImage("resources/ed_button.png", 2, 3, 2, 3),
+	ed_button_click = NineImage("resources/ed_button_click.png", 2, 3, 2, 3),
+	ed_input = NineImage("resources/ed_input.png", 2, 3, 2, 3),
+	ed_input_hover = NineImage("resources/ed_input_hover.png", 2, 3, 2, 3),
+	ed_input_disabled = NineImage("resources/ed_input_disabled.png", 2, 3, 2, 3),
+	widget_box = Image("resources/widget_box.png"),
+	widget_button = Image("resources/widget_button.png"),
+	widget_canvas = Image("resources/widget_canvas.png"),
+	widget_ninesprite = Image("resources/widget_ninesprite.png"),
+	widget_none = Image("resources/widget_none.png"),
+	widget_text = Image("resources/widget_text.png"),
+	widget_titledigit = Image("resources/widget_titledigit.png")
 }
+_IMAGE_LOOKUP = {}
 _COLORS = {
 	white = Color(1, 1, 1),
 	gray = Color(0.5, 0.5, 0.5),
@@ -78,6 +80,17 @@ _EDITOR = Editor()
 
 
 
+function _PrepareResourceLookups()
+	for fontName, font in pairs(_FONTS) do
+		_FONT_LOOKUP[font] = fontName
+	end
+	for imageName, image in pairs(_IMAGES) do
+		_IMAGE_LOOKUP[image] = imageName
+	end
+end
+
+
+
 function _IsCtrlPressed()
 	return love.keyboard.isDown("lctrl", "rctrl")
 end
@@ -99,6 +112,7 @@ end
 
 function love.load()
 	love.window.setMode(_WINDOW_SIZE.x, _WINDOW_SIZE.y)
+	_PrepareResourceLookups()
 	_UI = _LoadUI("ui.json")
 	_UI:findChildByName("btn1"):setOnClick(function ()
 		if _TRANSITION.state then

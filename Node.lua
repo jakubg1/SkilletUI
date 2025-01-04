@@ -12,6 +12,15 @@ local NineSprite = require("Widgets.NineSprite")
 local Text = require("Widgets.Text")
 local TitleDigit = require("Widgets.TitleDigit")
 
+local CONSTRUCTORS = {
+    box = Box,
+    button = Button,
+    canvas = Canvas,
+    ["9sprite"] = NineSprite,
+    text = Text,
+    ["@titleDigit"] = TitleDigit
+}
+
 
 
 ---Creates a new UI Node.
@@ -28,45 +37,23 @@ function Node:new(data, parent)
         {name = "Alpha", key = "alpha", type = "number"}
     }
 
-    self.name = data.name
-    self.type = data.type or "none"
-    self.pos = Vec2(data.pos)
-    self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
-    self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
-    self.alpha = data.alpha or 1
-    self.shortcut = data.shortcut
-    self.canvasInputMode = data.canvasInputMode
+    self.name = "ERROR"
+    self.type = "none"
+    self.pos = Vec2()
+    self.align = _ALIGNMENTS["topLeft"]
+    self.parentAlign = _ALIGNMENTS["topLeft"]
+    self.alpha = 1
+    self.shortcut = nil
+    self.canvasInputMode = false
 
     self.clicked = false
     self.onClick = nil
     self.disabled = false
 
     self.children = {}
-    if data.children then
-    	for i, child in ipairs(data.children) do
-	    	table.insert(self.children, Node(child, self))
-	    end
-    end
     self.deleteIndex = nil
 
-    if data.type == "box" then
-        self.widget = Box(self, data)
-    elseif data.type == "button" then
-        self.isController = true
-        self.widget = Button(self, data)
-    elseif data.type == "canvas" then
-        -- Not supported. Canvases have a few problems:
-        -- - Debug drawing
-        -- - Drawing stuff other than UI on such canvas would be a problem
-        self.isCanvas = true
-        self.widget = Canvas(self, data)
-    elseif data.type == "9sprite" then
-        self.widget = NineSprite(self, data)
-    elseif data.type == "text" then
-        self.widget = Text(self, data)
-    elseif data.type == "@titleDigit" then
-        self.widget = TitleDigit(self, data)
-    end
+    self:deserialize(data)
 end
 
 
@@ -836,6 +823,69 @@ function Node:keypressed(key)
     end
     for i, child in ipairs(self.children) do
         child:keypressed(key)
+    end
+end
+
+
+
+---Returns Node's data to be used for loading later.
+---@return table
+function Node:serialize()
+    local data = {}
+
+    data.name = self.name
+    data.type = self.type
+    data.pos = {x = self.pos.x, y = self.pos.y}
+    data.align = {x = self.align.x, y = self.align.y}
+    data.parentAlign = {x = self.parentAlign.x, y = self.parentAlign.y}
+    data.alpha = self.alpha
+    data.shortcut = self.shortcut
+    data.canvasInputMode = self.canvasInputMode
+
+    data.widget = self.widget and self.widget:serialize()
+
+    data.children = {}
+    for i, child in ipairs(self.children) do
+        data.children[i] = child:serialize()
+    end
+
+    return data
+end
+
+
+
+---Loads Node data to this Node from a previously serialized table.
+---@param data table The data to be loaded.
+function Node:deserialize(data)
+    self.name = data.name
+    self.type = data.type or "none"
+    self.pos = Vec2(data.pos)
+    self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
+    self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
+    self.alpha = data.alpha or 1
+    self.shortcut = data.shortcut
+    self.canvasInputMode = data.canvasInputMode
+
+    if data.children then
+    	for i, child in ipairs(data.children) do
+	    	table.insert(self.children, Node(child, self))
+	    end
+    end
+
+    if self.type == "button" then
+        self.isController = true
+    end
+    if self.type == "canvas" then
+        -- Not supported. Canvases have a few problems:
+        -- - Debug drawing
+        -- - Drawing stuff other than UI on such canvas would be a problem
+        self.isCanvas = true
+    end
+
+    if self.type ~= "none" then
+        local success, result = pcall(function() return CONSTRUCTORS[data.type](self, data.widget) end)
+        assert(success, string.format("Node \"%s\": Could not make widget of type \"%s\": %s", self.name, self.type, result))
+        self.widget = result
     end
 end
 

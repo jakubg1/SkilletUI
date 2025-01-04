@@ -16,7 +16,8 @@ local Color = require("Color")
 function TitleDigit:new(node, data)
     self.node = node
 
-    self.shadowOffset = data.shadow and (type(data.shadow) == "number" and Vec2(data.shadow) or Vec2(1))
+    local so = data.shadowOffset
+    self.shadowOffset = so and (type(so) == "number" and Vec2(so) or Vec2(so.x, so.y))
 
     self.SIZE = Vec2(6, 7)
     self.MAIN_COLOR = Color(1, 0.8, 0)
@@ -167,6 +168,18 @@ function TitleDigit:draw()
         local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
         self:drawCube(cubePos2, angle, self.node.alpha)
     end
+end
+
+
+
+---Returns the TitleDigit's data to be used for loading later.
+---@return table
+function TitleDigit:serialize()
+    local data = {}
+
+    data.shadowOffset = self.shadowOffset and {x = self.shadowOffset.x, y = self.shadowOffset.y}
+
+    return data
 end
 
 

@@ -20,9 +20,9 @@ function Button:new(node, data)
 
     self.node = node
     self.textNode = self.node:findChildByName("text")
-    assert(self.textNode, string.format("Error in Button \"%s\": This Compound Widget must have a child Node with a Text Widget named \"text\" to work!", data.name))
+    assert(self.textNode, string.format("Error in Button \"%s\": This Compound Widget must have a child Node with a Text Widget named \"text\" to work!", self.node.name))
     self.spriteNode = self.node:findChildByName("sprite")
-    assert(self.spriteNode, string.format("Error in Button \"%s\": This Compound Widget must have a child Node with a Sprite Widget named \"sprite\" to work!", data.name))
+    assert(self.spriteNode, string.format("Error in Button \"%s\": This Compound Widget must have a child Node with a Sprite Widget named \"sprite\" to work!", self.node.name))
 end
 
 
@@ -69,6 +69,14 @@ end
 
 ---Draws the Button on the screen.
 function Button:draw()
+    -- no-op
+end
+
+
+
+---Returns the Button's data to be used for loading later.
+---@return nil
+function Button:serialize()
     -- no-op
 end
 

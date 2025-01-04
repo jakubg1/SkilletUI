@@ -30,7 +30,8 @@ function NineSprite:new(node, data)
     self.disabledImage = data.disabledImage and _IMAGES[data.disabledImage]
     self.size = Vec2(data.size)
     self.scale = data.scale or 1
-    self.shadowOffset = data.shadowOffset and (type(data.shadowOffset) == "number" and Vec2(data.shadowOffset) or Vec2(data.shadowOffset.x, data.shadowOffset.y))
+    local so = data.shadowOffset
+    self.shadowOffset = so and (type(so) == "number" and Vec2(so) or Vec2(so.x, so.y))
     self.shadowAlpha = data.shadowAlpha or 0.5
 end
 
@@ -94,6 +95,25 @@ function NineSprite:draw()
     end
     love.graphics.setColor(1, 1, 1, self.node.alpha)
     image:draw(pos, self.size, self.scale)
+end
+
+
+
+---Returns the NineSprite's data to be used for loading later.
+---@return table
+function NineSprite:serialize()
+    local data = {}
+
+    data.image = _IMAGE_LOOKUP[self.image]
+    data.hoverImage = self.hoverImage and _IMAGE_LOOKUP[self.hoverImage]
+    data.clickImage = self.clickImage and _IMAGE_LOOKUP[self.clickImage]
+    data.disabledImage = self.disabledImage and _IMAGE_LOOKUP[self.disabledImage]
+    data.size = {x = self.size.x, y = self.size.y}
+    data.scale = self.scale
+    data.shadowOffset = self.shadowOffset and {x = self.shadowOffset.x, y = self.shadowOffset.y}
+    data.shadowAlpha = self.shadowAlpha
+
+    return data
 end
 
 
