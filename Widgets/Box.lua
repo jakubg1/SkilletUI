@@ -15,13 +15,19 @@ local Color = require("Color")
 function Box:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Size", key = "size", type = "Vector2"},
-        {name = "Color", key = "color", type = "color"}
+        {name = "Color", key = "color", type = "color"},
+        {name = "Alpha", key = "alpha", type = "number"},
+        {name = "Border Color", key = "borderColor", type = "color"},
+        {name = "Border Alpha", key = "borderAlpha", type = "number"}
     }
 
     self.node = node
 
-    self.size = Vec2(data.size)
-    self.color = Color(data.color)
+    self.size = Vec2(data.size) or Vec2(10)
+    self.color = Color(data.color) or _COLORS.white
+    self.alpha = data.alpha or 1
+    self.borderColor = data.borderColor and Color(data.borderColor)
+    self.borderAlpha = data.borderAlpha or 1
 end
 
 
@@ -61,8 +67,15 @@ end
 ---Draws the Box on the screen.
 function Box:draw()
     local pos = self.node:getGlobalPos()
-    love.graphics.setColor(self.color.r, self.color.g, self.color.b, self.node.alpha)
-    love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, self.size.x, self.size.y)
+    if self.color then
+        love.graphics.setColor(self.color.r, self.color.g, self.color.b, self.alpha)
+        love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, self.size.x, self.size.y)
+    end
+    if self.borderColor then
+        love.graphics.setColor(self.borderColor.r, self.borderColor.g, self.borderColor.b, self.borderAlpha)
+        love.graphics.setLineWidth(1)
+        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, self.size.x - 0.5, self.size.y - 0.5)
+    end
 end
 
 
@@ -74,6 +87,9 @@ function Box:serialize()
 
     data.size = {x = self.size.x, y = self.size.y}
     data.color = {r = self.color.r, g = self.color.g, b = self.color.b}
+    data.alpha = self.alpha
+    data.borderColor = self.borderColor and {r = self.borderColor.r, g = self.borderColor.g, b = self.borderColor.b}
+    data.borderAlpha = self.borderAlpha
 
     return data
 end

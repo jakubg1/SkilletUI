@@ -167,10 +167,9 @@ end
 
 
 
----Marks the provided node as selected and updates all UI in order to facilitate editing its properties.
----@param node Node? The node to be selected. If not provided, all nodes will be deselected.
-function Editor:selectNode(node)
-    self.selectedNode = node
+---Clears and regenerates the UI for given node's properties.
+---@param node Node The Node to generate property UI for.
+function Editor:generateNodePropertyUI(node)
     -- Clear all properties.
     local previousPropertiesUI = self.UI:findChildByName("properties")
     if previousPropertiesUI then
@@ -240,6 +239,15 @@ function Editor:selectNode(node)
         end
         self.UI:addChild(propertiesUI)
     end
+end
+
+
+
+---Marks the provided node as selected and updates all UI in order to facilitate editing its properties.
+---@param node Node? The node to be selected. If not provided, all nodes will be deselected.
+function Editor:selectNode(node)
+    self.selectedNode = node
+    self:generateNodePropertyUI(node)
 end
 
 
@@ -589,52 +597,52 @@ end
 ---@param fn function? The function that will be executed when the value has been changed. The parameter will be the new text.
 ---@return Node
 function Editor:input(x, y, w, type, value, fn)
-    local input
-    if not value then
-        input = Node({name = "inp_" .. type, type = "9sprite", widget = {image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", size = {x = w, y = 20}}, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = "<none>", color = _COLORS.gray}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
-    elseif type ~= "color" then
-        input = Node({name = "inp_" .. type, type = "9sprite", widget = {image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", size = {x = w, y = 20}}, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = tostring(value), color = _COLORS.white}, pos = {x = 4, y = -1}, align = "left", parentAlign = "left"}}})
-    else
-        input = Node({name = "inp_" .. type, type = "9sprite", widget = {image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", size = {x = w, y = 20}}, pos = {x = x, y = y}, children = {{name = "$color", type = "box", widget = {color = value, size = {x = w - 2, y = 18}}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
-    end
+    local data = {
+        name = "inp_" .. type,
+        type = "input_text",
+        pos = {x = x, y = y},
+        children = {
+            {
+                name = "text",
+                type = "text",
+                widget = {
+                    font = "default",
+                    color = _COLORS.white
+                },
+                pos = {x = 4, y = -1},
+                align = "left",
+                parentAlign = "left"
+            },
+            {
+                name = "color",
+                type = "box",
+                invisible = true,
+                widget = {
+                    color = _COLORS.white,
+                    size = {x = w - 2, y = 18}
+                },
+                pos = {x = 0, y = -1},
+                align = "center",
+                parentAlign = "center"
+            },
+            {
+                name = "sprite",
+                type = "9sprite",
+                widget = {
+                    image = "ed_input",
+                    hoverImage = "ed_input_hover",
+                    disabledImage = "ed_input_disabled",
+                    size = {x = w, y = 20}
+                },
+                pos = {x = 0, y = 0}
+            }
+        }
+    }
+    local input = Node(data)
+    input.widget:setValue(value)
     input:setOnClick(function() self:askForInput(input, type) end)
     input._onChange = fn
     return input
-end
-
-
-
----Returns the value of an editor input field.
----@param node Node The editor input field.
----@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
----@return string|number|Color?
-function Editor:inputGetValue(node, type)
-    if type == "string" then
-        return node:findChildByName("$text"):getText()
-    elseif type == "number" then
-        return tonumber(node:findChildByName("$text"):getText())
-    elseif type == "color" then
-        if not node:findChildByName("$color") then
-            return Color(1, 1, 1)
-        end
-        return node:findChildByName("$color"):getColor()
-    end
-end
-
-
-
----Sets the value of an editor input field.
----@param node Node The editor input field.
----@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
----@param value string|number|Color The value to be set.
-function Editor:inputSetValue(node, type, value)
-    if type == "string" then
-        node:findChildByName("$text"):setText(value)
-    elseif type == "number" then
-        node:findChildByName("$text"):setText(tostring(value))
-    elseif type == "color" then
-        node:findChildByName("$color"):setColor(value)
-    end
 end
 
 
@@ -644,10 +652,7 @@ end
 ---@param disabled boolean Whether the field should be disabled.
 function Editor:inputSetDisabled(node, disabled)
     node:setDisabled(disabled)
-    local textNode = node:findChildByName("$text")
-    if textNode then
-        textNode:setColor(disabled and _COLORS.gray or _COLORS.white)
-    end
+    node.widget:updateUI()
 end
 
 
@@ -657,7 +662,7 @@ end
 ---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
 function Editor:askForInput(input, type)
     self.activeInput = input
-    local value = self:inputGetValue(input, type)
+    local value = input.widget:getValue()
     self.INPUT_DIALOG:inputAsk(type, value)
 end
 
@@ -665,9 +670,8 @@ end
 
 ---Executed when an input has been submitted for a certain editor input field.
 ---@param result string|number|Color The value that has been submitted for this input.
----@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
-function Editor:onInputReceived(result, type)
-    self:inputSetValue(self.activeInput, type, result)
+function Editor:onInputReceived(result)
+    self.activeInput.widget:setValue(result)
     if self.activeInput._onChange then
         self.activeInput._onChange(result)
     end
@@ -706,7 +710,7 @@ function Editor:load()
         self:label(UTILITY_X, UTILITY_Y + 150, "New Widget:"),
         self:button(UTILITY_X, UTILITY_Y + 170, 100, "Box", function() self:addNode(Node({name = "NewNode", type = "box", widget = {size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}}})) end),
         self:button(UTILITY_X + 100, UTILITY_Y + 170, 100, "Text", function() self:addNode(Node({name = "NewNode", type = "text", widget = {font = "standard", text = "You can't change me!"}})) end),
-        
+
         self:label(ALIGN_X, ALIGN_Y - 20, "Node Align"),
         self:button(ALIGN_X, ALIGN_Y, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
         self:button(ALIGN_X + 30, ALIGN_Y, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
@@ -732,8 +736,8 @@ function Editor:load()
         self:label(ALIGN_X, ALIGN_Y + 70, "Ctrl+Click a node to make it a parent of the currently selected node"),
 
         self:label(FILE_X, FILE_Y, "File Name:"),
-        self:button(FILE_X + 270, FILE_Y, 100, "Save [Ctrl+S]", function() self:saveScene(self:inputGetValue(self.fileNameInput, "string")) end, {ctrl = true, key = "s"}),
-        self:button(FILE_X + 370, FILE_Y, 100, "Load [Ctrl+L]", function() self:loadScene(self:inputGetValue(self.fileNameInput, "string")) end, {ctrl = true, key = "l"})
+        self:button(FILE_X + 270, FILE_Y, 100, "Save [Ctrl+S]", function() self:saveScene(self.fileNameInput.widget:getValue()) end, {ctrl = true, key = "s"}),
+        self:button(FILE_X + 370, FILE_Y, 100, "Load [Ctrl+L]", function() self:loadScene(self.fileNameInput.widget:getValue()) end, {ctrl = true, key = "l"})
     }
     for i, node in ipairs(nodes) do
         self.UI:addChild(node)
@@ -864,17 +868,19 @@ end
 ---@param y number The Y coordinate.
 ---@param color Color? The color to be used, white by default.
 ---@param backgroundColor Color? The background color to be used. No background by default.
-function Editor:drawShadowedText(text, x, y, color, backgroundColor)
+---@param alpha number? The text alpha, 1 by default.
+function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha)
     color = color or _COLORS.white
+    alpha = alpha or 1
     if backgroundColor then
         local w = love.graphics.getFont():getWidth(text)
         local h = love.graphics.getFont():getHeight()
-        love.graphics.setColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.5)
+        love.graphics.setColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.5 * alpha)
         love.graphics.rectangle("fill", x - 2, y - 2, w + 4, h + 4)
     end
-    love.graphics.setColor(0, 0, 0, 0.8)
+    love.graphics.setColor(0, 0, 0, 0.8 * alpha)
     love.graphics.print(text, x + 2, y + 2)
-    love.graphics.setColor(color.r, color.g, color.b)
+    love.graphics.setColor(color.r, color.g, color.b, alpha)
     love.graphics.print(text, x, y)
 end
 

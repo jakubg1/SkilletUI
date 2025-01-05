@@ -78,4 +78,10 @@ end
 
 
 
+function Color.getHex(o)
+	return string.format("#%02x%02x%02x", o.r * 255, o.g * 255, o.b * 255)
+end
+
+
+
 return Color

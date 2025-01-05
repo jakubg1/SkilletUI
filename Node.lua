@@ -8,6 +8,7 @@ local Vec2 = require("Vector2")
 local Box = require("Widgets.Box")
 local Button = require("Widgets.Button")
 local Canvas = require("Widgets.Canvas")
+local InputText = require("Widgets.InputText")
 local NineSprite = require("Widgets.NineSprite")
 local Text = require("Widgets.Text")
 local TitleDigit = require("Widgets.TitleDigit")
@@ -16,6 +17,7 @@ local CONSTRUCTORS = {
     box = Box,
     button = Button,
     canvas = Canvas,
+    input_text = InputText,
     ["9sprite"] = NineSprite,
     text = Text,
     ["@titleDigit"] = TitleDigit
@@ -34,7 +36,7 @@ function Node:new(data, parent)
         {name = "Position", key = "pos", type = "Vector2"},
         {name = "Align", key = "align", type = "Vector2"},
         {name = "Parent Align", key = "parentAlign", type = "Vector2"},
-        {name = "Alpha", key = "alpha", type = "number"}
+        {name = "Invisible", key = "invisible", type = "boolean"}
     }
 
     self.name = "ERROR"
@@ -42,7 +44,7 @@ function Node:new(data, parent)
     self.pos = Vec2()
     self.align = _ALIGNMENTS["topLeft"]
     self.parentAlign = _ALIGNMENTS["topLeft"]
-    self.alpha = 1
+    self.invisible = false
     self.shortcut = nil
     self.canvasInputMode = false
 
@@ -302,13 +304,35 @@ end
 
 
 
----Returns whether this Node is disabled.
+---Returns whether this Node or any of the Nodes up the tree is disabled.
 ---
 ---Disabled Nodes can still be hovered, but their `onClick` callbacks will not fire if the mouse button or a keyboard shortcut has been pressed.
 ---They can have their own graphics used in Widgets.
 ---@return boolean
 function Node:isDisabled()
+    if self.parent then
+        return self.parent:isDisabled() or self.disabled
+    end
     return self.disabled
+end
+
+
+
+---Sets whether this Node (and all its children!) should be invisible.
+---@param invisible boolean Whether this Node should be invisible, including all its children.
+function Node:setInvisible(invisible)
+    self.invisible = invisible
+end
+
+
+
+---Returns whether this Node is visible, i.e. none of either this or all Nodes up the tree have the invisible flag set.
+---@return boolean
+function Node:isVisible()
+    if self.parent then
+        return self.parent:isVisible() and not self.invisible
+    end
+    return not self.invisible
 end
 
 
@@ -744,7 +768,11 @@ end
 --- - First, the node itself is drawn.
 --- - Then, its children are drawn in *reverse* order (from bottom to the top), so that the first entry in the hierarchy is the topmost one.
 --- - If any child has its own children, draw them immediately after that child has been drawn.
+---If the Node is invisible, the call immediately returns, resulting in neither this nor any children's widgets being drawn.
 function Node:draw()
+    if self.invisible then
+        return
+    end
     if not self.isCanvas then
         if self.widget then
             self.widget:draw()
@@ -897,7 +925,7 @@ function Node:serialize()
     data.pos = {x = self.pos.x, y = self.pos.y}
     data.align = {x = self.align.x, y = self.align.y}
     data.parentAlign = {x = self.parentAlign.x, y = self.parentAlign.y}
-    data.alpha = self.alpha
+    data.invisible = self.invisible
     data.shortcut = self.shortcut
     data.canvasInputMode = self.canvasInputMode
 
@@ -921,7 +949,7 @@ function Node:deserialize(data)
     self.pos = Vec2(data.pos)
     self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
     self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
-    self.alpha = data.alpha or 1
+    self.invisible = data.invisible or false
     self.shortcut = data.shortcut
     self.canvasInputMode = data.canvasInputMode
 
@@ -931,7 +959,7 @@ function Node:deserialize(data)
 	    end
     end
 
-    if self.type == "button" then
+    if self.type == "button" or self.type == "input_text" then
         self.isController = true
     end
     if self.type == "canvas" then

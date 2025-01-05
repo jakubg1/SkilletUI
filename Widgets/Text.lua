@@ -17,6 +17,7 @@ function Text:new(node, data)
         {name = "Text", key = "text", type = "string"},
         {name = "Scale", key = "scale", type = "number"},
         {name = "Color", key = "color", type = "color"},
+        {name = "Alpha", key = "alpha", type = "number"},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2"},
         {name = "Shadow Alpha", key = "shadowAlpha", type = "number"},
         {name = "Wave Amplitude", key = "waveAmplitude", type = "number"},
@@ -33,6 +34,7 @@ function Text:new(node, data)
     self.text = data.text or ""
     self.scale = data.scale or 1
     self.color = Color(data.color)
+    self.alpha = data.alpha or 1
     self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
     self.shadowAlpha = data.shadowAlpha or 0.5
 
@@ -123,10 +125,10 @@ function Text:draw()
         end
 
         if self.shadowOffset then
-            love.graphics.setColor(0, 0, 0, self.node.alpha * self.shadowAlpha)
+            love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
             love.graphics.print(chr, math.floor(pos.x + self.shadowOffset.x + x + 0.5), math.floor(pos.y + self.shadowOffset.y + y + 0.5), 0, self.scale)
         end
-        love.graphics.setColor(color.r, color.g, color.b, self.node.alpha)
+        love.graphics.setColor(color.r, color.g, color.b, self.alpha)
         love.graphics.print(chr, math.floor(pos.x + x + 0.5), math.floor(pos.y + y + 0.5), 0, self.scale)
         x = x + w
     end
@@ -143,6 +145,7 @@ function Text:serialize()
     data.text = self.text
     data.scale = self.scale
     data.color = {r = self.color.r, g = self.color.g, b = self.color.b}
+    data.alpha = self.alpha
     data.shadowOffset = self.shadowOffset and {x = self.shadowOffset.x, y = self.shadowOffset.y}
     data.shadowAlpha = self.shadowAlpha
 

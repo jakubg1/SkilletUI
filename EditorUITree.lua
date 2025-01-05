@@ -191,6 +191,12 @@ function EditorUITree:draw()
         elseif line.node == self.editor.hoveredNode then
             bgColor = _COLORS.yellow
         end
+        local alpha = 1
+        if line.node.invisible then
+            alpha = 0.5
+        elseif not line.node:isVisible() then
+            alpha = 0.75
+        end
         local image = _IMAGES.widget_none
         if line.node.type == "box" then
             image = _IMAGES.widget_box
@@ -211,7 +217,7 @@ function EditorUITree:draw()
         end
         love.graphics.setColor(1, 1, 1)
         image:draw(Vec2(x, y))
-        self.editor:drawShadowedText(line.node.name, x + 25, y + 2, color)
+        self.editor:drawShadowedText(line.node.name, x + 25, y + 2, color, nil, alpha)
         -- If dragged over, additional signs will be shown.
         if self.dragOrigin and not self.dragSnap and line.node ~= self.editor.selectedNode and line.node == self.editor.hoveredNode then
             if self.hoverTop then

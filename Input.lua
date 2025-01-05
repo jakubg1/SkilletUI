@@ -154,7 +154,7 @@ function Input:inputAccept()
 		result = Color(self:getInputColor())
 	end
 	
-	_EDITOR:onInputReceived(result, self.inputType)
+	_EDITOR:onInputReceived(result)
 	self:inputCancel()
 end
 
@@ -261,7 +261,7 @@ function Input:getSize()
 	elseif self.inputType == "string" or self.inputType == "number" then
 		return 400, 150
 	elseif self.inputType == "color" then
-		return 400, 300
+		return 450, 300
 	end
 end
 
@@ -308,7 +308,7 @@ function Input:isConfirmButtonHovered()
 
 	local posX, posY = self:getPos()
 	local sizeX, sizeY = self:getSize()
-	return _MousePos.x >= posX + 20 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + 200 and _MousePos.y <= posY + sizeY - 10
+	return _MousePos.x >= posX + sizeX - 380 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + sizeX - 200 and _MousePos.y <= posY + sizeY - 10
 end
 
 
@@ -320,7 +320,7 @@ function Input:isCancelButtonHovered()
 
 	local posX, posY = self:getPos()
 	local sizeX, sizeY = self:getSize()
-	return _MousePos.x >= posX + 220 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + 380 and _MousePos.y <= posY + sizeY - 10
+	return _MousePos.x >= posX + sizeX - 180 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + sizeX and _MousePos.y <= posY + sizeY - 10
 end
 
 
@@ -383,17 +383,18 @@ function Input:draw()
 		--love.graphics.print(string.format("X: %s", x), posX + 350, posY + 180)
 		--love.graphics.print(string.format("Y: %s", y), posX + 350, posY + 200)
 		--love.graphics.print(string.format("Z: %s", z), posX + 350, posY + 220)
+		love.graphics.print(string.format("Hex: %02x%02x%02x", r * 255, g * 255, b * 255), posX + 300, posY + 180)
 	end
 	love.graphics.setColor(1, 1, 1)
 	if self:isConfirmButtonHovered() then
 		love.graphics.setColor(0, 1, 1)
 	end
-	love.graphics.print("[ Enter ] = Confirm", posX + 20, posY + sizeY - 30)
+	love.graphics.print("[ Enter ] = Confirm", posX + sizeX - 380, posY + sizeY - 30)
 	love.graphics.setColor(1, 1, 1)
 	if self:isCancelButtonHovered() then
 		love.graphics.setColor(0, 1, 1)
 	end
-	love.graphics.print("[ Esc ] = Cancel", posX + 220, posY + sizeY - 30)
+	love.graphics.print("[ Esc ] = Cancel", posX + sizeX - 180, posY + sizeY - 30)
 end
 
 

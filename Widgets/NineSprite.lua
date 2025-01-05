@@ -19,6 +19,7 @@ function NineSprite:new(node, data)
         {name = "Disabled Image", key = "disabledImage", type = "Image"},
         {name = "Size", key = "size", type = "Vector2"},
         {name = "Scale", key = "scale", type = "number"},
+        {name = "Alpha", key = "alpha", type = "number"},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2"},
         {name = "Shadow Alpha", key = "shadowAlpha", type = "number"}
     }
@@ -31,6 +32,7 @@ function NineSprite:new(node, data)
     self.disabledImage = data.disabledImage and _IMAGES[data.disabledImage]
     self.size = Vec2(data.size)
     self.scale = data.scale or 1
+    self.alpha = data.alpha or 1
     self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
     self.shadowAlpha = data.shadowAlpha or 0.5
 end
@@ -82,10 +84,10 @@ function NineSprite:draw()
         end
     end
     if self.shadowOffset then
-        love.graphics.setColor(0, 0, 0, self.node.alpha * self.shadowAlpha)
+        love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
         image:draw(pos + self.shadowOffset, self.size, self.scale)
     end
-    love.graphics.setColor(1, 1, 1, self.node.alpha)
+    love.graphics.setColor(1, 1, 1, self.alpha)
     image:draw(pos, self.size, self.scale)
 end
 
@@ -102,6 +104,7 @@ function NineSprite:serialize()
     data.disabledImage = self.disabledImage and _IMAGE_LOOKUP[self.disabledImage]
     data.size = {x = self.size.x, y = self.size.y}
     data.scale = self.scale
+    data.alpha = self.alpha
     data.shadowOffset = self.shadowOffset and {x = self.shadowOffset.x, y = self.shadowOffset.y}
     data.shadowAlpha = self.shadowAlpha
 
