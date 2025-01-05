@@ -19,10 +19,12 @@ function EditorUITree:new(editor)
     self.editor = editor
 
     self.POS = Vec2(5, 120)
-    self.SIZE = Vec2(200, 350)
+    self.SIZE = Vec2(210, 500)
     self.ITEM_HEIGHT = 20
     self.ITEM_MARGIN = 8
 
+    self.scrollOffset = 0
+    self.maxScrollOffset = 0
     self.hoverTop = false
     self.hoverBottom = false
     self.dragOrigin = nil
@@ -35,7 +37,15 @@ end
 ---@param n integer The item index.
 ---@return number
 function EditorUITree:getItemY(n)
-    return self.ITEM_HEIGHT * (n - 1) + 5
+    return self.ITEM_HEIGHT * (n - 1) - self.scrollOffset
+end
+
+
+
+---Returns `true` if the mouse cursor is inside of the Editor UI Tree area, `false` otherwise.
+---@return boolean
+function EditorUITree:isHovered()
+    return _Utils.isPointInsideBox(_MousePos, self.POS, self.SIZE)
 end
 
 
@@ -43,6 +53,9 @@ end
 ---Returns the hovered UI node in the tree, if one exists.
 ---@return Node?
 function EditorUITree:getHoveredNode()
+    if not self:isHovered() then
+        return nil
+    end
     self.hoverTop = false
     self.hoverBottom = false
     for i, entry in ipairs(self.editor.uiTreeInfo) do
@@ -146,6 +159,11 @@ function EditorUITree:update(dt)
             end
         end
     end
+
+    -- Calculate the maximum scroll offset.
+    self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #self.editor.uiTreeInfo - self.SIZE.y, 0)
+    -- Scroll back if we've scrolled too far.
+    self.scrollOffset = math.min(self.scrollOffset, self.maxScrollOffset)
 end
 
 
@@ -155,22 +173,23 @@ function EditorUITree:draw()
     -- Background
     love.graphics.setColor(0, 0, 0, 0.3)
     love.graphics.rectangle("fill", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
-    love.graphics.setColor(0.5, 0.75, 1)
-    love.graphics.rectangle("line", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
 
     -- Node tree
+    love.graphics.setScissor(self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
     for i, line in ipairs(self.editor.uiTreeInfo) do
         local x = self.POS.x + 30 * line.indent
         local y = self.POS.y + self:getItemY(i)
         local color = _COLORS.white
-        if line.node == self.editor.selectedNode then
-            color = _COLORS.cyan
-        elseif line.node == self.editor.hoveredNode then
-            color = _COLORS.yellow
-        elseif line.node.isController then
+        if line.node.isController then
             color = _COLORS.purple
         elseif line.node:isControlled() then
             color = _COLORS.lightPurple
+        end
+        local bgColor = nil
+        if line.node == self.editor.selectedNode then
+            bgColor = _COLORS.cyan
+        elseif line.node == self.editor.hoveredNode then
+            bgColor = _COLORS.yellow
         end
         local image = _IMAGES.widget_none
         if line.node.type == "box" then
@@ -186,9 +205,13 @@ function EditorUITree:draw()
         elseif line.node.type == "@titleDigit" then
             image = _IMAGES.widget_titledigit
         end
+        if bgColor then
+            love.graphics.setColor(bgColor.r, bgColor.g, bgColor.b, 0.3)
+            love.graphics.rectangle("fill", self.POS.x, y, self.SIZE.x, self.ITEM_HEIGHT)
+        end
         love.graphics.setColor(1, 1, 1)
         image:draw(Vec2(x, y))
-        self.editor:drawShadowedText(line.node.name, x + 25, y, color)
+        self.editor:drawShadowedText(line.node.name, x + 25, y + 2, color)
         -- If dragged over, additional signs will be shown.
         if self.dragOrigin and not self.dragSnap and line.node ~= self.editor.selectedNode and line.node == self.editor.hoveredNode then
             if self.hoverTop then
@@ -210,10 +233,37 @@ function EditorUITree:draw()
             end
         end
     end
+    love.graphics.setScissor()
+
+    -- Scroll bar (non-interactive)
+    if self.maxScrollOffset > 0 then
+        love.graphics.setColor(0.5, 0.75, 1)
+        love.graphics.rectangle("fill", self.POS.x + self.SIZE.x - 10, self.POS.y, 10, self.SIZE.y)
+        local y = self.scrollOffset / (self.maxScrollOffset + self.SIZE.y)
+        local h = self.SIZE.y / (self.maxScrollOffset + self.SIZE.y)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("fill", self.POS.x + self.SIZE.x - 10, self.POS.y + y * self.SIZE.y, 10, h * self.SIZE.y)
+    end
+
+    -- Border
+    love.graphics.setColor(0.5, 0.75, 1)
+    love.graphics.setLineWidth(1)
+    love.graphics.rectangle("line", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
 
     -- Dragged element in node tree
     if self.dragOrigin and not self.dragSnap then
         self.editor:drawShadowedText(string.format("%s {%s}", self.editor.selectedNode.name, self.editor.selectedNode.type), _MousePos.x + 10, _MousePos.y + 15, _COLORS.white, _COLORS.blue)
+    end
+end
+
+
+
+---Executed whenever a mouse wheel has been scrolled.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+function EditorUITree:wheelmoved(x, y)
+    if self:isHovered() then
+        self.scrollOffset = math.min(math.max(self.scrollOffset - y * self.ITEM_HEIGHT * 3, 0), self.maxScrollOffset)
     end
 end
 

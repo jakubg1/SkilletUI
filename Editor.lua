@@ -44,10 +44,10 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Widget manipulation (color, text, size, scale, etc.)
 --- - Dragging entries around in the node tree
 --- - Resizing widgets like boxes
----
---- To Do:
 --- - Saving layouts
 --- - Loading/switching layouts
+---
+--- To Do:
 --- - Live editing of parameters
 --- - Vector support for parameters
 --- - Finish widget parameters
@@ -94,6 +94,7 @@ function Editor:new()
 
     self.uiTree = EditorUITree(self)
     self.uiTreeInfo = {}
+    self.uiTreeShowsInternalUI = false
 end
 
 
@@ -211,6 +212,11 @@ function Editor:selectNode(node)
                         inputValue = widget[property.nodeKeys[1]].widget[property.key]
                     else
                         inputValue = widget[property.key]
+                    end
+                    if not inputValue then
+                        inputValue = "<none>"
+                    elseif property.type == "Image" then
+                        inputValue = tostring(inputValue)
                     end
                     local inputFunction = function(input)
                         if property.nodeKeys then
@@ -531,9 +537,17 @@ end
 
 
 ---Saves the current scene to a file.
----@param name string The file name.
-function Editor:save(name)
-    _Utils.saveJson(name .. ".json", _UI:serialize())
+---@param path string The path to the file.
+function Editor:saveScene(path)
+    _Utils.saveJson(path, _UI:serialize())
+end
+
+
+
+---Loads a new scene from the specified file.
+---@param path string The path to the file.
+function Editor:loadScene(path)
+    _UI = _LoadUI(path)
 end
 
 
@@ -572,7 +586,7 @@ end
 ---@param w number The width of the input field. Height is always 20.
 ---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
 ---@param value string|number|Color The value that should be initially set in the input field.
----@param fn function The function that will be executed when the value has been changed. The parameter will be the new text.
+---@param fn function? The function that will be executed when the value has been changed. The parameter will be the new text.
 ---@return Node
 function Editor:input(x, y, w, type, value, fn)
     local input
@@ -594,11 +608,11 @@ end
 ---@return string|number|Color?
 function Editor:inputGetValue(node, type)
     if type == "string" then
-        return node:findChildByName("$text").widget.text
+        return node:findChildByName("$text"):getText()
     elseif type == "number" then
-        return tonumber(node:findChildByName("$text").widget.text)
+        return tonumber(node:findChildByName("$text"):getText())
     elseif type == "color" then
-        return node:findChildByName("$color").widget.color
+        return node:findChildByName("$color"):getColor()
     end
 end
 
@@ -610,11 +624,11 @@ end
 ---@param value string|number|Color The value to be set.
 function Editor:inputSetValue(node, type, value)
     if type == "string" then
-        node:findChildByName("$text").widget.text = value
+        node:findChildByName("$text"):setText(value)
     elseif type == "number" then
-        node:findChildByName("$text").widget.text = tostring(value)
+        node:findChildByName("$text"):setText(tostring(value))
     elseif type == "color" then
-        node:findChildByName("$color").widget.color = value
+        node:findChildByName("$color"):setColor(value)
     end
 end
 
@@ -627,7 +641,7 @@ function Editor:inputSetDisabled(node, disabled)
     node:setDisabled(disabled)
     local textNode = node:findChildByName("$text")
     if textNode then
-        textNode.widget.color = disabled and _COLORS.gray or _COLORS.white
+        textNode:setColor(disabled and _COLORS.gray or _COLORS.white)
     end
 end
 
@@ -649,7 +663,9 @@ end
 ---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
 function Editor:onInputReceived(result, type)
     self:inputSetValue(self.activeInput, type, result)
-    self.activeInput._onChange(result)
+    if self.activeInput._onChange then
+        self.activeInput._onChange(result)
+    end
     self.activeInput = nil
 end
 
@@ -672,6 +688,8 @@ function Editor:load()
     local ALIGN_Y = 800
     local PALIGN_X = 400
     local PALIGN_Y = 800
+    local FILE_X = 250
+    local FILE_Y = 10
     local buttons = {
         self:button(UTILITY_X, UTILITY_Y, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
         self:button(UTILITY_X, UTILITY_Y + 20, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
@@ -700,10 +718,17 @@ function Editor:load()
         self:button(PALIGN_X, PALIGN_Y + 40, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
         self:button(PALIGN_X + 30, PALIGN_Y + 40, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
         self:button(PALIGN_X + 60, PALIGN_Y + 40, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
+
+        self:button(FILE_X + 270, FILE_Y, 100, "Save [Ctrl+S]", function() self:saveScene(self:inputGetValue(self.fileNameInput, "string")) end),
+        self:button(FILE_X + 370, FILE_Y, 100, "Load [Ctrl+L]", function() self:loadScene(self:inputGetValue(self.fileNameInput, "string")) end)
     }
     for i, button in ipairs(buttons) do
         self.UI:addChild(button)
     end
+
+    self.fileNameInput = self:input(FILE_X + 100, FILE_Y, 150, "string", "ui.json")
+    self.UI:addChild(self.fileNameInput)
+    self.UI:addChild(self:label(FILE_X, FILE_Y, "File Name:"))
 end
 
 
@@ -711,7 +736,7 @@ end
 ---Updates the Editor.
 ---@param dt number Time delta in seconds.
 function Editor:update(dt)
-    self.uiTreeInfo = self:getUITreeInfo()
+    self.uiTreeInfo = self:getUITreeInfo(self.uiTreeShowsInternalUI and self.UI or nil)
     self.hoveredNode = self:getHoveredNode()
 
     -- Handle the node dragging.
@@ -747,18 +772,18 @@ function Editor:draw()
     if not self.enabled then
         return
     end
-	self.UI:findChildByName("drawtime").widget.text = string.format("Drawing took approximately %.1fms", _DrawTime * 1000)
-	self.UI:findChildByName("pos").widget.text = string.format("Mouse position: %s", _MouseCPos)
-	self.UI:findChildByName("line3").widget.text = string.format("Vecs per frame: %s", _VEC2S_PER_FRAME)
-	self.UI:findChildByName("hovText").widget.text = ""
-	self.UI:findChildByName("selText").widget.text = ""
+	self.UI:findChildByName("drawtime"):setText(string.format("Drawing took approximately %.1fms", _DrawTime * 1000))
+	self.UI:findChildByName("pos"):setText(string.format("Mouse position: %s", _MouseCPos))
+	self.UI:findChildByName("line3"):setText(string.format("Vecs per frame: %s", _VEC2S_PER_FRAME))
+	self.UI:findChildByName("hovText"):setText("")
+	self.UI:findChildByName("selText"):setText("")
 
     -- Hovered and selected node
     if self.hoveredNode then
-        self.UI:findChildByName("hovText").widget.text = string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode.name, self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos())
+        self.UI:findChildByName("hovText"):setText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode.name, self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()))
     end
     if self.selectedNode then
-        self.UI:findChildByName("selText").widget.text = string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos())
+        self.UI:findChildByName("selText"):setText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()))
     end
 	self.UI:draw()
 
@@ -858,7 +883,9 @@ function Editor:mousepressed(x, y, button)
         return
     end
     self.UI:mousepressed(x, y, button)
-    self.INPUT_DIALOG:mousepressed(x, y, button)
+    if self.INPUT_DIALOG:mousepressed(x, y, button) then
+        return
+    end
 	if button == 1 and not self:isUIHovered() then
         local resizeHandleID = self.selectedNode and self.selectedNode:getHoveredResizeHandleID()
         if _IsCtrlPressed() then
@@ -905,28 +932,43 @@ end
 
 
 
+---Executed whenever a mouse wheel has been scrolled.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+function Editor:wheelmoved(x, y)
+    self.uiTree:wheelmoved(x, y)
+end
+
+
+
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string The key code.
 function Editor:keypressed(key)
     love.keyboard.setKeyRepeat(key == "backspace")
     self.UI:keypressed(key)
-    self.INPUT_DIALOG:keypressed(key)
+    if self.INPUT_DIALOG:keypressed(key) then
+        return
+    end
 	if key == "tab" then
 		self.enabled = not self.enabled
+    elseif key == "p" then
+        self.uiTreeShowsInternalUI = not self.uiTreeShowsInternalUI
     elseif key == "up" then
-        self:moveSelectedNode(Vec2(0, -1))
+        self:moveSelectedNode(Vec2(0, _IsShiftPressed() and -10 or -1))
     elseif key == "down" then
-        self:moveSelectedNode(Vec2(0, 1))
+        self:moveSelectedNode(Vec2(0, _IsShiftPressed() and 10 or 1))
     elseif key == "left" then
-        self:moveSelectedNode(Vec2(-1, 0))
+        self:moveSelectedNode(Vec2(_IsShiftPressed() and -10 or -1, 0))
     elseif key == "right" then
-        self:moveSelectedNode(Vec2(1, 0))
+        self:moveSelectedNode(Vec2(_IsShiftPressed() and 10 or 1, 0))
     elseif key == "pageup" and _IsShiftPressed() then
         self:moveSelectedNodeToTop()
     elseif key == "pagedown" and _IsShiftPressed() then
         self:moveSelectedNodeToBottom()
     elseif key == "s" and _IsCtrlPressed() then
-        self:save("ui_test")
+        self:saveScene(self:inputGetValue(self.fileNameInput, "string"))
+    elseif key == "l" and _IsCtrlPressed() then
+        self:loadScene(self:inputGetValue(self.fileNameInput, "string"))
     elseif key == "z" and _IsCtrlPressed() then
         self:undoLastCommand()
     elseif key == "y" and _IsCtrlPressed() then

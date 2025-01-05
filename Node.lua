@@ -295,6 +295,46 @@ end
 
 
 
+---Returns any Text this Node's widget contains. Works only with `text` widgets. Returns `nil` otherwise.
+---@return string?
+function Node:getText()
+    if self.type == "text" then
+        return self.widget.text
+    end
+end
+
+
+
+---Sets the given text on this Node's widget. Works only with `text` widgets.
+---@param text string The text to be set on this Node's widget.
+function Node:setText(text)
+    if self.type == "text" then
+        self.widget.text = text
+    end
+end
+
+
+
+---Returns any color this Node's widget contains. Works only with `text` and `box` widgets. Returns `nil` otherwise.
+---@return Color?
+function Node:getColor()
+    if self.type == "text" or self.type == "box" then
+        return self.widget.color
+    end
+end
+
+
+
+---Sets the given color on this Node's widget. Works only with `text` and `box` widgets.
+---@param color Color The color to be set on this Node's widget.
+function Node:setColor(color)
+    if self.type == "text" or self.type == "box" then
+        self.widget.color = color
+    end
+end
+
+
+
 ---Returns whether this Node or any of its children is hovered.
 function Node:isHoveredWithChildren()
     if self:isHovered() then

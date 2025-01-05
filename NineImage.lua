@@ -42,6 +42,14 @@ end
 
 
 
+---Returns the string representation of this NineImage.
+---@return string
+function NineImage:__tostring()
+    return "NineImage<" .. self.path .. ">"
+end
+
+
+
 ---Draws this NineImage on the screen.
 ---@param pos Vector2 The position where this NineImage will be drawn.
 ---@param size Vector2 The size of this NineImage.

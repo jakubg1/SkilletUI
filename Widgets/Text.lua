@@ -18,7 +18,13 @@ function Text:new(node, data)
         {name = "Scale", key = "scale", type = "number"},
         {name = "Color", key = "color", type = "color"},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2"},
-        {name = "Shadow Alpha", key = "shadowAlpha", type = "number"}
+        {name = "Shadow Alpha", key = "shadowAlpha", type = "number"},
+        {name = "Wave Amplitude", key = "waveAmplitude", type = "number"},
+        {name = "Wave Frequency", key = "waveFrequency", type = "number"},
+        {name = "Wave Speed", key = "waveSpeed", type = "number"},
+        {name = "Gradient Wave Color", key = "gradientWaveColor", type = "color"},
+        {name = "Gradient Wave Frequency", key = "gradientWaveFrequency", type = "number"},
+        {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number"}
     }
 
     self.node = node
@@ -27,8 +33,7 @@ function Text:new(node, data)
     self.text = data.text or ""
     self.scale = data.scale or 1
     self.color = Color(data.color)
-    local so = data.shadowOffset
-    self.shadowOffset = so and (type(so) == "number" and Vec2(so) or Vec2(so.x, so.y))
+    self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
     self.shadowAlpha = data.shadowAlpha or 0.5
 
     self.waveAmplitude = data.waveAmplitude

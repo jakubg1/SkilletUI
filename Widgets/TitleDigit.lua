@@ -16,8 +16,7 @@ local Color = require("Color")
 function TitleDigit:new(node, data)
     self.node = node
 
-    local so = data.shadowOffset
-    self.shadowOffset = so and (type(so) == "number" and Vec2(so) or Vec2(so.x, so.y))
+    self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
 
     self.SIZE = Vec2(6, 7)
     self.MAIN_COLOR = Color(1, 0.8, 0)

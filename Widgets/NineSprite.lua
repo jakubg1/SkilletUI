@@ -30,8 +30,7 @@ function NineSprite:new(node, data)
     self.disabledImage = data.disabledImage and _IMAGES[data.disabledImage]
     self.size = Vec2(data.size)
     self.scale = data.scale or 1
-    local so = data.shadowOffset
-    self.shadowOffset = so and (type(so) == "number" and Vec2(so) or Vec2(so.x, so.y))
+    self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
     self.shadowAlpha = data.shadowAlpha or 0.5
 end
 

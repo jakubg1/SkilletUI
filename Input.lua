@@ -49,17 +49,28 @@ end
 
 
 function Input:mousepressed(x, y, button)
+	if not self.inputType then
+		return false
+	end
 	if button == 1 then
 		if self:isColorMeshHovered() then
 			self.colorDragging = 1
+			return true
 		elseif self:isSideColorMeshHovered() then
 			self.colorDragging = 2
+			return true
 		elseif self:isConfirmButtonHovered() then
 			self:inputAccept()
+			return true
 		elseif self:isCancelButtonHovered() then
 			self:inputCancel()
+			return true
+		elseif not self:isHovered() then
+			self:inputCancel()
+			return true
 		end
 	end
+	return false
 end
 
 
@@ -80,11 +91,15 @@ function Input:keypressed(key)
 				self.error = nil
 			end
 		end
+		return true
 	elseif key == "return" then
 		self:inputAccept()
+		return true
 	elseif key == "escape" then
 		self:inputCancel()
+		return true
 	end
+	return false
 end
 
 

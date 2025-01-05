@@ -26,7 +26,7 @@ _DrawTime = 0
 _FONT_CHARACTERS = " abcdefghijklmnopqrstuvwxyząćęłńóśźżABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ0123456789<>-+()[]_.,:;'!?@#$€%^&*\"/|\\"
 _FONTS = {
 	default = love.graphics.newFont(),
-	editor = love.graphics.newFont(16),
+	editor = love.graphics.newFont(14),
 	standard = love.graphics.newImageFont("resources/standard.png", _FONT_CHARACTERS, 1)
 }
 _FONT_LOOKUP = {}
@@ -174,6 +174,12 @@ function love.mousereleased(x, y, button)
 		_UI:mousereleased(x, y, button)
 	end
 	_EDITOR:mousereleased(x, y, button)
+end
+
+
+
+function love.wheelmoved(x, y)
+	_EDITOR:wheelmoved(x, y)
 end
 
 

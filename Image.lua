@@ -15,6 +15,14 @@ end
 
 
 
+---Returns the string representation of this Image.
+---@return string
+function Image:__tostring()
+    return "Image<" .. self.path .. ">"
+end
+
+
+
 ---Draws this Image on the screen.
 ---@param pos Vector2 The position where this Image will be drawn.
 ---@param scale number? The scale of this Image. The final size will be unaffected.
