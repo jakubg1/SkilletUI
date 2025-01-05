@@ -89,14 +89,6 @@ end
 
 
 
----Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
----@return boolean
-function Text:isResizable()
-    return false
-end
-
-
-
 ---Returns the property list of this Text.
 ---@return table
 function Text:getPropertyList()

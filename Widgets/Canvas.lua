@@ -38,14 +38,6 @@ end
 
 
 
----Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
----@return boolean
-function Canvas:isResizable()
-    return false
-end
-
-
-
 ---Activates this Canvas for drawing. The canvas is automatically cleared.
 function Canvas:activate()
     love.graphics.setCanvas(self.canvas)

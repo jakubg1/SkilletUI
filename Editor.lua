@@ -47,11 +47,12 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Resizing widgets like boxes
 --- - Saving layouts
 --- - Loading/switching layouts
+--- - Finish widget parameters
+--- - Proper editing of node groups (size forwarding, unable to edit their components, etc.)
 ---
 --- To Do:
 --- - Live editing of parameters
---- - Vector support for parameters
---- - Finish widget parameters
+--- - Vector and image support for parameters
 --- - Copy/Paste and widget duplication
 --- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
 ---   - tip: have a Button class as a controller for the children which have unchangeable names and references them directly by name in the constructor
@@ -152,7 +153,7 @@ function Editor:getHoveredNode()
         return hoveredNode
     end
     -- Finally, look if any node is directly hovered.
-	return _UI:findChildByPixelDepthFirst(_MouseCPos)
+	return _UI:findChildByPixelDepthFirst(_MouseCPos, true)
 end
 
 

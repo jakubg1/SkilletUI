@@ -147,7 +147,7 @@ end
 ---@return boolean
 function Node:isResizable()
     if self.widget then
-        return self.widget:isResizable()
+        return self:hasProperty("size")
     end
     return false
 end
@@ -247,6 +247,24 @@ end
 ---@return table
 function Node:getPropertyList()
     return self.PROPERTY_LIST
+end
+
+
+
+---Returns `true` if this Node has a widget and that widget has a property of the given key.
+---@param key string The key to search for.
+---@return boolean
+function Node:hasProperty(key)
+    if not self.widget or not self.widget.getPropertyList then
+        return false
+    end
+    local properties = self.widget:getPropertyList()
+    for i, property in ipairs(properties) do
+        if property.key == key then
+            return true
+        end
+    end
+    return false
 end
 
 
@@ -673,14 +691,15 @@ end
 
 ---Returns the first encountered child that contains the provided position (depth first), or `nil` if it is not found.
 ---@param pos Vector2 The position to be checked.
+---@param ignoreControlledNodes boolean? If set, controlled nodes will not be returned by this function.
 ---@return Node?
-function Node:findChildByPixelDepthFirst(pos)
+function Node:findChildByPixelDepthFirst(pos, ignoreControlledNodes)
     for i, child in ipairs(self.children) do
-        local potentialResult = child:findChildByPixelDepthFirst(pos)
+        local potentialResult = child:findChildByPixelDepthFirst(pos, ignoreControlledNodes)
         if potentialResult then
             return potentialResult
         end
-        if child:hasPixel(pos) then
+        if child:hasPixel(pos) and (not ignoreControlledNodes or not child:isControlled()) then
             return child
         end
     end

@@ -17,6 +17,7 @@ function NineSprite:new(node, data)
         {name = "Hover Image", key = "hoverImage", type = "Image"},
         {name = "Click Image", key = "clickImage", type = "Image"},
         {name = "Disabled Image", key = "disabledImage", type = "Image"},
+        {name = "Size", key = "size", type = "Vector2"},
         {name = "Scale", key = "scale", type = "number"},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2"},
         {name = "Shadow Alpha", key = "shadowAlpha", type = "number"}
@@ -48,14 +49,6 @@ end
 ---@param size Vector2 The new size of this NineSprite.
 function NineSprite:setSize(size)
     self.size = size
-end
-
-
-
----Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
----@return boolean
-function NineSprite:isResizable()
-    return true
 end
 
 

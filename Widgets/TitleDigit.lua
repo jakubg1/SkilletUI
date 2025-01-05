@@ -130,14 +130,6 @@ end
 
 
 
----Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
----@return boolean
-function TitleDigit:isResizable()
-    return false
-end
-
-
-
 ---Updates the Title Digit.
 ---@param dt number Time delta, in seconds.
 function TitleDigit:update(dt)

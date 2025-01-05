@@ -42,14 +42,6 @@ end
 
 
 
----Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
----@return boolean
-function Box:isResizable()
-    return true
-end
-
-
-
 ---Returns the property list of this Box.
 ---@return table
 function Box:getPropertyList()

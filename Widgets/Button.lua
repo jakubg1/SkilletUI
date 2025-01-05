@@ -13,6 +13,7 @@ local Vec2 = require("Vector2")
 ---@param data table The data to be used for this Button.
 function Button:new(node, data)
     self.PROPERTY_LIST = {
+        {name = "Size", key = "size", nodeKeys = {"spriteNode"}, type = "Vector2"},
         {name = "Text", key = "text", nodeKeys = {"textNode"}, type = "string"},
         {name = "Scale", key = "scale", nodeKeys = {"textNode", "spriteNode"}, type = "number"},
         {name = "Color", key = "color", nodeKeys = {"textNode"}, type = "color"}
@@ -35,18 +36,10 @@ end
 
 
 
----Sets the size of this Button, except it doesn't. Don't even try!
+---Sets the size of this Button.
 ---@param size Vector2 The new size of this Button.
 function Button:setSize(size)
-    error("You cannot resize a Button!")
-end
-
-
-
----Returns whether this widget can be resized, i.e. squares will appear around that can be dragged.
----@return boolean
-function Button:isResizable()
-    return false
+    self.spriteNode:setSize(size)
 end
 
 
