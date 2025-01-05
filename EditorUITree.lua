@@ -181,9 +181,9 @@ function EditorUITree:draw()
         local y = self.POS.y + self:getItemY(i)
         local color = _COLORS.white
         if line.node.isController then
-            color = _COLORS.purple
+            color = _COLORS.orange
         elseif line.node:isControlled() then
-            color = _COLORS.lightPurple
+            color = _COLORS.lightOrange
         end
         local bgColor = nil
         if line.node == self.editor.selectedNode then
@@ -237,7 +237,7 @@ function EditorUITree:draw()
 
     -- Scroll bar (non-interactive)
     if self.maxScrollOffset > 0 then
-        love.graphics.setColor(0.5, 0.75, 1)
+        love.graphics.setColor(0.5, 0.75, 1, 0.5)
         love.graphics.rectangle("fill", self.POS.x + self.SIZE.x - 10, self.POS.y, 10, self.SIZE.y)
         local y = self.scrollOffset / (self.maxScrollOffset + self.SIZE.y)
         local h = self.SIZE.y / (self.maxScrollOffset + self.SIZE.y)

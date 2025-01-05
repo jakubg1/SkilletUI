@@ -856,7 +856,7 @@ end
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string Code of the key that has been pressed.
 function Node:keypressed(key)
-    if key == self.shortcut and not _IsCtrlPressed() and not _IsShiftPressed() then
+    if self.shortcut and self.shortcut.key == key and (self.shortcut.ctrl or false) == _IsCtrlPressed() and (self.shortcut.shift or false) == _IsShiftPressed() then
         if self.onClick then
             self.onClick()
         end

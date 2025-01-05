@@ -5,6 +5,7 @@ local class = require "com.class"
 local Editor = class:derive("Editor")
 
 local Vec2 = require("Vector2")
+local Color = require("Color")
 local Node = require("Node")
 local Input = require("Input")
 local EditorUITree = require("EditorUITree")
@@ -213,9 +214,7 @@ function Editor:selectNode(node)
                     else
                         inputValue = widget[property.key]
                     end
-                    if not inputValue then
-                        inputValue = "<none>"
-                    elseif property.type == "Image" then
+                    if property.type == "Image" and inputValue then
                         inputValue = tostring(inputValue)
                     end
                     local inputFunction = function(input)
@@ -570,10 +569,10 @@ end
 ---@param w number The width of the button. Height is always 20.
 ---@param text string The text that should be written on the button.
 ---@param fn function? The function to be executed when this button is clicked.
----@param key string? The key which will activate this button.
+---@param shortcut table? The key which will activate this button.
 ---@return Node
-function Editor:button(x, y, w, text, fn, key)
-    local button = Node({name = "btn_" .. text, type = "9sprite", widget = {image = "ed_button", clickImage = "ed_button_click", size = {x = w, y = 20}, scale = 2}, shortcut = key, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = text, color = _COLORS.black}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
+function Editor:button(x, y, w, text, fn, shortcut)
+    local button = Node({name = "btn_" .. text, type = "9sprite", widget = {image = "ed_button", clickImage = "ed_button_click", size = {x = w, y = 20}, scale = 2}, shortcut = shortcut, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = text, color = _COLORS.black}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
     button:setOnClick(fn)
     return button
 end
@@ -590,7 +589,9 @@ end
 ---@return Node
 function Editor:input(x, y, w, type, value, fn)
     local input
-    if type ~= "color" then
+    if not value then
+        input = Node({name = "inp_" .. type, type = "9sprite", widget = {image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", size = {x = w, y = 20}}, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = "<none>", color = _COLORS.gray}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
+    elseif type ~= "color" then
         input = Node({name = "inp_" .. type, type = "9sprite", widget = {image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", size = {x = w, y = 20}}, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = tostring(value), color = _COLORS.white}, pos = {x = 4, y = -1}, align = "left", parentAlign = "left"}}})
     else
         input = Node({name = "inp_" .. type, type = "9sprite", widget = {image = "ed_input", hoverImage = "ed_input_hover", disabledImage = "ed_input_disabled", size = {x = w, y = 20}}, pos = {x = x, y = y}, children = {{name = "$color", type = "box", widget = {color = value, size = {x = w - 2, y = 18}}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
@@ -612,6 +613,9 @@ function Editor:inputGetValue(node, type)
     elseif type == "number" then
         return tonumber(node:findChildByName("$text"):getText())
     elseif type == "color" then
+        if not node:findChildByName("$color") then
+            return Color(1, 1, 1)
+        end
         return node:findChildByName("$color"):getColor()
     end
 end
@@ -684,21 +688,25 @@ function Editor:load()
     self.UI = _LoadUI("editor_ui.json")
     local UTILITY_X = 0
     local UTILITY_Y = 700
-    local ALIGN_X = 200
+    local ALIGN_X = 250
     local ALIGN_Y = 800
-    local PALIGN_X = 400
+    local PALIGN_X = 450
     local PALIGN_Y = 800
     local FILE_X = 250
     local FILE_Y = 10
-    local buttons = {
-        self:button(UTILITY_X, UTILITY_Y, 150, "Delete [Del]", function() self:deleteSelectedNode() end, "delete"),
-        self:button(UTILITY_X, UTILITY_Y + 20, 150, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, "pageup"),
-        self:button(UTILITY_X, UTILITY_Y + 40, 150, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, "pagedown"),
-        self:button(UTILITY_X, UTILITY_Y + 60, 150, "Undo [Ctrl+Z]", function() self:undoLastCommand() end),
-        self:button(UTILITY_X, UTILITY_Y + 80, 150, "Redo [Ctrl+Y]", function() self:redoLastCommand() end),
-        self:button(UTILITY_X, UTILITY_Y + 130, 75, "Box", function() self:addNode(Node({name = "NewNode", type = "box", widget = {size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}}})) end),
-        self:button(UTILITY_X + 75, UTILITY_Y + 130, 75, "Text", function() self:addNode(Node({name = "NewNode", type = "text", widget = {font = "standard", text = "You can't change me!"}})) end),
-
+    local nodes = {
+        self:button(UTILITY_X, UTILITY_Y, 200, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
+        self:button(UTILITY_X, UTILITY_Y + 20, 200, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"}),
+        self:button(UTILITY_X, UTILITY_Y + 40, 200, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"}),
+        self:button(UTILITY_X, UTILITY_Y + 60, 200, "To Top [Shift+PgUp]", function() self:moveSelectedNodeUp() end, {shift = true, key = "pageup"}),
+        self:button(UTILITY_X, UTILITY_Y + 80, 200, "To Bottom [Shift+PgDown]", function() self:moveSelectedNodeDown() end, {shift = true, key = "pagedown"}),
+        self:button(UTILITY_X, UTILITY_Y + 100, 200, "Undo [Ctrl+Z]", function() self:undoLastCommand() end, {ctrl = true, key = "z"}),
+        self:button(UTILITY_X, UTILITY_Y + 120, 200, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"}),
+        self:label(UTILITY_X, UTILITY_Y + 150, "New Widget:"),
+        self:button(UTILITY_X, UTILITY_Y + 170, 100, "Box", function() self:addNode(Node({name = "NewNode", type = "box", widget = {size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}}})) end),
+        self:button(UTILITY_X + 100, UTILITY_Y + 170, 100, "Text", function() self:addNode(Node({name = "NewNode", type = "text", widget = {font = "standard", text = "You can't change me!"}})) end),
+        
+        self:label(ALIGN_X, ALIGN_Y - 20, "Node Align"),
         self:button(ALIGN_X, ALIGN_Y, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
         self:button(ALIGN_X + 30, ALIGN_Y, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
         self:button(ALIGN_X + 60, ALIGN_Y, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
@@ -709,6 +717,7 @@ function Editor:load()
         self:button(ALIGN_X + 30, ALIGN_Y + 40, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
         self:button(ALIGN_X + 60, ALIGN_Y + 40, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
 
+        self:label(PALIGN_X, PALIGN_Y - 20, "Parent Align"),
         self:button(PALIGN_X, PALIGN_Y, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
         self:button(PALIGN_X + 30, PALIGN_Y, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
         self:button(PALIGN_X + 60, PALIGN_Y, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
@@ -719,16 +728,18 @@ function Editor:load()
         self:button(PALIGN_X + 30, PALIGN_Y + 40, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
         self:button(PALIGN_X + 60, PALIGN_Y + 40, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
 
-        self:button(FILE_X + 270, FILE_Y, 100, "Save [Ctrl+S]", function() self:saveScene(self:inputGetValue(self.fileNameInput, "string")) end),
-        self:button(FILE_X + 370, FILE_Y, 100, "Load [Ctrl+L]", function() self:loadScene(self:inputGetValue(self.fileNameInput, "string")) end)
+        self:label(ALIGN_X, ALIGN_Y + 70, "Ctrl+Click a node to make it a parent of the currently selected node"),
+
+        self:label(FILE_X, FILE_Y, "File Name:"),
+        self:button(FILE_X + 270, FILE_Y, 100, "Save [Ctrl+S]", function() self:saveScene(self:inputGetValue(self.fileNameInput, "string")) end, {ctrl = true, key = "s"}),
+        self:button(FILE_X + 370, FILE_Y, 100, "Load [Ctrl+L]", function() self:loadScene(self:inputGetValue(self.fileNameInput, "string")) end, {ctrl = true, key = "l"})
     }
-    for i, button in ipairs(buttons) do
-        self.UI:addChild(button)
+    for i, node in ipairs(nodes) do
+        self.UI:addChild(node)
     end
 
     self.fileNameInput = self:input(FILE_X + 100, FILE_Y, 150, "string", "ui.json")
     self.UI:addChild(self.fileNameInput)
-    self.UI:addChild(self:label(FILE_X, FILE_Y, "File Name:"))
 end
 
 
@@ -815,12 +826,6 @@ function Editor:draw()
             y = y + COMMAND_BUFFER_ITEM_HEIGHT
         end
     end
-
-    -- Buttons
-    self:drawShadowedText("New Widget:", 5, 810)
-    self:drawShadowedText("Node Align", 200, 780)
-    self:drawShadowedText("Parent Align", 400, 780)
-    self:drawShadowedText("Ctrl+Click a node to make it a parent of the currently selected node", 200, 870)
 
     -- Widget properties
     if self.selectedNode then
@@ -965,14 +970,6 @@ function Editor:keypressed(key)
         self:moveSelectedNodeToTop()
     elseif key == "pagedown" and _IsShiftPressed() then
         self:moveSelectedNodeToBottom()
-    elseif key == "s" and _IsCtrlPressed() then
-        self:saveScene(self:inputGetValue(self.fileNameInput, "string"))
-    elseif key == "l" and _IsCtrlPressed() then
-        self:loadScene(self:inputGetValue(self.fileNameInput, "string"))
-    elseif key == "z" and _IsCtrlPressed() then
-        self:undoLastCommand()
-    elseif key == "y" and _IsCtrlPressed() then
-        self:redoLastCommand()
     elseif key == "p" and _IsCtrlPressed() then
         self:printInternalUITreeInfo()
 	end
