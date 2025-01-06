@@ -49,15 +49,17 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Loading/switching layouts
 --- - Finish widget parameters
 --- - Proper editing of node groups (size forwarding, unable to edit their components, etc.)
+--- - Nullifying parameters
 ---
 --- To Do:
 --- - Live editing of parameters
 --- - Vector and image support for parameters
+--- - Node modifier system, where you could add a rule, like: "modify this node and all its children's widgets' alpha by multiplying it by 0.5"
 --- - Copy/Paste and widget duplication
 --- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
 ---   - tip: have a Button class as a controller for the children which have unchangeable names and references them directly by name in the constructor
 --- - Multi-selection(?)
---- - Animations at some point
+--- - Animations and timelines
 
 
 
@@ -167,8 +169,15 @@ end
 
 
 
+---Refreshes all critical UI for Editors, for example the node properties.
+function Editor:refreshUI()
+    self:generateNodePropertyUI(self.selectedNode)
+end
+
+
+
 ---Clears and regenerates the UI for given node's properties.
----@param node Node The Node to generate property UI for.
+---@param node Node? The Node to generate property UI for. If not set, the node properties UI will be cleared.
 function Editor:generateNodePropertyUI(node)
     -- Clear all properties.
     local previousPropertiesUI = self.UI:findChildByName("properties")
@@ -192,7 +201,7 @@ function Editor:generateNodePropertyUI(node)
             local propertyUI = Node({name = "input", pos = {x = 0, y = currentRow * 20}})
             currentRow = currentRow + 1
             local propertyText = self:label(0, 0, property.name)
-            local propertyInput = self:input(150, 0, 200, property.type, inputValue, inputFunction)
+            local propertyInput = self:input(150, 0, 200, property.type, inputValue, property.nullable, inputFunction)
             self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (node:isControlled() and property.disabledIfControlled))
             propertyUI:addChild(propertyText)
             propertyUI:addChild(propertyInput)
@@ -229,7 +238,7 @@ function Editor:generateNodePropertyUI(node)
                     local propertyUI = Node({name = "input", pos = {x = 0, y = currentRow * 20}})
                     currentRow = currentRow + 1
                     local propertyText = self:label(0, 0, property.name)
-                    local propertyInput = self:input(150, 0, 200, property.type, inputValue, inputFunction)
+                    local propertyInput = self:input(150, 0, 200, property.type, inputValue, property.nullable, inputFunction)
                     self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property))
                     propertyUI:addChild(propertyText)
                     propertyUI:addChild(propertyInput)
@@ -247,7 +256,7 @@ end
 ---@param node Node? The node to be selected. If not provided, all nodes will be deselected.
 function Editor:selectNode(node)
     self.selectedNode = node
-    self:generateNodePropertyUI(node)
+    self:refreshUI()
 end
 
 
@@ -461,6 +470,8 @@ function Editor:executeCommand(command)
         else
             table.insert(self.commandHistory, command)
         end
+        -- Make sure to refresh UIs.
+        self:refreshUI()
     end
     return result
 end
@@ -522,6 +533,8 @@ function Editor:undoLastCommand()
         command:undo()
     end
     table.insert(self.undoCommandHistory, command)
+    -- Make sure to refresh UIs.
+    self:refreshUI()
 end
 
 
@@ -540,6 +553,8 @@ function Editor:redoLastCommand()
         command:execute()
     end
     table.insert(self.commandHistory, command)
+    -- Make sure to refresh UIs.
+    self:refreshUI()
 end
 
 
@@ -594,9 +609,10 @@ end
 ---@param w number The width of the input field. Height is always 20.
 ---@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
 ---@param value string|number|Color The value that should be initially set in the input field.
+---@param nullable boolean? Whether the contents can be erased with a builtin X button.
 ---@param fn function? The function that will be executed when the value has been changed. The parameter will be the new text.
 ---@return Node
-function Editor:input(x, y, w, type, value, fn)
+function Editor:input(x, y, w, type, value, nullable, fn)
     local data = {
         name = "inp_" .. type,
         type = "input_text",
@@ -616,7 +632,7 @@ function Editor:input(x, y, w, type, value, fn)
             {
                 name = "color",
                 type = "box",
-                invisible = true,
+                visible = false,
                 widget = {
                     color = _COLORS.white,
                     size = {x = w - 2, y = 18}
@@ -634,13 +650,46 @@ function Editor:input(x, y, w, type, value, fn)
                     disabledImage = "ed_input_disabled",
                     size = {x = w, y = 20}
                 },
-                pos = {x = 0, y = 0}
+                children = {
+                    {
+                        name = "nullifyButton",
+                        type = "button",
+                        align = "left",
+                        parentAlign = "right",
+                        children = {
+                            {
+                                name = "text",
+                                type = "text",
+                                widget = {
+                                    font = "editor",
+                                    text = "X",
+                                    color = _COLORS.black
+                                },
+                                align = "center",
+                                parentAlign = "center"
+                            },
+                            {
+                                name = "sprite",
+                                type = "9sprite",
+                                widget = {
+                                    image = "ed_button",
+                                    clickImage = "ed_button_click",
+                                    size = {x = 20, y = 20}
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
     local input = Node(data)
+    input.widget.nullable = nullable
     input.widget:setValue(value)
     input:setOnClick(function() self:askForInput(input, type) end)
+    if nullable and fn then
+        input:findChildByName("sprite"):findChildByName("nullifyButton"):setOnClick(function() fn(nil) end)
+    end
     input._onChange = fn
     return input
 end
@@ -671,7 +720,6 @@ end
 ---Executed when an input has been submitted for a certain editor input field.
 ---@param result string|number|Color The value that has been submitted for this input.
 function Editor:onInputReceived(result)
-    self.activeInput.widget:setValue(result)
     if self.activeInput._onChange then
         self.activeInput._onChange(result)
     end

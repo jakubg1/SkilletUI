@@ -14,13 +14,13 @@ local Vec2 = require("Vector2")
 function NineSprite:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Image", key = "image", type = "Image"},
-        {name = "Hover Image", key = "hoverImage", type = "Image"},
-        {name = "Click Image", key = "clickImage", type = "Image"},
-        {name = "Disabled Image", key = "disabledImage", type = "Image"},
+        {name = "Hover Image", key = "hoverImage", type = "Image", nullable = true},
+        {name = "Click Image", key = "clickImage", type = "Image", nullable = true},
+        {name = "Disabled Image", key = "disabledImage", type = "Image", nullable = true},
         {name = "Size", key = "size", type = "Vector2"},
         {name = "Scale", key = "scale", type = "number"},
         {name = "Alpha", key = "alpha", type = "number"},
-        {name = "Shadow Offset", key = "shadowOffset", type = "Vector2"},
+        {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true},
         {name = "Shadow Alpha", key = "shadowAlpha", type = "number"}
     }
 

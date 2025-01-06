@@ -36,7 +36,7 @@ function Node:new(data, parent)
         {name = "Position", key = "pos", type = "Vector2"},
         {name = "Align", key = "align", type = "Vector2"},
         {name = "Parent Align", key = "parentAlign", type = "Vector2"},
-        {name = "Invisible", key = "invisible", type = "boolean"}
+        {name = "Visible", key = "visible", type = "boolean"}
     }
 
     self.name = "ERROR"
@@ -44,7 +44,7 @@ function Node:new(data, parent)
     self.pos = Vec2()
     self.align = _ALIGNMENTS["topLeft"]
     self.parentAlign = _ALIGNMENTS["topLeft"]
-    self.invisible = false
+    self.visible = false
     self.shortcut = nil
     self.canvasInputMode = false
 
@@ -318,21 +318,21 @@ end
 
 
 
----Sets whether this Node (and all its children!) should be invisible.
----@param invisible boolean Whether this Node should be invisible, including all its children.
-function Node:setInvisible(invisible)
-    self.invisible = invisible
+---Sets whether this Node (and all its children!) should be visible.
+---@param visible boolean Whether this Node should be visible. If a Node is not visible, it cannot be seen, including all its children.
+function Node:setVisible(visible)
+    self.visible = visible
 end
 
 
 
----Returns whether this Node is visible, i.e. none of either this or all Nodes up the tree have the invisible flag set.
+---Returns whether this Node is visible, i.e. all of the Nodes in this Node's hierarchy have the visible flag set.
 ---@return boolean
 function Node:isVisible()
     if self.parent then
-        return self.parent:isVisible() and not self.invisible
+        return self.parent:isVisible() or self.visible
     end
-    return not self.invisible
+    return self.visible
 end
 
 
@@ -770,7 +770,7 @@ end
 --- - If any child has its own children, draw them immediately after that child has been drawn.
 ---If the Node is invisible, the call immediately returns, resulting in neither this nor any children's widgets being drawn.
 function Node:draw()
-    if self.invisible then
+    if not self.visible then
         return
     end
     if not self.isCanvas then
@@ -925,7 +925,7 @@ function Node:serialize()
     data.pos = {x = self.pos.x, y = self.pos.y}
     data.align = {x = self.align.x, y = self.align.y}
     data.parentAlign = {x = self.parentAlign.x, y = self.parentAlign.y}
-    data.invisible = self.invisible
+    data.visible = self.visible
     data.shortcut = self.shortcut
     data.canvasInputMode = self.canvasInputMode
 
@@ -949,7 +949,7 @@ function Node:deserialize(data)
     self.pos = Vec2(data.pos)
     self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
     self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
-    self.invisible = data.invisible or false
+    self.visible = data.visible ~= false
     self.shortcut = data.shortcut
     self.canvasInputMode = data.canvasInputMode
 

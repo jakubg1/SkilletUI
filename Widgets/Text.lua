@@ -18,14 +18,14 @@ function Text:new(node, data)
         {name = "Scale", key = "scale", type = "number"},
         {name = "Color", key = "color", type = "color"},
         {name = "Alpha", key = "alpha", type = "number"},
-        {name = "Shadow Offset", key = "shadowOffset", type = "Vector2"},
+        {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true},
         {name = "Shadow Alpha", key = "shadowAlpha", type = "number"},
-        {name = "Wave Amplitude", key = "waveAmplitude", type = "number"},
-        {name = "Wave Frequency", key = "waveFrequency", type = "number"},
-        {name = "Wave Speed", key = "waveSpeed", type = "number"},
-        {name = "Gradient Wave Color", key = "gradientWaveColor", type = "color"},
-        {name = "Gradient Wave Frequency", key = "gradientWaveFrequency", type = "number"},
-        {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number"}
+        {name = "Wave Amplitude", key = "waveAmplitude", type = "number", nullable = true},
+        {name = "Wave Frequency", key = "waveFrequency", type = "number", nullable = true},
+        {name = "Wave Speed", key = "waveSpeed", type = "number", nullable = true},
+        {name = "Gradient Wave Color", key = "gradientWaveColor", type = "color", nullable = true},
+        {name = "Gradient Wave Frequency", key = "gradientWaveFrequency", type = "number", nullable = true},
+        {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number", nullable = true}
     }
 
     self.node = node

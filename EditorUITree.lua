@@ -192,7 +192,7 @@ function EditorUITree:draw()
             bgColor = _COLORS.yellow
         end
         local alpha = 1
-        if line.node.invisible then
+        if not line.node.visible then
             alpha = 0.5
         elseif not line.node:isVisible() then
             alpha = 0.75

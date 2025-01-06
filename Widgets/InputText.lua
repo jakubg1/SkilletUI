@@ -16,7 +16,8 @@ function InputText:new(node, data)
         {name = "Size", key = "size", nodeKeys = {"spriteNode"}, type = "Vector2"},
         {name = "Text", key = "text", nodeKeys = {"textNode"}, type = "string"},
         {name = "Scale", key = "scale", nodeKeys = {"textNode", "spriteNode"}, type = "number"},
-        {name = "Color", key = "color", nodeKeys = {"textNode"}, type = "color"}
+        {name = "Color", key = "color", nodeKeys = {"textNode"}, type = "color"},
+        {name = "Nullable", key = "nullable", type = "boolean"}
     }
 
     self.node = node
@@ -26,14 +27,17 @@ function InputText:new(node, data)
     assert(self.colorNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Box Widget named \"color\" to work!", self.node.name))
     self.spriteNode = self.node:findChildByName("sprite")
     assert(self.spriteNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Sprite Widget named \"sprite\" to work!", self.node.name))
+    self.nullifyButtonNode = self.node:findChildByName("nullifyButton")
+    assert(self.nullifyButtonNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Button Widget named \"nullifyButton\" to work!", self.node.name))
 
     self.value = nil
+    self.nullable = false
 end
 
 
 
 ---Returns the current value of this InputText.
----@return string|number|Vector2|Color?
+---@return any?
 function InputText:getValue()
     return self.value
 end
@@ -41,7 +45,7 @@ end
 
 
 ---Sets a new value of this InputText, or clears it if nothing is provided.
----@param value string|number|Vector2|Color? The new value for this InputText.
+---@param value any? The new value for this InputText.
 function InputText:setValue(value)
     self.value = value
     self:updateUI()
@@ -75,16 +79,18 @@ function InputText:updateUI()
         self.textNode:setColor(self.node.disabled and _COLORS.gray or (darkColorText and _COLORS.black or _COLORS.white))
         self.textNode:setAlign(_ALIGNMENTS.left)
         self.textNode:setParentAlign(_ALIGNMENTS.left)
-        self.colorNode:setInvisible(not showColor)
+        self.colorNode:setVisible(showColor)
         if showColor then
             self.colorNode:setColor(self.value)
         end
+        self.nullifyButtonNode:setVisible(self.nullable)
     else
         self.textNode:setText("<none>")
         self.textNode:setPos(Vec2(0, -1))
         self.textNode:setColor(_COLORS.gray)
         self.textNode:setAlign(_ALIGNMENTS.center)
         self.textNode:setParentAlign(_ALIGNMENTS.center)
+        self.nullifyButtonNode:setVisible(false)
     end
 end
 

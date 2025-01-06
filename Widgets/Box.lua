@@ -15,9 +15,9 @@ local Color = require("Color")
 function Box:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Size", key = "size", type = "Vector2"},
-        {name = "Color", key = "color", type = "color"},
+        {name = "Color", key = "color", type = "color", nullable = true},
         {name = "Alpha", key = "alpha", type = "number"},
-        {name = "Border Color", key = "borderColor", type = "color"},
+        {name = "Border Color", key = "borderColor", type = "color", nullable = true},
         {name = "Border Alpha", key = "borderAlpha", type = "number"}
     }
 
