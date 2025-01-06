@@ -81,6 +81,50 @@ end
 
 
 
+---If another sibling of this Node has the same name, this function will change the name of this Node by adding a suffix of the form `#2`, `#3`, `#4`, etc.
+---Otherwise, this Node's name will remain unchanged.
+function Node:ensureUniqueName()
+    if not self.parent then
+        return
+    end
+    -- Check if any other Node with this name exists.
+    local found = false
+    for i, child in ipairs(self.parent.children) do
+        if child ~= self and child.name == self.name then
+            -- We've found a sibling that has the same name as us!
+            found = true
+            break
+        end
+    end
+    -- If this Node's name is unique, we don't need to do anything.
+    if not found then
+        return
+    end
+    local nameBase = self.name
+    local suffixNumber = 2
+    -- Check if we've got a suffix already.
+    local split = _Utils.strSplit(self.name, "#")
+    if #split > 1 then
+        local n = tonumber(split[#split])
+        if n then
+            -- We've got a proper suffix.
+            split[#split] = nil
+            nameBase = table.concat(split, "#")
+            suffixNumber = n + 1
+        end
+    end
+    -- Now, try our new name and increment each time we find a sibling.
+    local newName
+    repeat
+        newName = nameBase .. "#" .. tostring(suffixNumber)
+        suffixNumber = suffixNumber + 1
+    until not self.parent:findChildByName(newName)
+    -- When we finally find it, set it as our new name.
+    self.name = newName
+end
+
+
+
 ---Returns the local position of this Node, which is relative to its parent's position.
 ---@return Vector2
 function Node:getPos()

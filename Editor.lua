@@ -739,6 +739,8 @@ end
 ---Initializes the UI for this Editor.
 function Editor:load()
     self.UI = _LoadUI("editor_ui.json")
+    local NEW_X = 5
+    local NEW_Y = 100
     local UTILITY_X = 0
     local UTILITY_Y = 700
     local ALIGN_X = 250
@@ -755,9 +757,10 @@ function Editor:load()
         self:button(UTILITY_X, UTILITY_Y + 80, 200, "To Bottom [Shift+PgDown]", function() self:moveSelectedNodeDown() end, {shift = true, key = "pagedown"}),
         self:button(UTILITY_X, UTILITY_Y + 100, 200, "Undo [Ctrl+Z]", function() self:undoLastCommand() end, {ctrl = true, key = "z"}),
         self:button(UTILITY_X, UTILITY_Y + 120, 200, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"}),
-        self:label(UTILITY_X, UTILITY_Y + 150, "New Widget:"),
-        self:button(UTILITY_X, UTILITY_Y + 170, 100, "Box", function() self:addNode(Node({name = "NewNode", type = "box", widget = {size = {x = 10, y = 10}, color = {r = 1, g = 1, b = 1}}})) end),
-        self:button(UTILITY_X + 100, UTILITY_Y + 170, 100, "Text", function() self:addNode(Node({name = "NewNode", type = "text", widget = {font = "standard", text = "You can't change me!"}})) end),
+        self:label(NEW_X, NEW_Y - 20, "New Widget:"),
+        self:button(NEW_X, NEW_Y, 50, "Box", function() self:addNode(Node({name = "Box", type = "box", widget = {}})) end),
+        self:button(NEW_X + 50, NEW_Y, 50, "Text", function() self:addNode(Node({name = "Text", type = "text", widget = {}})) end),
+        self:button(NEW_X + 50, NEW_Y + 20, 50, "Test Btn", function() self:addNode(Node(_Utils.loadJson("Layouts/snippet_test2.json"))) end),
 
         self:label(ALIGN_X, ALIGN_Y - 20, "Node Align"),
         self:button(ALIGN_X, ALIGN_Y, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
@@ -858,7 +861,7 @@ function Editor:draw()
     self.uiTree:draw()
 
     -- Command buffer
-    local COMMAND_BUFFER_POS = Vec2(1220, 400)
+    local COMMAND_BUFFER_POS = Vec2(1220, 600)
     local COMMAND_BUFFER_ITEM_HEIGHT = 20
     self:drawShadowedText("Command Buffer", COMMAND_BUFFER_POS.x, COMMAND_BUFFER_POS.y)
     local y = COMMAND_BUFFER_POS.y + 30

@@ -30,10 +30,10 @@ function Text:new(node, data)
 
     self.node = node
 
-    self.font = _FONTS[data.font]
-    self.text = data.text or ""
+    self.font = _FONTS[data.font] or _FONTS.standard
+    self.text = data.text or "Text"
     self.scale = data.scale or 1
-    self.color = Color(data.color)
+    self.color = data.color and Color(data.color) or _COLORS.white
     self.alpha = data.alpha or 1
     self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
     self.shadowAlpha = data.shadowAlpha or 0.5
@@ -121,7 +121,13 @@ function Text:draw()
         end
         local color = self.color
         if self.gradientWaveColor then
-            color = _Utils.interpolate(color, self.gradientWaveColor, (_Utils.getWavePoint(self.gradientWaveFrequency, self.gradientWaveSpeed, x, self.time) + 1) / 2)
+            local t
+            if self.gradientWaveSpeed then
+                t = (_Utils.getWavePoint(self.gradientWaveFrequency, self.gradientWaveSpeed, x, self.time) + 1) / 2
+            else
+                t = (_Utils.getWavePoint(1 / self.gradientWaveFrequency, 1, 0, self.time) + 1) / 2
+            end
+            color = _Utils.interpolate(color, self.gradientWaveColor, t)
         end
 
         if self.shadowOffset then

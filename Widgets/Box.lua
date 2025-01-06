@@ -23,8 +23,8 @@ function Box:new(node, data)
 
     self.node = node
 
-    self.size = Vec2(data.size) or Vec2(10)
-    self.color = Color(data.color) or _COLORS.white
+    self.size = data.size and Vec2(data.size) or Vec2(10)
+    self.color = data.color and Color(data.color) or _COLORS.white
     self.alpha = data.alpha or 1
     self.borderColor = data.borderColor and Color(data.borderColor)
     self.borderAlpha = data.borderAlpha or 1

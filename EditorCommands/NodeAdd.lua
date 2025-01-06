@@ -20,6 +20,7 @@ function EditorCommandNodeAdd:execute()
         return false
     end
     self.parent:addChild(self.node)
+    self.node:ensureUniqueName()
     return true
 end
 

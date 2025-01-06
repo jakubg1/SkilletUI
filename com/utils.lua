@@ -493,6 +493,12 @@ end
 
 
 
+---Returns a value in range from `-1` to `1` based on the sine wave.
+---@param frequency number The frequency of the wave.
+---@param speed number The speed of the wave.
+---@param offset number The offset of the wave.
+---@param time number The time.
+---@return number
 function utils.getWavePoint(frequency, speed, offset, time)
 	return math.sin(((offset - speed * time) / frequency) % 1 * math.pi * 2)
 end
