@@ -10,8 +10,10 @@ local Vec2 = require("Vector2")
 
 ---Creates a new Canvas.
 ---@param node Node The Node that this Canvas is attached to.
----@param data table The data to be used for this Canvas.
+---@param data table? The data to be used for this Canvas.
 function Canvas:new(node, data)
+    data = data or {}
+
     self.node = node
 
     self.size = Vec2(data.size)

@@ -10,7 +10,7 @@ local Vec2 = require("Vector2")
 
 ---Creates a new InputText.
 ---@param node Node The Node that this InputText is attached to.
----@param data table The data to be used for this InputText.
+---@param data table? The data to be used for this InputText.
 function InputText:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Size", key = "size", nodeKeys = {"spriteNode"}, type = "Vector2"},
@@ -19,6 +19,7 @@ function InputText:new(node, data)
         {name = "Color", key = "color", nodeKeys = {"textNode"}, type = "color"},
         {name = "Nullable", key = "nullable", type = "boolean"}
     }
+    data = data or {}
 
     self.node = node
     self.textNode = self.node:findChildByName("text")

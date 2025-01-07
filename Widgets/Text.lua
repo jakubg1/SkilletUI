@@ -12,7 +12,7 @@ local Color = require("Color")
 
 ---Creates a new Text.
 ---@param node Node The Node that this Text is attached to.
----@param data table The data to be used for this Text.
+---@param data table? The data to be used for this Text.
 function Text:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Text", key = "text", type = "string"},
@@ -28,6 +28,7 @@ function Text:new(node, data)
         {name = "Gradient Wave Frequency", key = "gradientWaveFrequency", type = "number", nullable = true},
         {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number", nullable = true}
     }
+    data = data or {}
 
     self.node = node
 

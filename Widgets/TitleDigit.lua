@@ -12,8 +12,10 @@ local Color = require("Color")
 
 ---A hardcoded rotating "2" in the title screen.
 ---@param node Node The Node that this digit is attached to.
----@param data table The data to be used for this Title Digit.
+---@param data table? The data to be used for this Title Digit.
 function TitleDigit:new(node, data)
+    data = data or {}
+
     self.node = node
 
     self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)

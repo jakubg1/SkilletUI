@@ -13,14 +13,15 @@ local NineSprite = require("Widgets.NineSprite")
 local Text = require("Widgets.Text")
 local TitleDigit = require("Widgets.TitleDigit")
 
-local CONSTRUCTORS = {
-    box = Box,
-    button = Button,
-    canvas = Canvas,
-    input_text = InputText,
-    ["9sprite"] = NineSprite,
-    text = Text,
-    ["@titleDigit"] = TitleDigit
+local WIDGET_TYPES = {
+    none = {constructor = nil, defaultName = "Node"},
+    box = {constructor = Box, defaultName = "Box"},
+    button = {constructor = Button, defaultName = "Button"},
+    canvas = {constructor = Canvas, defaultName = "Canvas"},
+    input_text = {constructor = InputText, defaultName = "InputText"},
+    ["9sprite"] = {constructor = NineSprite, defaultName = "NineSprite"},
+    text = {constructor = Text, defaultName = "Text"},
+    ["@titleDigit"] = {constructor = TitleDigit, defaultName = "TitleDigit"}
 }
 
 
@@ -990,8 +991,9 @@ end
 ---Loads Node data to this Node from a previously serialized table.
 ---@param data table The data to be loaded.
 function Node:deserialize(data)
-    self.name = data.name
     self.type = data.type or "none"
+    local widgetData = WIDGET_TYPES[self.type]
+    self.name = data.name or widgetData.defaultName
     self.pos = Vec2(data.pos)
     self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
     self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
@@ -1015,8 +1017,8 @@ function Node:deserialize(data)
         self.isCanvas = true
     end
 
-    if self.type ~= "none" then
-        local success, result = pcall(function() return CONSTRUCTORS[data.type](self, data.widget) end)
+    if widgetData.constructor then
+        local success, result = pcall(function() return widgetData.constructor(self, data.widget) end)
         assert(success, string.format("Node \"%s\": Could not make widget of type \"%s\": %s", self.name, self.type, result))
         self.widget = result
     end

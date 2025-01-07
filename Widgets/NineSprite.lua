@@ -10,7 +10,7 @@ local Vec2 = require("Vector2")
 
 ---Creates a new NineSprite.
 ---@param node Node The Node that this NineSprite is attached to.
----@param data table The data to be used for this NineSprite.
+---@param data table? The data to be used for this NineSprite.
 function NineSprite:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Image", key = "image", type = "Image"},
@@ -23,6 +23,7 @@ function NineSprite:new(node, data)
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true},
         {name = "Shadow Alpha", key = "shadowAlpha", type = "number"}
     }
+    data = data or {image = "ed_button"}
 
     self.node = node
 
@@ -30,7 +31,7 @@ function NineSprite:new(node, data)
     self.hoverImage = data.hoverImage and _IMAGES[data.hoverImage]
     self.clickImage = data.clickImage and _IMAGES[data.clickImage]
     self.disabledImage = data.disabledImage and _IMAGES[data.disabledImage]
-    self.size = Vec2(data.size)
+    self.size = data.size and Vec2(data.size) or Vec2(10)
     self.scale = data.scale or 1
     self.alpha = data.alpha or 1
     self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)

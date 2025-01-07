@@ -11,7 +11,7 @@ local Color = require("Color")
 
 ---Creates a new Box.
 ---@param node Node The Node that this Box is attached to.
----@param data table The data to be used for this Box.
+---@param data table? The data to be used for this Box.
 function Box:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Size", key = "size", type = "Vector2"},
@@ -20,6 +20,7 @@ function Box:new(node, data)
         {name = "Border Color", key = "borderColor", type = "color", nullable = true},
         {name = "Border Alpha", key = "borderAlpha", type = "number"}
     }
+    data = data or {color = _COLORS.white}
 
     self.node = node
 

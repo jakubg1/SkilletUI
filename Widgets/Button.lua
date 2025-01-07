@@ -10,7 +10,7 @@ local Vec2 = require("Vector2")
 
 ---Creates a new Button.
 ---@param node Node The Node that this Button is attached to.
----@param data table The data to be used for this Button.
+---@param data table? The data to be used for this Button.
 function Button:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Size", key = "size", nodeKeys = {"spriteNode"}, type = "Vector2"},
@@ -18,6 +18,7 @@ function Button:new(node, data)
         {name = "Scale", key = "scale", nodeKeys = {"textNode", "spriteNode"}, type = "number"},
         {name = "Color", key = "color", nodeKeys = {"textNode"}, type = "color"}
     }
+    data = data or {}
 
     self.node = node
     self.textNode = self.node:findChildByName("text")

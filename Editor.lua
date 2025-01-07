@@ -267,7 +267,7 @@ end
 ---Adds the provided UI node as the currently selected node's sibling, or, if no node is selected, to the root node.
 ---@param node Node The node to be added.
 function Editor:addNode(node)
-    self:executeCommand(CommandNodeAdd(node, self.selectedNode.parent or _UI))
+    self:executeCommand(CommandNodeAdd(node, self.selectedNode and self.selectedNode.parent or _UI))
 end
 
 
@@ -584,11 +584,15 @@ end
 
 
 
----Saves the current scene to a file.
----@param path string The path to the file.
-function Editor:saveScene(path)
-    _Utils.saveJson(path, _UI:serialize())
-    self.currentSceneFile = path
+---Creates a new blank scene.
+function Editor:newScene()
+    _UI = Node({name = "root"})
+    self.currentSceneFile = nil
+    -- Deselect any selected nodes.
+    self:selectNode()
+    -- Remove everything from the undo stack.
+    self.commandHistory = {}
+    self.undoCommandHistory = {}
 end
 
 
@@ -603,6 +607,15 @@ function Editor:loadScene(path)
     -- Remove everything from the undo stack.
     self.commandHistory = {}
     self.undoCommandHistory = {}
+end
+
+
+
+---Saves the current scene to a file.
+---@param path string The path to the file.
+function Editor:saveScene(path)
+    _Utils.saveJson(path, _UI:serialize())
+    self.currentSceneFile = path
 end
 
 
@@ -810,9 +823,12 @@ function Editor:load()
         self:button(UTILITY_X, UTILITY_Y + 120, 100, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"}),
         self:button(UTILITY_X + 100, UTILITY_Y + 120, 100, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"}),
         self:label(NEW_X, NEW_Y - 20, "New Widget:"),
-        self:button(NEW_X, NEW_Y, 50, "Box", function() self:addNode(Node({name = "Box", type = "box", widget = {color = _COLORS.white}})) end),
-        self:button(NEW_X + 50, NEW_Y, 50, "Text", function() self:addNode(Node({name = "Text", type = "text", widget = {}})) end),
-        self:button(NEW_X + 50, NEW_Y + 20, 50, "Test Btn", function() self:addNode(Node(_Utils.loadJson("Layouts/snippet_test2.json"))) end),
+        self:button(NEW_X, NEW_Y, 50, "Box", function() self:addNode(Node({type = "box"})) end),
+        self:button(NEW_X + 50, NEW_Y, 50, "Text", function() self:addNode(Node({type = "text"})) end),
+        self:button(NEW_X + 100, NEW_Y, 50, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end),
+        self:button(NEW_X + 150, NEW_Y, 50, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite"}}})) end),
+        self:button(NEW_X, NEW_Y + 20, 100, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end),
+        self:button(NEW_X + 100, NEW_Y + 20, 100, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end),
 
         self:label(ALIGN_X, ALIGN_Y, "Node Align"),
         self:button(ALIGN_X, ALIGN_Y + 20, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
@@ -838,10 +854,11 @@ function Editor:load()
 
         self:label(ALIGN_X, ALIGN_Y + 90, "Ctrl+Click a node to make it a parent of the currently selected node"),
 
-        self:button(FILE_X, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false) end, {ctrl = true, key = "l"}),
-        self:button(FILE_X + 60, FILE_Y, 60, "Save", function() if self.currentSceneFile then self:saveScene(self.currentSceneFile) else self:askForInput("save", "file", {".json"}, true) end end, {ctrl = true, key = "s"}),
-        self:button(FILE_X + 120, FILE_Y, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true) end, {ctrl = true, shift = true, key = "s"}),
-        self:label(FILE_X + 200, FILE_Y, "File: (none)", "lb_file")
+        self:button(FILE_X, FILE_Y, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"}),
+        self:button(FILE_X + 60, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false) end, {ctrl = true, key = "l"}),
+        self:button(FILE_X + 120, FILE_Y, 60, "Save", function() if self.currentSceneFile then self:saveScene(self.currentSceneFile) else self:askForInput("save", "file", {".json"}, true) end end, {ctrl = true, key = "s"}),
+        self:button(FILE_X + 180, FILE_Y, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true) end, {ctrl = true, shift = true, key = "s"}),
+        self:label(FILE_X + 250, FILE_Y, "File: (none)", "lb_file")
     }
     for i, node in ipairs(nodes) do
         self.UI:addChild(node)
