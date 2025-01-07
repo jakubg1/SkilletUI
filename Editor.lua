@@ -5,10 +5,10 @@ local class = require "com.class"
 local Editor = class:derive("Editor")
 
 local Vec2 = require("Vector2")
-local Color = require("Color")
 local Node = require("Node")
 local Input = require("Input")
 local EditorUITree = require("EditorUITree")
+local EditorCommands = require("EditorCommands")
 
 local CommandNodeAdd = require("EditorCommands.NodeAdd")
 local CommandNodeRename = require("EditorCommands.NodeRename")
@@ -83,10 +83,6 @@ function Editor:new()
     self.isSceneModified = false
     self.clipboard = nil
 
-    self.commandHistory = {}
-    self.undoCommandHistory = {}
-    self.transactionMode = false
-
     self.enabled = true
     self.activeInput = nil -- Can be a Node, but also `"save"` or `"load"`
     self.hoveredNode = nil
@@ -103,6 +99,8 @@ function Editor:new()
     self.uiTree = EditorUITree(self)
     self.uiTreeInfo = {}
     self.uiTreeShowsInternalUI = false
+
+    self.commandMgr = EditorCommands(self)
 end
 
 
@@ -179,6 +177,10 @@ end
 
 ---Refreshes all critical UI for Editors, for example the node properties.
 function Editor:refreshUI()
+    -- If the selected node has been removed, deselect it.
+    if not _UI:findChild(self.selectedNode) then
+        self.selectedNode = nil
+    end
     self:generateNodePropertyUI(self.selectedNode)
 end
 
@@ -324,7 +326,7 @@ end
 ---Moves the currently selected UI node by the given amount of pixels.
 ---@param offset Vector2 The movement vector the selected UI node should be moved towards.
 function Editor:moveSelectedNode(offset)
-    self:executeCommand(CommandNodeMove(self.selectedNode, offset))
+    self:executeCommand(CommandNodeMove(self.selectedNode, offset), "widgetMove")
 end
 
 
@@ -347,6 +349,10 @@ function Editor:finishDraggingSelectedNode()
         return
     end
     self:executeCommand(CommandNodeDrag(self.selectedNode, self.nodeDragOriginalPos))
+    -- If we were dragging a freshly duplicated node, we need to commit the transaction.
+    if self.commandMgr.transactionMode then
+        self:commitCommandTransaction()
+    end
     self.nodeDragOrigin = nil
     self.nodeDragOriginalPos = nil
     self.nodeDragSnap = false
@@ -360,6 +366,10 @@ function Editor:cancelDraggingSelectedNode()
         return
     end
     self.selectedNode:setPos(self.nodeDragOriginalPos)
+    -- If we were dragging a freshly duplicated node, we need to cancel the transaction.
+    if self.commandMgr.transactionMode then
+        self:cancelCommandTransaction()
+    end
     self:finishDraggingSelectedNode()
 end
 
@@ -487,33 +497,20 @@ end
 
 ---Deletes the currently selected UI node.
 function Editor:deleteSelectedNode()
-    local result = self:executeCommand(CommandNodeDelete(self.selectedNode))
-    -- Unselect the selected node if it has been successfully deleted.
-    if result then
-        self.selectedNode = nil
-    end
+    self:executeCommand(CommandNodeDelete(self.selectedNode))
 end
 
 
 
----Executes an editor command. Each command is an atomic action, which can be undone with a single press of the Undo button.
----If the command has been executed successfully, it is added to the command stack and can be undone using `:undoLastCommand()`.
+---Executes an editor command.
+---If the command has been executed successfully, it can be undone using `:undoLastCommand()`.
 ---Returns `true` if the command has been executed successfully. Otherwise, returns `false`.
 ---@param command EditorCommand* The command to be performed.
+---@param groupID string? An optional group identifier for this command execution. If set, commands with the same group ID will be grouped together, and so will be packed into a single command transaction.
 ---@return boolean
-function Editor:executeCommand(command)
-    local result = command:execute()
+function Editor:executeCommand(command, groupID)
+    local result = self.commandMgr:executeCommand(command, groupID)
     if result then
-        -- Purge the undo command stack if anything was there.
-        if #self.undoCommandHistory > 0 then
-            self.undoCommandHistory = {}
-        end
-        -- Add a command onto the stack, or into the transaction if one is open.
-        if self.transactionMode then
-            table.insert(self.commandHistory[#self.commandHistory], command)
-        else
-            table.insert(self.commandHistory, command)
-        end
         -- Mark the scene as unsaved.
         self.isSceneModified = true
         -- Make sure to refresh UIs.
@@ -526,59 +523,35 @@ end
 
 ---Starts a command transaction.
 ---Command transactions bundle a few commands into an atomic pack. It only can be undone as a whole.
----
----Each command transaction is saved as a subtable in the `self.commandHistory` table.
----To close a command transaction, use `:closeCommandTransaction()`.
-function Editor:startCommandTransaction()
-    if self.transactionMode then
-        error("Cannot nest command transactions!")
-    end
-    self.transactionMode = true
-    table.insert(self.commandHistory, {})
+---To close a command transaction, use `:commitCommandTransaction()`.
+---@param groupID string? An optional group identifier for this command group. If set, any incoming command that does not match this group will automatically commit this transaction.
+function Editor:startCommandTransaction(groupID)
+    self.commandMgr:startCommandTransaction(groupID)
 end
 
 
 
 ---Closes a command transaction.
 ---From this point, any new commands will be added separately, as usual.
-function Editor:closeCommandTransaction()
-    if not self.transactionMode then
-        error("Cannot close a command transaction when none is open!")
-    end
-    self.transactionMode = false
-    if #self.commandHistory[#self.commandHistory] == 0 then
-        -- Remove an empty transaction.
-        table.remove(self.commandHistory)
-    elseif #self.commandHistory[#self.commandHistory] == 1 then
-        -- Unwrap a transaction with just one command.
-        local command = self.commandHistory[#self.commandHistory][1]
-        table.remove(self.commandHistory)
-        table.insert(self.commandHistory, command)
-    end
+function Editor:commitCommandTransaction()
+    self.commandMgr:commitCommandTransaction()
+end
+
+
+
+---Cancels a command transaction by undoing all commands that have been already executed and removing the transaction from the stack.
+---Cancelled command transactions can NOT be restored.
+function Editor:cancelCommandTransaction()
+    self.commandMgr:cancelCommandTransaction()
+    -- Make sure to refresh UIs.
+    self:refreshUI()
 end
 
 
 
 ---Undoes the command that has been executed last and moves it to the undo command stack.
 function Editor:undoLastCommand()
-    if #self.commandHistory == 0 then
-        return
-    end
-    -- Undoing a command closes the transaction.
-    -- TODO: Redoing should open it back. Find a solution to this problem.
-    if self.transactionMode then
-        self:closeCommandTransaction()
-    end
-    local command = table.remove(self.commandHistory)
-    if #command > 0 then    -- Both command groups and commands themselves are tables, so we cannot do `type(command) == "table"` here.
-        -- Undo the whole transaction at once.
-        for i = #command, 1, -1 do
-            command[i]:undo()
-        end
-    else
-        command:undo()
-    end
-    table.insert(self.undoCommandHistory, command)
+    self.commandMgr:undoLastCommand()
     -- Mark the scene as unsaved.
     self.isSceneModified = true
     -- Make sure to refresh UIs.
@@ -589,18 +562,7 @@ end
 
 ---Redoes the undone command and moves it back to the main command stack.
 function Editor:redoLastCommand()
-    if #self.undoCommandHistory == 0 then
-        return
-    end
-    local command = table.remove(self.undoCommandHistory)
-    if #command > 0 then
-        for i = 1, #command do
-            command[i]:execute()
-        end
-    else
-        command:execute()
-    end
-    table.insert(self.commandHistory, command)
+    self.commandMgr:redoLastCommand()
     -- Mark the scene as unsaved.
     self.isSceneModified = true
     -- Make sure to refresh UIs.
@@ -763,7 +725,7 @@ function Editor:input(x, y, w, type, value, nullable, fn, extensions)
     input.widget:setValue(value)
     input:setOnClick(function() self:askForInput(input, type, extensions) end)
     if nullable and fn then
-        input:findChildByName("sprite"):findChildByName("nullifyButton"):setOnClick(function() fn(nil) end)
+        input:findChildByName("nullifyButton"):setOnClick(function() fn(nil) end)
     end
     input._onChange = fn
     return input
@@ -958,27 +920,7 @@ function Editor:draw()
     self.uiTree:draw()
 
     -- Command buffer
-    local COMMAND_BUFFER_POS = Vec2(1220, 600)
-    local COMMAND_BUFFER_ITEM_HEIGHT = 20
-    self:drawShadowedText("Command Buffer", COMMAND_BUFFER_POS.x, COMMAND_BUFFER_POS.y)
-    local y = COMMAND_BUFFER_POS.y + 30
-    for i, command in ipairs(self.commandHistory) do
-        if #command > 0 then
-            self:drawShadowedText("Transaction {", COMMAND_BUFFER_POS.x, y)
-            y = y + COMMAND_BUFFER_ITEM_HEIGHT
-            for j, subcommand in ipairs(command) do
-                self:drawShadowedText(subcommand.NAME, COMMAND_BUFFER_POS.x + 30, y)
-                y = y + COMMAND_BUFFER_ITEM_HEIGHT
-            end
-            if command ~= self.commandHistory[#self.commandHistory] or not self.transactionMode then
-                self:drawShadowedText("}", COMMAND_BUFFER_POS.x, y)
-                y = y + COMMAND_BUFFER_ITEM_HEIGHT
-            end
-        else
-            self:drawShadowedText(command.NAME, COMMAND_BUFFER_POS.x, y)
-            y = y + COMMAND_BUFFER_ITEM_HEIGHT
-        end
-    end
+    self.commandMgr:draw()
 
     -- Widget properties
     if self.selectedNode then
@@ -1065,6 +1007,7 @@ function Editor:mousepressed(x, y, button, istouch, presses)
         else
             self:selectNode(self.hoveredNode)
             if _IsCtrlPressed() then
+                self:startCommandTransaction()
                 self:duplicateSelectedNode()
             end
             if self.selectedNode then

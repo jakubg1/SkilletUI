@@ -292,7 +292,7 @@ function EditorUITree:mousepressed(x, y, button, istouch, presses)
             self.nameEditNode = nil
             self.nameEditValue = nil
         end
-        if presses == 2 then
+        if presses >= 2 then
             if node then
                 self.nameEditNode = node
                 self.nameEditValue = node:getName()

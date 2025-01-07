@@ -707,7 +707,7 @@ end
 
 
 
----Returns the first encountered child by reference, or `nil` if it is not found.
+---Returns the first encountered child by reference (recursively), or `nil` if it is not found.
 ---@param node Node The instance of the child to be found.
 ---@return Node?
 function Node:findChild(node)
@@ -724,7 +724,7 @@ end
 
 
 
----Returns the first encountered child of the provided name, or `nil` if it is not found.
+---Returns the first encountered child of the provided name (recursively), or `nil` if it is not found.
 ---@param name string The name of the child to be found.
 ---@return Node?
 function Node:findChildByName(name)
@@ -741,7 +741,7 @@ end
 
 
 
----Returns the first encountered child that contains the provided position, or `nil` if it is not found.
+---Returns the first encountered child that contains the provided position (recursively), or `nil` if it is not found.
 ---@param pos Vector2 The position to be checked.
 ---@return Node?
 function Node:findChildByPixel(pos)
@@ -758,7 +758,7 @@ end
 
 
 
----Returns the first encountered child that contains the provided position (depth first), or `nil` if it is not found.
+---Returns the first encountered child that contains the provided position (recursively, depth first), or `nil` if it is not found.
 ---@param pos Vector2 The position to be checked.
 ---@param ignoreControlledNodes boolean? If set, controlled nodes will not be returned by this function.
 ---@return Node?
@@ -776,7 +776,7 @@ end
 
 
 
----Returns the last encountered child that contains the provided position (depth first), or `nil` if it is not found.
+---Returns the last encountered child that contains the provided position (recursively, depth first), or `nil` if it is not found.
 ---@param pos Vector2 The position to be checked.
 ---@return Node?
 function Node:findChildByPixelDepthFirstReverse(pos)

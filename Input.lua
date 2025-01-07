@@ -68,7 +68,7 @@ function Input:mousepressed(x, y, button, istouch, presses)
 			local entry = self:getHoveredFileEntryIndex()
 			if entry then
 				self.inputText = self.fileList[entry]
-				if presses == 2 then
+				if presses >= 2 then
 					self:inputAccept()
 				end
 			end
