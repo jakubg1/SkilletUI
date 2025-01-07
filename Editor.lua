@@ -50,12 +50,12 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Finish widget parameters
 --- - Proper editing of node groups (size forwarding, unable to edit their components, etc.)
 --- - Nullifying parameters
+--- - Copy/Paste and widget duplication
 ---
 --- To Do:
 --- - Live editing of parameters
 --- - Vector and image support for parameters
 --- - Node modifier system, where you could add a rule, like: "modify this node and all its children's widgets' alpha by multiplying it by 0.5"
---- - Copy/Paste and widget duplication
 --- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
 ---   - tip: have a Button class as a controller for the children which have unchangeable names and references them directly by name in the constructor
 --- - Multi-selection(?)
@@ -82,6 +82,8 @@ function Editor:new()
     self.commandHistory = {}
     self.undoCommandHistory = {}
     self.transactionMode = false
+
+    self.clipboard = nil
 
     self.enabled = true
     self.activeInput = nil
@@ -261,10 +263,32 @@ end
 
 
 
----Adds the provided UI node to the currently selected node, or, if no node is selected, to the root node.
+---Adds the provided UI node as the currently selected node's sibling, or, if no node is selected, to the root node.
 ---@param node Node The node to be added.
 function Editor:addNode(node)
-    self:executeCommand(CommandNodeAdd(node, self.selectedNode or _UI))
+    self:executeCommand(CommandNodeAdd(node, self.selectedNode.parent or _UI))
+end
+
+
+
+---Copies the currently selected UI node to the internal clipboard.
+function Editor:copySelectedNode()
+    if not self.selectedNode then
+        return
+    end
+    self.clipboard = self.selectedNode:serialize()
+end
+
+
+
+---Pastes the UI node which is stored in the internal clipboard and adds it as the currently selected node's sibling (or to the root node).
+function Editor:pasteNode()
+    if not self.clipboard then
+        return
+    end
+    local node = Node(self.clipboard)
+    self:addNode(node)
+    self:selectNode(node)
 end
 
 
@@ -571,6 +595,9 @@ end
 ---@param path string The path to the file.
 function Editor:loadScene(path)
     _UI = _LoadUI(path)
+    -- Remove everything from the undo stack.
+    self.commandHistory = {}
+    self.undoCommandHistory = {}
 end
 
 
@@ -720,6 +747,9 @@ end
 ---Executed when an input has been submitted for a certain editor input field.
 ---@param result string|number|Color The value that has been submitted for this input.
 function Editor:onInputReceived(result)
+    -- Not required for property lists, but required for file name.
+    self.activeInput.widget:setValue(result)
+
     if self.activeInput._onChange then
         self.activeInput._onChange(result)
     end
@@ -744,9 +774,9 @@ function Editor:load()
     local UTILITY_X = 0
     local UTILITY_Y = 700
     local ALIGN_X = 250
-    local ALIGN_Y = 800
+    local ALIGN_Y = 600
     local PALIGN_X = 450
-    local PALIGN_Y = 800
+    local PALIGN_Y = 600
     local FILE_X = 250
     local FILE_Y = 10
     local nodes = {
@@ -755,36 +785,38 @@ function Editor:load()
         self:button(UTILITY_X, UTILITY_Y + 40, 200, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"}),
         self:button(UTILITY_X, UTILITY_Y + 60, 200, "To Top [Shift+PgUp]", function() self:moveSelectedNodeUp() end, {shift = true, key = "pageup"}),
         self:button(UTILITY_X, UTILITY_Y + 80, 200, "To Bottom [Shift+PgDown]", function() self:moveSelectedNodeDown() end, {shift = true, key = "pagedown"}),
-        self:button(UTILITY_X, UTILITY_Y + 100, 200, "Undo [Ctrl+Z]", function() self:undoLastCommand() end, {ctrl = true, key = "z"}),
-        self:button(UTILITY_X, UTILITY_Y + 120, 200, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"}),
+        self:button(UTILITY_X, UTILITY_Y + 100, 100, "Undo [Ctrl+Z]", function() self:undoLastCommand() end, {ctrl = true, key = "z"}),
+        self:button(UTILITY_X + 100, UTILITY_Y + 100, 100, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"}),
+        self:button(UTILITY_X, UTILITY_Y + 120, 100, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"}),
+        self:button(UTILITY_X + 100, UTILITY_Y + 120, 100, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"}),
         self:label(NEW_X, NEW_Y - 20, "New Widget:"),
-        self:button(NEW_X, NEW_Y, 50, "Box", function() self:addNode(Node({name = "Box", type = "box", widget = {}})) end),
+        self:button(NEW_X, NEW_Y, 50, "Box", function() self:addNode(Node({name = "Box", type = "box", widget = {color = _COLORS.white}})) end),
         self:button(NEW_X + 50, NEW_Y, 50, "Text", function() self:addNode(Node({name = "Text", type = "text", widget = {}})) end),
         self:button(NEW_X + 50, NEW_Y + 20, 50, "Test Btn", function() self:addNode(Node(_Utils.loadJson("Layouts/snippet_test2.json"))) end),
 
-        self:label(ALIGN_X, ALIGN_Y - 20, "Node Align"),
-        self:button(ALIGN_X, ALIGN_Y, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
-        self:button(ALIGN_X + 30, ALIGN_Y, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
-        self:button(ALIGN_X + 60, ALIGN_Y, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
-        self:button(ALIGN_X, ALIGN_Y + 20, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
-        self:button(ALIGN_X + 30, ALIGN_Y + 20, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
-        self:button(ALIGN_X + 60, ALIGN_Y + 20, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
-        self:button(ALIGN_X, ALIGN_Y + 40, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(ALIGN_X + 30, ALIGN_Y + 40, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
-        self:button(ALIGN_X + 60, ALIGN_Y + 40, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
+        self:label(ALIGN_X, ALIGN_Y, "Node Align"),
+        self:button(ALIGN_X, ALIGN_Y + 20, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
+        self:button(ALIGN_X + 30, ALIGN_Y + 20, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
+        self:button(ALIGN_X + 60, ALIGN_Y + 20, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
+        self:button(ALIGN_X, ALIGN_Y + 40, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
+        self:button(ALIGN_X + 30, ALIGN_Y + 40, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
+        self:button(ALIGN_X + 60, ALIGN_Y + 40, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
+        self:button(ALIGN_X, ALIGN_Y + 60, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(ALIGN_X + 30, ALIGN_Y + 60, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
+        self:button(ALIGN_X + 60, ALIGN_Y + 60, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
 
-        self:label(PALIGN_X, PALIGN_Y - 20, "Parent Align"),
-        self:button(PALIGN_X, PALIGN_Y, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
-        self:button(PALIGN_X + 30, PALIGN_Y, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
-        self:button(PALIGN_X + 60, PALIGN_Y, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
-        self:button(PALIGN_X, PALIGN_Y + 20, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
-        self:button(PALIGN_X + 30, PALIGN_Y + 20, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
-        self:button(PALIGN_X + 60, PALIGN_Y + 20, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
-        self:button(PALIGN_X, PALIGN_Y + 40, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(PALIGN_X + 30, PALIGN_Y + 40, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
-        self:button(PALIGN_X + 60, PALIGN_Y + 40, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
+        self:label(PALIGN_X, PALIGN_Y, "Parent Align"),
+        self:button(PALIGN_X, PALIGN_Y + 20, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
+        self:button(PALIGN_X + 30, PALIGN_Y + 20, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
+        self:button(PALIGN_X + 60, PALIGN_Y + 20, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
+        self:button(PALIGN_X, PALIGN_Y + 40, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
+        self:button(PALIGN_X + 30, PALIGN_Y + 40, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
+        self:button(PALIGN_X + 60, PALIGN_Y + 40, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
+        self:button(PALIGN_X, PALIGN_Y + 60, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
+        self:button(PALIGN_X + 30, PALIGN_Y + 60, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
+        self:button(PALIGN_X + 60, PALIGN_Y + 60, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
 
-        self:label(ALIGN_X, ALIGN_Y + 70, "Ctrl+Click a node to make it a parent of the currently selected node"),
+        self:label(ALIGN_X, ALIGN_Y + 90, "Ctrl+Click a node to make it a parent of the currently selected node"),
 
         self:label(FILE_X, FILE_Y, "File Name:"),
         self:button(FILE_X + 270, FILE_Y, 100, "Save [Ctrl+S]", function() self:saveScene(self.fileNameInput.widget:getValue()) end, {ctrl = true, key = "s"}),
@@ -1009,7 +1041,7 @@ end
 function Editor:keypressed(key)
     love.keyboard.setKeyRepeat(key == "backspace")
     self.UI:keypressed(key)
-    if self.INPUT_DIALOG:keypressed(key) then
+    if self.INPUT_DIALOG:keypressed(key) or self.INPUT_DIALOG.inputType then
         return
     end
 	if key == "tab" then

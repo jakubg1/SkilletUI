@@ -21,7 +21,8 @@ function EditorUITree:new(editor)
     self.POS = Vec2(5, 150)
     self.SIZE = Vec2(210, 500)
     self.ITEM_HEIGHT = 20
-    self.ITEM_MARGIN = 8
+    self.ITEM_INDENT = 20
+    self.ITEM_MARGIN = 5
 
     self.scrollOffset = 0
     self.maxScrollOffset = 0
@@ -177,7 +178,7 @@ function EditorUITree:draw()
     -- Node tree
     love.graphics.setScissor(self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
     for i, line in ipairs(self.editor.uiTreeInfo) do
-        local x = self.POS.x + 30 * line.indent
+        local x = self.POS.x + self.ITEM_INDENT * line.indent
         local y = self.POS.y + self:getItemY(i)
         local color = _COLORS.white
         if line.node.isController then
@@ -227,7 +228,7 @@ function EditorUITree:draw()
             elseif self.hoverBottom then
                 -- Indent the line if this node has children.
                 if line.node:hasChildren() then
-                    x = x + 30
+                    x = x + self.ITEM_INDENT
                 end
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.setLineWidth(2)

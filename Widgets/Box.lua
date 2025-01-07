@@ -24,7 +24,7 @@ function Box:new(node, data)
     self.node = node
 
     self.size = data.size and Vec2(data.size) or Vec2(10)
-    self.color = data.color and Color(data.color) or _COLORS.white
+    self.color = data.color and Color(data.color)
     self.alpha = data.alpha or 1
     self.borderColor = data.borderColor and Color(data.borderColor)
     self.borderAlpha = data.borderAlpha or 1
@@ -86,7 +86,7 @@ function Box:serialize()
     local data = {}
 
     data.size = {x = self.size.x, y = self.size.y}
-    data.color = {r = self.color.r, g = self.color.g, b = self.color.b}
+    data.color = self.color and {r = self.color.r, g = self.color.g, b = self.color.b}
     data.alpha = self.alpha
     data.borderColor = self.borderColor and {r = self.borderColor.r, g = self.borderColor.g, b = self.borderColor.b}
     data.borderAlpha = self.borderAlpha
