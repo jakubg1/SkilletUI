@@ -194,7 +194,7 @@ function Editor:generateNodePropertyUI(node)
     end
     -- Make a new property list UI.
     if node then
-        local propertiesUI = Node({name = "properties", pos = {x = 1220, y = 60}})
+        local propertiesUI = Node({name = "properties", pos = {1220, 60}})
         local currentRow = 0
         local nodeProperties = node:getPropertyList()
         local propertyHeaderUI = self:label(0, currentRow * 20, "Node Properties")
@@ -206,7 +206,7 @@ function Editor:generateNodePropertyUI(node)
             local inputFunction = function(input)
                 self:setSelectedNodeProperty(property.key, input)
             end
-            local propertyUI = Node({name = "input", pos = {x = 0, y = currentRow * 20}})
+            local propertyUI = Node({name = "input", pos = {0, currentRow * 20}})
             currentRow = currentRow + 1
             local propertyText = self:label(0, 0, property.name)
             local propertyInput = self:input(150, 0, 200, property.type, inputValue, property.nullable, inputFunction)
@@ -243,7 +243,7 @@ function Editor:generateNodePropertyUI(node)
                             self:setSelectedNodeWidgetProperty(property.key, input)
                         end
                     end
-                    local propertyUI = Node({name = "input", pos = {x = 0, y = currentRow * 20}})
+                    local propertyUI = Node({name = "input", pos = {0, currentRow * 20}})
                     currentRow = currentRow + 1
                     local propertyText = self:label(0, 0, property.name)
                     local propertyInput = self:input(150, 0, 200, property.type, inputValue, property.nullable, inputFunction)
@@ -641,7 +641,7 @@ end
 ---@param name string? The label name.
 ---@return Node
 function Editor:label(x, y, text, name)
-    local label = Node({name = name or ("lb_" .. text), type = "text", widget = {font = "editor", text = text, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x = x, y = y}})
+    local label = Node({name = name or ("lb_" .. text), type = "text", widget = {font = "editor", text = text, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x, y}})
     return label
 end
 
@@ -656,7 +656,7 @@ end
 ---@param shortcut table? The key which will activate this button.
 ---@return Node
 function Editor:button(x, y, w, text, fn, shortcut)
-    local button = Node({name = "btn_" .. text, type = "9sprite", widget = {image = "ed_button", clickImage = "ed_button_click", size = {x = w, y = 20}, scale = 2}, shortcut = shortcut, pos = {x = x, y = y}, children = {{name = "$text", type = "text", widget = {font = "default", text = text, color = _COLORS.black}, pos = {x = 0, y = -1}, align = "center", parentAlign = "center"}}})
+    local button = Node({name = "btn_" .. text, type = "9sprite", widget = {image = "ed_button", clickImage = "ed_button_click", size = {w, 20}, scale = 2}, shortcut = shortcut, pos = {x, y}, children = {{name = "$text", type = "text", widget = {font = "default", text = text, color = _COLORS.black}, pos = {0, -1}, align = "center", parentAlign = "center"}}})
     button:setOnClick(fn)
     return button
 end
@@ -677,7 +677,7 @@ function Editor:input(x, y, w, type, value, nullable, fn, extensions)
     local data = {
         name = "inp_" .. type,
         type = "input_text",
-        pos = {x = x, y = y},
+        pos = {x, y},
         children = {
             {
                 name = "text",
@@ -686,7 +686,7 @@ function Editor:input(x, y, w, type, value, nullable, fn, extensions)
                     font = "default",
                     color = _COLORS.white
                 },
-                pos = {x = 4, y = -1},
+                pos = {4, -1},
                 align = "left",
                 parentAlign = "left"
             },
@@ -696,9 +696,9 @@ function Editor:input(x, y, w, type, value, nullable, fn, extensions)
                 visible = false,
                 widget = {
                     color = _COLORS.white,
-                    size = {x = w - 2, y = 18}
+                    size = {w - 2, 18}
                 },
-                pos = {x = 0, y = -1},
+                pos = {0, -1},
                 align = "center",
                 parentAlign = "center"
             },
@@ -709,7 +709,7 @@ function Editor:input(x, y, w, type, value, nullable, fn, extensions)
                     image = "ed_input",
                     hoverImage = "ed_input_hover",
                     disabledImage = "ed_input_disabled",
-                    size = {x = w, y = 20}
+                    size = {w, 20}
                 },
                 children = {
                     {
@@ -735,7 +735,7 @@ function Editor:input(x, y, w, type, value, nullable, fn, extensions)
                                 widget = {
                                     image = "ed_button",
                                     clickImage = "ed_button_click",
-                                    size = {x = 20, y = 20}
+                                    size = {20, 20}
                                 }
                             }
                         }

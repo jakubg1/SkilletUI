@@ -20,11 +20,26 @@ local Color = class:derive("Color")
 ---`Color(r, g, b)` will make a `(r, g, b)` color.
 ---
 ---`Color({r: r, g: g, b: b})` will make a `(r, g, b)` color.
+---
+---`Color("#00ff00")` will make a color matching the hex code.
 function Color:new(r, g, b)
 	if type(r) == "table" then
 		self.r = r.r
 		self.g = r.g
 		self.b = r.b
+	elseif type(r) == "string" then
+		if r:sub(1, 1) == "#" then
+			r = r:sub(2)
+		end
+		if r:len() == 6 then
+			self.r = tonumber(r:sub(1, 2), 16) / 255
+			self.g = tonumber(r:sub(3, 4), 16) / 255
+			self.b = tonumber(r:sub(5, 6), 16) / 255
+		else
+			self.r = tonumber(r:sub(1, 1), 16) / 15
+			self.g = tonumber(r:sub(2, 2), 16) / 15
+			self.b = tonumber(r:sub(3, 3), 16) / 15
+		end
 	else
 		self.r = r or 1
 		self.g = g or self.r

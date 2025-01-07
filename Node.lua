@@ -968,19 +968,21 @@ function Node:serialize()
     local data = {}
 
     data.name = self.name
-    data.type = self.type
-    data.pos = {x = self.pos.x, y = self.pos.y}
-    data.align = {x = self.align.x, y = self.align.y}
-    data.parentAlign = {x = self.parentAlign.x, y = self.parentAlign.y}
-    data.visible = self.visible
+    data.type = self.type ~= "none" and self.type or nil
+    data.pos = self.pos ~= Vec2() and {self.pos.x, self.pos.y} or nil
+    data.align = self.align ~= _ALIGNMENTS.topLeft and {self.align.x, self.align.y} or nil
+    data.parentAlign = self.parentAlign ~= _ALIGNMENTS.topLeft and {self.parentAlign.x, self.parentAlign.y} or nil
+    data.visible = self.visible ~= true and self.visible or nil
     data.shortcut = self.shortcut
     data.canvasInputMode = self.canvasInputMode
 
     data.widget = self.widget and self.widget:serialize()
 
-    data.children = {}
-    for i, child in ipairs(self.children) do
-        data.children[i] = child:serialize()
+    if #self.children > 0 then
+        data.children = {}
+        for i, child in ipairs(self.children) do
+            data.children[i] = child:serialize()
+        end
     end
 
     return data

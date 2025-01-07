@@ -72,8 +72,8 @@ end
 function Canvas:serialize()
     local data = {}
 
-    data.size = {x = self.size.x, y = self.size.y}
-    data.canvasSize = {x = self.canvasSize.x, y = self.canvasSize.y}
+    data.size = {self.size.x, self.size.y}
+    data.canvasSize = {self.canvasSize.x, self.canvasSize.y}
 
     return data
 end

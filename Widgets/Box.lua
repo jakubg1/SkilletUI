@@ -86,10 +86,10 @@ end
 function Box:serialize()
     local data = {}
 
-    data.size = {x = self.size.x, y = self.size.y}
-    data.color = self.color and {r = self.color.r, g = self.color.g, b = self.color.b}
+    data.size = {self.size.x, self.size.y}
+    data.color = self.color and self.color:getHex()
     data.alpha = self.alpha
-    data.borderColor = self.borderColor and {r = self.borderColor.r, g = self.borderColor.g, b = self.borderColor.b}
+    data.borderColor = self.borderColor and self.borderColor:getHex()
     data.borderAlpha = self.borderAlpha
 
     return data

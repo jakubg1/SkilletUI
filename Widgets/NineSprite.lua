@@ -103,11 +103,11 @@ function NineSprite:serialize()
     data.hoverImage = self.hoverImage and _IMAGE_LOOKUP[self.hoverImage]
     data.clickImage = self.clickImage and _IMAGE_LOOKUP[self.clickImage]
     data.disabledImage = self.disabledImage and _IMAGE_LOOKUP[self.disabledImage]
-    data.size = {x = self.size.x, y = self.size.y}
-    data.scale = self.scale
-    data.alpha = self.alpha
-    data.shadowOffset = self.shadowOffset and {x = self.shadowOffset.x, y = self.shadowOffset.y}
-    data.shadowAlpha = self.shadowAlpha
+    data.size = {self.size.x, self.size.y}
+    data.scale = self.scale ~= 1 and self.scale or nil
+    data.alpha = self.alpha ~= 1 and self.alpha or nil
+    data.shadowOffset = self.shadowOffset and {self.shadowOffset.x, self.shadowOffset.y}
+    data.shadowAlpha = self.shadowAlpha ~= 0.5 and self.shadowAlpha or nil
 
     return data
 end

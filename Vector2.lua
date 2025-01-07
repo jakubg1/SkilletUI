@@ -19,14 +19,16 @@ local Vec2 = class:derive("Vec2")
 ---
 ---`Vec2(x, y)` will make a `(x, y)` vector.
 ---
+---`Vec2({x, y})` will make a `(x, y)` vector.
+---
 ---`Vec2({x: x, y: y})` will make a `(x, y)` vector.
 ---@param x number?
 ---@param y number?
 function Vec2:new(x, y)
 	_VEC2S_PER_FRAME = (_VEC2S_PER_FRAME or 0) + 1
 	if type(x) == "table" then
-		self.x = x.x
-		self.y = x.y
+		self.x = x.x or x[1]
+		self.y = x.y or x[2]
 	else
 		self.x = x or 0
 		self.y = y or self.x

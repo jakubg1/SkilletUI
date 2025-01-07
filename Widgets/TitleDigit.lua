@@ -18,6 +18,7 @@ function TitleDigit:new(node, data)
 
     self.node = node
 
+    self.alpha = data.alpha or 1
     self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
 
     self.SIZE = Vec2(6, 7)
@@ -152,14 +153,14 @@ function TitleDigit:draw()
         for i, cubePos in ipairs(self.CUBE_POSITIONS) do
             local offsetX = cubePos.x - (self.SIZE.x - 1) / 2
             local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
-            self:drawCube(cubePos2, angle, self.node.alpha, true)
+            self:drawCube(cubePos2, angle, self.alpha, true)
         end
     end
     ]]
     for i, cubePos in ipairs(self.CUBE_POSITIONS) do
         local offsetX = cubePos.x - (self.SIZE.x - 1) / 2
         local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
-        self:drawCube(cubePos2, angle, self.node.alpha)
+        self:drawCube(cubePos2, angle, self.alpha)
     end
 end
 
@@ -170,7 +171,8 @@ end
 function TitleDigit:serialize()
     local data = {}
 
-    data.shadowOffset = self.shadowOffset and {x = self.shadowOffset.x, y = self.shadowOffset.y}
+    data.alpha = self.alpha ~= 1 and self.alpha or nil
+    data.shadowOffset = self.shadowOffset and {self.shadowOffset.x, self.shadowOffset.y}
 
     return data
 end

@@ -161,17 +161,17 @@ function Text:serialize()
 
     data.font = _FONT_LOOKUP[self.font]
     data.text = self.text
-    data.scale = self.scale
-    data.color = {r = self.color.r, g = self.color.g, b = self.color.b}
-    data.alpha = self.alpha
-    data.shadowOffset = self.shadowOffset and {x = self.shadowOffset.x, y = self.shadowOffset.y}
-    data.shadowAlpha = self.shadowAlpha
+    data.scale = self.scale ~= 1 and self.scale or nil
+    data.color = self.color ~= _COLORS.white and self.color:getHex() or nil
+    data.alpha = self.alpha ~= 1 and self.alpha or nil
+    data.shadowOffset = self.shadowOffset and {self.shadowOffset.x, self.shadowOffset.y}
+    data.shadowAlpha = self.shadowAlpha ~= 0.5 and self.shadowAlpha or nil
 
     data.waveAmplitude = self.waveAmplitude
     data.waveFrequency = self.waveFrequency
     data.waveSpeed = self.waveSpeed
 
-    data.gradientWaveColor = self.gradientWaveColor and {r = self.gradientWaveColor.r, g = self.gradientWaveColor.g, b = self.gradientWaveColor.b}
+    data.gradientWaveColor = self.gradientWaveColor and self.gradientWaveColor:getHex()
     data.gradientWaveFrequency = self.gradientWaveFrequency
     data.gradientWaveSpeed = self.gradientWaveSpeed
 
