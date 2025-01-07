@@ -598,6 +598,8 @@ end
 function Editor:loadScene(path)
     _UI = _LoadUI(path)
     self.currentSceneFile = path
+    -- Deselect any selected nodes.
+    self:selectNode()
     -- Remove everything from the undo stack.
     self.commandHistory = {}
     self.undoCommandHistory = {}
@@ -1075,10 +1077,6 @@ function Editor:keypressed(key)
         self:moveSelectedNode(Vec2(_IsShiftPressed() and -10 or -1, 0))
     elseif key == "right" then
         self:moveSelectedNode(Vec2(_IsShiftPressed() and 10 or 1, 0))
-    elseif key == "pageup" and _IsShiftPressed() then
-        self:moveSelectedNodeToTop()
-    elseif key == "pagedown" and _IsShiftPressed() then
-        self:moveSelectedNodeToBottom()
     elseif key == "p" and _IsCtrlPressed() then
         self:printInternalUITreeInfo()
 	end

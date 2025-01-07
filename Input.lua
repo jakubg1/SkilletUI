@@ -3,6 +3,7 @@
 local class = require "com.class"
 local Input = class:derive("Input")
 
+local utf8 = require("utf8")
 local Color = require("Color")
 
 
@@ -20,7 +21,7 @@ function Input:new()
 
 	self.font = love.graphics.newFont()
 	self.bigFont = love.graphics.newFont(18)
-	
+
 	self.inputType = nil
 	self.inputText = ""
 	self.inputColor = {x = 0, y = 0, z = 0.5}
@@ -105,8 +106,9 @@ end
 function Input:keypressed(key)
 	if key == "backspace" then
 		if self.inputType == "string" or self.inputType == "number" or self.inputType == "file" then
-			if #self.inputText > 0 then
-				self.inputText = self.inputText:sub(1, #self.inputText - 1)
+			local offset = utf8.offset(self.inputText, -1)
+			if offset then
+				self.inputText = self.inputText:sub(1, offset - 1)
 				self.error = nil
 			end
 		end

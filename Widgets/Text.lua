@@ -4,6 +4,7 @@ local class = require "com.class"
 ---@overload fun(node, data):Text
 local Text = class:derive("Text")
 
+local utf8 = require("utf8")
 local Vec2 = require("Vector2")
 local Color = require("Color")
 
@@ -112,8 +113,8 @@ function Text:draw()
     local pos = self.node:getGlobalPos()
     love.graphics.setFont(self.font)
     local x = 0
-    for i = 1, #self.text do
-        local chr = self.text:sub(i, i)
+    for i = 1, utf8.len(self.text) do
+        local chr = self.text:sub(utf8.offset(self.text, i), utf8.offset(self.text, i + 1) - 1)
         local w = self.font:getWidth(chr) * self.scale
         local y = 0
         if self.waveAmplitude then
