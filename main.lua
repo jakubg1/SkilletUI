@@ -160,11 +160,11 @@ end
 
 
 
-function love.mousepressed(x, y, button)
+function love.mousepressed(x, y, button, istouch, presses)
 	if not _EDITOR.enabled then
-		_UI:mousepressed(x, y, button)
+		_UI:mousepressed(x, y, button, istouch, presses)
 	end
-	_EDITOR:mousepressed(x, y, button)
+	_EDITOR:mousepressed(x, y, button, istouch, presses)
 end
 
 

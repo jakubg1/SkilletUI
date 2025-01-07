@@ -25,6 +25,10 @@ function Input:new()
 	self.inputText = ""
 	self.inputColor = {x = 0, y = 0, z = 0.5}
 	self.colorDragging = nil
+	self.inputExtensions = nil
+	self.fileList = nil
+	self.fileWarnWhenExists = false
+	self.fileWarningActive = false
 	self.error = nil
 
 	self:updateSideColorPickerMeshes()
@@ -48,7 +52,7 @@ end
 
 
 
-function Input:mousepressed(x, y, button)
+function Input:mousepressed(x, y, button, istouch, presses)
 	if not self.inputType then
 		return false
 	end
@@ -59,10 +63,25 @@ function Input:mousepressed(x, y, button)
 		elseif self:isSideColorMeshHovered() then
 			self.colorDragging = 2
 			return true
+		elseif self:isFileInputBoxHovered() then
+			local entry = self:getHoveredFileEntryIndex()
+			if entry then
+				self.inputText = self.fileList[entry]
+				if presses == 2 then
+					self:inputAccept()
+				end
+			end
+			return true
 		elseif self:isConfirmButtonHovered() then
 			self:inputAccept()
 			return true
 		elseif self:isCancelButtonHovered() then
+			self:inputCancel()
+			return true
+		elseif self:isOverwriteYesButtonHovered() then
+			self:inputAccept()
+			return true
+		elseif self:isOverwriteNoButtonHovered() then
 			self:inputCancel()
 			return true
 		elseif not self:isHovered() then
@@ -85,7 +104,7 @@ end
 
 function Input:keypressed(key)
 	if key == "backspace" then
-		if self.inputType == "string" or self.inputType == "number" then
+		if self.inputType == "string" or self.inputType == "number" or self.inputType == "file" then
 			if #self.inputText > 0 then
 				self.inputText = self.inputText:sub(1, #self.inputText - 1)
 				self.error = nil
@@ -105,7 +124,7 @@ end
 
 
 function Input:textinput(text)
-	if self.inputType == "string" or self.inputType == "number" then
+	if self.inputType == "string" or self.inputType == "number" or self.inputType == "file" then
 		self.inputText = self.inputText .. text
 		self.error = nil
 	end
@@ -115,7 +134,7 @@ end
 
 
 
-function Input:inputAsk(type, value)
+function Input:inputAsk(type, value, extensions, warnWhenFileExists)
 	self.inputType = type
 	if value then
 		if type == "string" then
@@ -124,6 +143,11 @@ function Input:inputAsk(type, value)
 			self.inputText = tostring(value)
 		elseif type == "color" then
 			self:setInputColor(value.r, value.g, value.b)
+		elseif type == "file" then
+			self.inputText = value
+			self.inputExtensions = extensions
+			self.fileWarnWhenExists = warnWhenFileExists
+			self.fileList = self:getFileList()
 		end
 	end
 end
@@ -131,18 +155,29 @@ end
 
 
 function Input:inputCancel()
+	if self.fileWarningActive then
+		self.fileWarningActive = false
+	else
+		self:inputExit()
+	end
+end
+
+
+
+function Input:inputExit()
 	self.inputType = nil
 	self.inputText = ""
 	self.inputColor = {x = 0, y = 0, z = 0.5}
 	self:updateSideColorPickerMeshes()
+	self.fileWarningActive = false
 end
 
 
 
 function Input:inputAccept()
 	local result = nil
-	
-	if self.inputType == "string" then
+
+	if self.inputType == "string" or self.inputType == "file" then
 		result = self.inputText
 	elseif self.inputType == "number" then
 		result = tonumber(self.inputText)
@@ -153,9 +188,13 @@ function Input:inputAccept()
 	elseif self.inputType == "color" then
 		result = Color(self:getInputColor())
 	end
-	
-	_EDITOR:onInputReceived(result)
-	self:inputCancel()
+
+	if self.fileWarnWhenExists and not self.fileWarningActive and _Utils.isValueInTable(self.fileList, result) then
+		self.fileWarningActive = true
+	else
+		_EDITOR:onInputReceived(result)
+		self:inputExit()
+	end
 end
 
 
@@ -248,6 +287,21 @@ end
 
 
 
+function Input:getFileList()
+	local files = {}
+	for i, extension in ipairs(self.inputExtensions) do
+		local fileList = _Utils.getDirListing("", "file", extension, true)
+		for j, file in ipairs(fileList) do
+			table.insert(files, file)
+		end
+	end
+	return files
+end
+
+
+
+
+
 function Input:getPos()
 	local sizeX, sizeY = self:getSize()
 	return (_WINDOW_SIZE.x - sizeX) / 2, (_WINDOW_SIZE.y - sizeY) / 2
@@ -262,7 +316,22 @@ function Input:getSize()
 		return 400, 150
 	elseif self.inputType == "color" then
 		return 450, 300
+	elseif self.inputType == "file" then
+		return 400, 500
 	end
+end
+
+
+
+function Input:getOverwritePos()
+	local sizeX, sizeY = self:getOverwriteSize()
+	return (_WINDOW_SIZE.x - sizeX) / 2, (_WINDOW_SIZE.y - sizeY) / 2
+end
+
+
+
+function Input:getOverwriteSize()
+	return 500, 110
 end
 
 
@@ -301,8 +370,39 @@ end
 
 
 
+function Input:isFileInputBoxHovered()
+	if self.inputType ~= "file" or self.fileWarningActive then
+		return false
+	end
+
+	local posX, posY = self:getPos()
+	return _MousePos.x >= posX + 30 and _MousePos.y >= posY + 75 and _MousePos.x <= posX + 370 and _MousePos.y <= posY + 405
+end
+
+
+
+function Input:getHoveredFileEntryIndex()
+	if self.inputType ~= "file" or self.fileWarningActive then
+		return nil
+	end
+
+	local posX, posY = self:getPos()
+	-- Too far on the left/right.
+	if not self:isFileInputBoxHovered() then
+		return nil
+	end
+	local idx = math.floor((_MousePos.y - posY - 75) / 20) + 1
+	-- No entry here.
+	if idx > #self.fileList then
+		return nil
+	end
+	return idx
+end
+
+
+
 function Input:isConfirmButtonHovered()
-	if not self.inputType then
+	if not self.inputType or self.fileWarningActive then
 		return false
 	end
 
@@ -314,13 +414,37 @@ end
 
 
 function Input:isCancelButtonHovered()
-	if not self.inputType then
+	if not self.inputType or self.fileWarningActive then
 		return false
 	end
 
 	local posX, posY = self:getPos()
 	local sizeX, sizeY = self:getSize()
 	return _MousePos.x >= posX + sizeX - 180 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + sizeX and _MousePos.y <= posY + sizeY - 10
+end
+
+
+
+function Input:isOverwriteYesButtonHovered()
+	if not self.fileWarningActive then
+		return false
+	end
+
+	local posX, posY = self:getOverwritePos()
+	local sizeX, sizeY = self:getOverwriteSize()
+	return _MousePos.x >= posX + 80 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + 200 and _MousePos.y <= posY + sizeY - 10
+end
+
+
+
+function Input:isOverwriteNoButtonHovered()
+	if not self.fileWarningActive then
+		return false
+	end
+
+	local posX, posY = self:getOverwritePos()
+	local sizeX, sizeY = self:getOverwriteSize()
+	return _MousePos.x >= posX + 280 and _MousePos.y >= posY + sizeY - 30 and _MousePos.x <= posX + 400 and _MousePos.y <= posY + sizeY - 10
 end
 
 
@@ -384,6 +508,45 @@ function Input:draw()
 		--love.graphics.print(string.format("Y: %s", y), posX + 350, posY + 200)
 		--love.graphics.print(string.format("Z: %s", z), posX + 350, posY + 220)
 		love.graphics.print(string.format("Hex: %02x%02x%02x", r * 255, g * 255, b * 255), posX + 300, posY + 180)
+	elseif self.inputType == "file" then
+		local hoveredEntry = self:getHoveredFileEntryIndex()
+		-- File list
+		love.graphics.rectangle("line", posX + 20, posY + 70, sizeX - 40, 330)
+		for i, file in ipairs(self.fileList) do
+			if hoveredEntry == i then
+				love.graphics.setColor(0, 1, 1)
+			else
+				love.graphics.setColor(1, 1, 1)
+			end
+			love.graphics.print(file, posX + 30, posY + 75 + (i - 1) * 20)
+		end
+		-- Input box
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.rectangle("line", posX + 20, posY + 420, sizeX - 40, 25)
+		love.graphics.setFont(self.bigFont)
+		love.graphics.print(string.format("%s_", self.inputText), posX + 30, posY + 420)
+		if self.fileWarningActive then
+			-- File overwrite warning
+			local posBX, posBY = self:getOverwritePos()
+			local sizeBX, sizeBY = self:getOverwriteSize()
+			love.graphics.setLineWidth(3)
+			love.graphics.setColor(0, 0, 0)
+			love.graphics.rectangle("fill", posBX, posBY, sizeBX, sizeBY)
+			love.graphics.setColor(1, 1, 1)
+			love.graphics.rectangle("line", posBX, posBY, sizeBX, sizeBY)
+			love.graphics.print(string.format("File \"%s\" already exists.", self.inputText), posBX + 10, posBY + 10)
+			love.graphics.print("Overwrite it?", posBX + 10, posBY + 30)
+			love.graphics.setColor(1, 1, 1)
+			if self:isOverwriteYesButtonHovered() then
+				love.graphics.setColor(0, 1, 1)
+			end
+			love.graphics.print("Yes [ Enter ]", posBX + 80, posBY + sizeBY - 30)
+			love.graphics.setColor(1, 1, 1)
+			if self:isOverwriteNoButtonHovered() then
+				love.graphics.setColor(0, 1, 1)
+			end
+			love.graphics.print("No [ Esc ]", posBX + 280, posBY + sizeBY - 30)
+		end
 	end
 	love.graphics.setColor(1, 1, 1)
 	if self:isConfirmButtonHovered() then

@@ -912,12 +912,14 @@ end
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
 ---@param button integer The button that has been pressed.
-function Node:mousepressed(x, y, button)
+---@param istouch boolean Whether the press is coming from a touch input.
+---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
+function Node:mousepressed(x, y, button, istouch, presses)
     if button == 1 and self:isHovered() and not self.disabled then
         self.clicked = true
     end
     for i, child in ipairs(self.children) do
-        child:mousepressed(x, y, button)
+        child:mousepressed(x, y, button, istouch, presses)
     end
 end
 

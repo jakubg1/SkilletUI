@@ -79,14 +79,15 @@ function Editor:new()
         Vec2(1, 1)
     }
 
+    self.currentSceneFile = nil
+    self.clipboard = nil
+
     self.commandHistory = {}
     self.undoCommandHistory = {}
     self.transactionMode = false
 
-    self.clipboard = nil
-
     self.enabled = true
-    self.activeInput = nil
+    self.activeInput = nil -- Can be a Node, but also `"save"` or `"load"`
     self.hoveredNode = nil
     self.isNodeHoverIndirect = false
     self.selectedNode = nil
@@ -587,6 +588,7 @@ end
 ---@param path string The path to the file.
 function Editor:saveScene(path)
     _Utils.saveJson(path, _UI:serialize())
+    self.currentSceneFile = path
 end
 
 
@@ -595,6 +597,7 @@ end
 ---@param path string The path to the file.
 function Editor:loadScene(path)
     _UI = _LoadUI(path)
+    self.currentSceneFile = path
     -- Remove everything from the undo stack.
     self.commandHistory = {}
     self.undoCommandHistory = {}
@@ -606,9 +609,10 @@ end
 ---@param x number The X coordinate of the label position.
 ---@param y number The Y coordinate of the label position.
 ---@param text string The text that should be written on the label.
+---@param name string? The label name.
 ---@return Node
-function Editor:label(x, y, text)
-    local label = Node({name = "lb_" .. text, type = "text", widget = {font = "editor", text = text, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x = x, y = y}})
+function Editor:label(x, y, text, name)
+    local label = Node({name = name or ("lb_" .. text), type = "text", widget = {font = "editor", text = text, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x = x, y = y}})
     return label
 end
 
@@ -634,12 +638,13 @@ end
 ---@param x number The X coordinate of the position.
 ---@param y number The Y coordinate of the position.
 ---@param w number The width of the input field. Height is always 20.
----@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
+---@param type string The input type. Can be `"string"`, `"number"`, `"color"` or `"file"`.
 ---@param value string|number|Color The value that should be initially set in the input field.
 ---@param nullable boolean? Whether the contents can be erased with a builtin X button.
 ---@param fn function? The function that will be executed when the value has been changed. The parameter will be the new text.
+---@param extensions table? If `type` == `"file"`, the list of file extensions to be listed in the file picker.
 ---@return Node
-function Editor:input(x, y, w, type, value, nullable, fn)
+function Editor:input(x, y, w, type, value, nullable, fn, extensions)
     local data = {
         name = "inp_" .. type,
         type = "input_text",
@@ -713,7 +718,7 @@ function Editor:input(x, y, w, type, value, nullable, fn)
     local input = Node(data)
     input.widget.nullable = nullable
     input.widget:setValue(value)
-    input:setOnClick(function() self:askForInput(input, type) end)
+    input:setOnClick(function() self:askForInput(input, type, extensions) end)
     if nullable and fn then
         input:findChildByName("sprite"):findChildByName("nullifyButton"):setOnClick(function() fn(nil) end)
     end
@@ -734,12 +739,17 @@ end
 
 
 ---Executed when an editor input field has been clicked.
----@param input Node The input node that has been clicked.
----@param type string The input type. Can be `"string"`, `"number"` or `"color"`.
-function Editor:askForInput(input, type)
+---@param input Node|string The input node that has been clicked, or an identifier. Currently supported identifiers are `"save"` and `"load"`.
+---@param inputType string The input type. Can be `"string"`, `"number"`, `"color"` or `"file"`.
+---@param extensions table? If `type` == `"file"`, the list of file extensions to be listed in the input box.
+---@param warnWhenFileExists boolean? If `type` == `"file"`, whether a file overwrite warning should be shown if the file exists.
+function Editor:askForInput(input, inputType, extensions, warnWhenFileExists)
     self.activeInput = input
-    local value = input.widget:getValue()
-    self.INPUT_DIALOG:inputAsk(type, value)
+    local value = ""
+    if type(input) ~= "string" then
+        value = input.widget:getValue()
+    end
+    self.INPUT_DIALOG:inputAsk(inputType, value, extensions, warnWhenFileExists)
 end
 
 
@@ -747,11 +757,19 @@ end
 ---Executed when an input has been submitted for a certain editor input field.
 ---@param result string|number|Color The value that has been submitted for this input.
 function Editor:onInputReceived(result)
-    -- Not required for property lists, but required for file name.
-    self.activeInput.widget:setValue(result)
-
-    if self.activeInput._onChange then
-        self.activeInput._onChange(result)
+    if type(self.activeInput) == "string" then
+        if self.activeInput == "save" then
+            self:saveScene(result)
+        elseif self.activeInput == "load" then
+            self:loadScene(result)
+        end
+    else
+        -- Not required for property lists, but required for file name.
+        self.activeInput.widget:setValue(result)
+    
+        if self.activeInput._onChange then
+            self.activeInput._onChange(result)
+        end
     end
     self.activeInput = nil
 end
@@ -818,16 +836,14 @@ function Editor:load()
 
         self:label(ALIGN_X, ALIGN_Y + 90, "Ctrl+Click a node to make it a parent of the currently selected node"),
 
-        self:label(FILE_X, FILE_Y, "File Name:"),
-        self:button(FILE_X + 270, FILE_Y, 100, "Save [Ctrl+S]", function() self:saveScene(self.fileNameInput.widget:getValue()) end, {ctrl = true, key = "s"}),
-        self:button(FILE_X + 370, FILE_Y, 100, "Load [Ctrl+L]", function() self:loadScene(self.fileNameInput.widget:getValue()) end, {ctrl = true, key = "l"})
+        self:button(FILE_X, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false) end, {ctrl = true, key = "l"}),
+        self:button(FILE_X + 60, FILE_Y, 60, "Save", function() if self.currentSceneFile then self:saveScene(self.currentSceneFile) else self:askForInput("save", "file", {".json"}, true) end end, {ctrl = true, key = "s"}),
+        self:button(FILE_X + 120, FILE_Y, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true) end, {ctrl = true, shift = true, key = "s"}),
+        self:label(FILE_X + 200, FILE_Y, "File: (none)", "lb_file")
     }
     for i, node in ipairs(nodes) do
         self.UI:addChild(node)
     end
-
-    self.fileNameInput = self:input(FILE_X + 100, FILE_Y, 150, "string", "ui.json")
-    self.UI:addChild(self.fileNameInput)
 end
 
 
@@ -876,6 +892,7 @@ function Editor:draw()
 	self.UI:findChildByName("line3"):setText(string.format("Vecs per frame: %s", _VEC2S_PER_FRAME))
 	self.UI:findChildByName("hovText"):setText("")
 	self.UI:findChildByName("selText"):setText("")
+    self.UI:findChildByName("lb_file"):setText(string.format("File: %s", self.currentSceneFile or "(none)"))
 
     -- Hovered and selected node
     if self.hoveredNode then
@@ -973,12 +990,14 @@ end
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
 ---@param button integer The button that has been pressed.
-function Editor:mousepressed(x, y, button)
+---@param istouch boolean Whether the press is coming from a touch input.
+---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
+function Editor:mousepressed(x, y, button, istouch, presses)
     if not self.enabled then
         return
     end
-    self.UI:mousepressed(x, y, button)
-    if self.INPUT_DIALOG:mousepressed(x, y, button) then
+    self.UI:mousepressed(x, y, button, istouch, presses)
+    if self.INPUT_DIALOG:mousepressed(x, y, button, istouch, presses) then
         return
     end
 	if button == 1 and not self:isUIHovered() then
