@@ -104,6 +104,9 @@ end
 
 
 function Input:keypressed(key)
+	if not self.inputType then
+		return false
+	end
 	if key == "backspace" then
 		if self.inputType == "string" or self.inputType == "number" or self.inputType == "file" then
 			local offset = utf8.offset(self.inputText, -1)
@@ -118,6 +121,10 @@ function Input:keypressed(key)
 		return true
 	elseif key == "escape" then
 		self:inputCancel()
+		return true
+	end
+	if self.inputType then
+		-- Do not let anything else catch the keyboard input if the input box is currently active.
 		return true
 	end
 	return false

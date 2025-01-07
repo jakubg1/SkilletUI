@@ -5,6 +5,7 @@ local class = require "com.class"
 local EditorUITree = class:derive("EditorUITree")
 
 -- Place your imports here
+local utf8 = require("utf8")
 local Vec2 = require("Vector2")
 
 local CommandNodeSetParent = require("EditorCommands.NodeSetParent")
@@ -30,6 +31,9 @@ function EditorUITree:new(editor)
     self.hoverBottom = false
     self.dragOrigin = nil
     self.dragSnap = false
+
+    self.nameEditNode = nil
+    self.nameEditValue = nil
 end
 
 
@@ -218,7 +222,15 @@ function EditorUITree:draw()
         end
         love.graphics.setColor(1, 1, 1)
         image:draw(Vec2(x, y))
-        self.editor:drawShadowedText(line.node.name, x + 25, y + 2, color, nil, alpha)
+        if line.node == self.nameEditNode then
+            love.graphics.setColor(0.9, 0.9, 0.9)
+            love.graphics.rectangle("fill", x + 23, y + 1, self.SIZE.x - x - 20, self.ITEM_HEIGHT - 2)
+            love.graphics.setColor(0.2, 0.2, 1)
+            love.graphics.rectangle("line", x + 23, y + 1, self.SIZE.x - x - 20, self.ITEM_HEIGHT - 2)
+            self.editor:drawShadowedText(self.nameEditValue, x + 25, y + 2, _COLORS.black, nil, alpha, true)
+        else
+            self.editor:drawShadowedText(line.node.name, x + 25, y + 2, color, nil, alpha)
+        end
         -- If dragged over, additional signs will be shown.
         if self.dragOrigin and not self.dragSnap and line.node ~= self.editor.selectedNode and line.node == self.editor.hoveredNode then
             if self.hoverTop then
@@ -265,6 +277,34 @@ end
 
 
 
+---Executed whenever a mouse button is pressed anywhere on the screen.
+---Returns `true` if the input is consumed.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+---@param button integer The button that has been pressed.
+---@param istouch boolean Whether the press is coming from a touch input.
+---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
+---@return boolean
+function EditorUITree:mousepressed(x, y, button, istouch, presses)
+    if button == 1 then
+        local node = self:getHoveredNode()
+        if not node then
+            self.nameEditNode = nil
+            self.nameEditValue = nil
+        end
+        if presses == 2 then
+            if node then
+                self.nameEditNode = node
+                self.nameEditValue = node:getName()
+                return true
+            end
+        end
+    end
+    return false
+end
+
+
+
 ---Executed whenever a mouse wheel has been scrolled.
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
@@ -272,6 +312,47 @@ function EditorUITree:wheelmoved(x, y)
     if self:isHovered() then
         self.scrollOffset = math.min(math.max(self.scrollOffset - y * self.ITEM_HEIGHT * 3, 0), self.maxScrollOffset)
     end
+end
+
+
+
+---Executed whenever a key is pressed on the keyboard.
+---Returns `true` if the input is consumed.
+---@param key string The key code.
+---@return boolean
+function EditorUITree:keypressed(key)
+    if not self.nameEditNode then
+        return false
+    end
+	if key == "backspace" then
+        local offset = utf8.offset(self.nameEditValue, -1)
+        if offset then
+            self.nameEditValue = self.nameEditValue:sub(1, offset - 1)
+        end
+        return true
+    elseif key == "return" then
+        self.nameEditNode:setName(self.nameEditValue)
+        self.nameEditNode = nil
+        self.nameEditValue = nil
+        return true
+    elseif key == "escape" then
+        self.nameEditNode = nil
+        self.nameEditValue = nil
+        return true
+    end
+	if self.nameEditNode then
+		-- Do not let anything else catch the keyboard input if the name edition box is currently active.
+		return true
+	end
+    return false
+end
+
+
+
+---Executed whenever a certain character has been typed on the keyboard.
+---@param text string The character.
+function EditorUITree:textinput(text)
+	self.nameEditValue = self.nameEditValue .. text
 end
 
 

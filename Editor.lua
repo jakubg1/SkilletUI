@@ -288,11 +288,25 @@ end
 
 
 ---Pastes the UI node which is stored in the internal clipboard and adds it as the currently selected node's sibling (or to the root node).
+---The newly added Node will be selected.
 function Editor:pasteNode()
     if not self.clipboard then
         return
     end
     local node = Node(self.clipboard)
+    self:addNode(node)
+    self:selectNode(node)
+end
+
+
+
+---Duplicates the currently selected UI node and selects the newly made duplicate.
+function Editor:duplicateSelectedNode()
+    if not self.selectedNode then
+        return
+    end
+    local data = self.selectedNode:serialize()
+    local node = Node(data)
     self:addNode(node)
     self:selectNode(node)
 end
@@ -827,7 +841,8 @@ function Editor:load()
     local FILE_X = 250
     local FILE_Y = 10
     local nodes = {
-        self:button(UTILITY_X, UTILITY_Y, 200, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
+        self:button(UTILITY_X, UTILITY_Y, 100, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
+        self:button(UTILITY_X + 100, UTILITY_Y, 100, "Duplicate [Ctrl+D]", function() self:deleteSelectedNode() end, {ctrl = true, key = "d"}),
         self:button(UTILITY_X, UTILITY_Y + 20, 200, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"}),
         self:button(UTILITY_X, UTILITY_Y + 40, 200, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"}),
         self:button(UTILITY_X, UTILITY_Y + 60, 200, "To Top [Shift+PgUp]", function() self:moveSelectedNodeUp() end, {shift = true, key = "pageup"}),
@@ -866,7 +881,7 @@ function Editor:load()
         self:button(PALIGN_X + 30, PALIGN_Y + 60, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
         self:button(PALIGN_X + 60, PALIGN_Y + 60, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
 
-        self:label(ALIGN_X, ALIGN_Y + 90, "Ctrl+Click a node to make it a parent of the currently selected node"),
+        self:label(ALIGN_X, ALIGN_Y + 90, "Shift+Click a node to make it a parent of the currently selected node"),
 
         self:button(FILE_X, FILE_Y, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"}),
         self:button(FILE_X + 60, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false) end, {ctrl = true, key = "l"}),
@@ -1002,7 +1017,8 @@ end
 ---@param color Color? The color to be used, white by default.
 ---@param backgroundColor Color? The background color to be used. No background by default.
 ---@param alpha number? The text alpha, 1 by default.
-function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha)
+---@param noShadow boolean? If you don't want the shadow after all, despite this function's name...
+function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha, noShadow)
     color = color or _COLORS.white
     alpha = alpha or 1
     if backgroundColor then
@@ -1011,8 +1027,10 @@ function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha)
         love.graphics.setColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.5 * alpha)
         love.graphics.rectangle("fill", x - 2, y - 2, w + 4, h + 4)
     end
-    love.graphics.setColor(0, 0, 0, 0.8 * alpha)
-    love.graphics.print(text, x + 2, y + 2)
+    if not noShadow then
+        love.graphics.setColor(0, 0, 0, 0.8 * alpha)
+        love.graphics.print(text, x + 2, y + 2)
+    end
     love.graphics.setColor(color.r, color.g, color.b, alpha)
     love.graphics.print(text, x, y)
 end
@@ -1033,16 +1051,22 @@ function Editor:mousepressed(x, y, button, istouch, presses)
     if self.INPUT_DIALOG:mousepressed(x, y, button, istouch, presses) then
         return
     end
+    if self.uiTree:mousepressed(x, y, button, istouch, presses) then
+        return
+    end
 	if button == 1 and not self:isUIHovered() then
         local resizeHandleID = self.selectedNode and self.selectedNode:getHoveredResizeHandleID()
-        if _IsCtrlPressed() then
-            -- Ctrl+Click parents the selected node instead.
+        if _IsShiftPressed() then
+            -- Shift+Click parents the selected node instead.
             self:parentSelectedNodeToHoveredNode()
         elseif resizeHandleID then
             -- We've grabbed a resize handle of the currently selected node!
             self:startResizingSelectedNode(resizeHandleID)
         else
             self:selectNode(self.hoveredNode)
+            if _IsCtrlPressed() then
+                self:duplicateSelectedNode()
+            end
             if self.selectedNode then
                 if not self.isNodeHoverIndirect then
                     -- Start dragging the actual node on the screen.
@@ -1091,9 +1115,12 @@ end
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string The key code.
 function Editor:keypressed(key)
-    love.keyboard.setKeyRepeat(key == "backspace")
+    love.keyboard.setKeyRepeat(key == "backspace" or key == "up" or key == "down" or key == "left" or key == "right")
     self.UI:keypressed(key)
-    if self.INPUT_DIALOG:keypressed(key) or self.INPUT_DIALOG.inputType then
+    if self.INPUT_DIALOG:keypressed(key) then
+        return
+    end
+    if self.uiTree:keypressed(key) then
         return
     end
 	if key == "tab" then
@@ -1119,6 +1146,7 @@ end
 ---@param text string The character.
 function Editor:textinput(text)
     self.INPUT_DIALOG:textinput(text)
+    self.uiTree:textinput(text)
 end
 
 
