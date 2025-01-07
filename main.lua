@@ -18,7 +18,7 @@ love.graphics.setBackgroundColor(0.2, 0.5, 0.9)
 _VEC2S_PER_FRAME = 0
 _WINDOW_SIZE = Vec2(1600, 900)
 _CANVAS_SIZE = Vec2(960, 540)
-_CANVAS_OFFSET = Vec2(220, 40)
+_CANVAS_OFFSET = Vec2(230, 40)
 _MousePos = Vec2()
 _MouseCPos = Vec2()
 

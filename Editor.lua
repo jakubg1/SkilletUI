@@ -80,6 +80,7 @@ function Editor:new()
     }
 
     self.currentSceneFile = nil
+    self.isSceneModified = false
     self.clipboard = nil
 
     self.commandHistory = {}
@@ -156,6 +157,10 @@ function Editor:getHoveredNode()
     local hoveredNode = self.uiTree:getHoveredNode()
     if hoveredNode then
         return hoveredNode
+    end
+    -- Already selected nodes take over the hover, regardless of whatever is over it.
+    if self.selectedNode and self.selectedNode:isHovered() then
+        return self.selectedNode
     end
     -- Finally, look if any node is directly hovered.
 	return _UI:findChildByPixelDepthFirst(_MouseCPos, true)
@@ -495,6 +500,8 @@ function Editor:executeCommand(command)
         else
             table.insert(self.commandHistory, command)
         end
+        -- Mark the scene as unsaved.
+        self.isSceneModified = true
         -- Make sure to refresh UIs.
         self:refreshUI()
     end
@@ -558,6 +565,8 @@ function Editor:undoLastCommand()
         command:undo()
     end
     table.insert(self.undoCommandHistory, command)
+    -- Mark the scene as unsaved.
+    self.isSceneModified = true
     -- Make sure to refresh UIs.
     self:refreshUI()
 end
@@ -578,6 +587,8 @@ function Editor:redoLastCommand()
         command:execute()
     end
     table.insert(self.commandHistory, command)
+    -- Mark the scene as unsaved.
+    self.isSceneModified = true
     -- Make sure to refresh UIs.
     self:refreshUI()
 end
@@ -588,6 +599,7 @@ end
 function Editor:newScene()
     _UI = Node({name = "root"})
     self.currentSceneFile = nil
+    self.isSceneModified = false
     -- Deselect any selected nodes.
     self:selectNode()
     -- Remove everything from the undo stack.
@@ -602,6 +614,7 @@ end
 function Editor:loadScene(path)
     _UI = _LoadUI(path)
     self.currentSceneFile = path
+    self.isSceneModified = false
     -- Deselect any selected nodes.
     self:selectNode()
     -- Remove everything from the undo stack.
@@ -616,6 +629,7 @@ end
 function Editor:saveScene(path)
     _Utils.saveJson(path, _UI:serialize())
     self.currentSceneFile = path
+    self.isSceneModified = false
 end
 
 
@@ -823,12 +837,12 @@ function Editor:load()
         self:button(UTILITY_X, UTILITY_Y + 120, 100, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"}),
         self:button(UTILITY_X + 100, UTILITY_Y + 120, 100, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"}),
         self:label(NEW_X, NEW_Y - 20, "New Widget:"),
-        self:button(NEW_X, NEW_Y, 50, "Box", function() self:addNode(Node({type = "box"})) end),
-        self:button(NEW_X + 50, NEW_Y, 50, "Text", function() self:addNode(Node({type = "text"})) end),
-        self:button(NEW_X + 100, NEW_Y, 50, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end),
-        self:button(NEW_X + 150, NEW_Y, 50, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite"}}})) end),
-        self:button(NEW_X, NEW_Y + 20, 100, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end),
-        self:button(NEW_X + 100, NEW_Y + 20, 100, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end),
+        self:button(NEW_X, NEW_Y, 55, "Box", function() self:addNode(Node({type = "box"})) end),
+        self:button(NEW_X + 55, NEW_Y, 55, "Text", function() self:addNode(Node({type = "text"})) end),
+        self:button(NEW_X + 110, NEW_Y, 55, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end),
+        self:button(NEW_X + 165, NEW_Y, 55, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite"}}})) end),
+        self:button(NEW_X, NEW_Y + 20, 110, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end),
+        self:button(NEW_X + 110, NEW_Y + 20, 110, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end),
 
         self:label(ALIGN_X, ALIGN_Y, "Node Align"),
         self:button(ALIGN_X, ALIGN_Y + 20, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
@@ -911,7 +925,7 @@ function Editor:draw()
 	self.UI:findChildByName("line3"):setText(string.format("Vecs per frame: %s", _VEC2S_PER_FRAME))
 	self.UI:findChildByName("hovText"):setText("")
 	self.UI:findChildByName("selText"):setText("")
-    self.UI:findChildByName("lb_file"):setText(string.format("File: %s", self.currentSceneFile or "(none)"))
+    self.UI:findChildByName("lb_file"):setText(string.format("File: %s%s", self.currentSceneFile or "(none)", self.isSceneModified and "*" or ""))
 
     -- Hovered and selected node
     if self.hoveredNode then

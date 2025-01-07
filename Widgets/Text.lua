@@ -113,32 +113,42 @@ end
 function Text:draw()
     local pos = self.node:getGlobalPos()
     love.graphics.setFont(self.font)
-    local x = 0
-    for i = 1, utf8.len(self.text) do
-        local chr = self.text:sub(utf8.offset(self.text, i), utf8.offset(self.text, i + 1) - 1)
-        local w = self.font:getWidth(chr) * self.scale
-        local y = 0
-        if self.waveAmplitude then
-            y = _Utils.getWavePoint(self.waveFrequency, self.waveSpeed, x, self.time) * self.waveAmplitude
-        end
-        local color = self.color
-        if self.gradientWaveColor then
-            local t
-            if self.gradientWaveSpeed then
-                t = (_Utils.getWavePoint(self.gradientWaveFrequency, self.gradientWaveSpeed, x, self.time) + 1) / 2
-            else
-                t = (_Utils.getWavePoint(1 / self.gradientWaveFrequency, 1, 0, self.time) + 1) / 2
+    if self.waveAmplitude or self.gradientWaveColor then
+        local x = 0
+        for i = 1, utf8.len(self.text) do
+            local chr = self.text:sub(utf8.offset(self.text, i), utf8.offset(self.text, i + 1) - 1)
+            local w = self.font:getWidth(chr) * self.scale
+            local y = 0
+            if self.waveAmplitude then
+                y = _Utils.getWavePoint(self.waveFrequency, self.waveSpeed, x, self.time) * self.waveAmplitude
             end
-            color = _Utils.interpolate(color, self.gradientWaveColor, t)
-        end
+            local color = self.color
+            if self.gradientWaveColor then
+                local t
+                if self.gradientWaveSpeed then
+                    t = (_Utils.getWavePoint(self.gradientWaveFrequency, self.gradientWaveSpeed, x, self.time) + 1) / 2
+                else
+                    t = (_Utils.getWavePoint(1 / self.gradientWaveFrequency, 1, 0, self.time) + 1) / 2
+                end
+                color = _Utils.interpolate(color, self.gradientWaveColor, t)
+            end
 
+            if self.shadowOffset then
+                love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
+                love.graphics.print(chr, math.floor(pos.x + self.shadowOffset.x + x + 0.5), math.floor(pos.y + self.shadowOffset.y + y + 0.5), 0, self.scale)
+            end
+            love.graphics.setColor(color.r, color.g, color.b, self.alpha)
+            love.graphics.print(chr, math.floor(pos.x + x + 0.5), math.floor(pos.y + y + 0.5), 0, self.scale)
+            x = x + w
+        end
+    else
+        -- Optimize drawing if there are no effects which require drawing each character separately.
         if self.shadowOffset then
             love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
-            love.graphics.print(chr, math.floor(pos.x + self.shadowOffset.x + x + 0.5), math.floor(pos.y + self.shadowOffset.y + y + 0.5), 0, self.scale)
+            love.graphics.print(self.text, math.floor(pos.x + self.shadowOffset.x + 0.5), math.floor(pos.y + self.shadowOffset.y + 0.5), 0, self.scale)
         end
-        love.graphics.setColor(color.r, color.g, color.b, self.alpha)
-        love.graphics.print(chr, math.floor(pos.x + x + 0.5), math.floor(pos.y + y + 0.5), 0, self.scale)
-        x = x + w
+        love.graphics.setColor(self.color.r, self.color.g, self.color.b, self.alpha)
+        love.graphics.print(self.text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, self.scale)
     end
 end
 
