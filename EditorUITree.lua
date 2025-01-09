@@ -137,7 +137,7 @@ function EditorUITree:finishDraggingSelectedNodeInNodeTree()
         -- We've dropped the node inside of another node: attach it as a parent.
         self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNode, self.editor.hoveredNode))
     end
-    self.editor:closeCommandTransaction()
+    self.editor:commitCommandTransaction()
     self.dragOrigin = nil
     self.dragSnap = false
 end
