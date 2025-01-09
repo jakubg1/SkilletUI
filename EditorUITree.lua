@@ -11,6 +11,7 @@ local Vec2 = require("Vector2")
 local CommandNodeSetParent = require("EditorCommands.NodeSetParent")
 local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
+local CommandNodeSetProperty = require("EditorCommands.NodeSetProperty")
 
 
 
@@ -331,7 +332,7 @@ function EditorUITree:keypressed(key)
         end
         return true
     elseif key == "return" then
-        self.nameEditNode:setName(self.nameEditValue)
+        self.editor:executeCommand(CommandNodeSetProperty(self.nameEditNode, "name", self.nameEditValue))
         self.nameEditNode = nil
         self.nameEditValue = nil
         return true
@@ -352,6 +353,9 @@ end
 ---Executed whenever a certain character has been typed on the keyboard.
 ---@param text string The character.
 function EditorUITree:textinput(text)
+    if not self.nameEditNode then
+        return
+    end
 	self.nameEditValue = self.nameEditValue .. text
 end
 
