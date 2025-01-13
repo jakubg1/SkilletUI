@@ -573,7 +573,7 @@ end
 
 ---Creates a new blank scene.
 function Editor:newScene()
-    _UI = Node({name = "root"})
+    _UI = Node({name = "root", canvasInputMode = true})
     self.currentSceneFile = nil
     self.isSceneModified = false
     -- Deselect any selected nodes.
