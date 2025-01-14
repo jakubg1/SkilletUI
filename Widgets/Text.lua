@@ -6,7 +6,7 @@ local Text = class:derive("Text")
 
 local utf8 = require("utf8")
 local Vec2 = require("Vector2")
-local Color = require("Color")
+local PropertyList = require("PropertyList")
 
 
 
@@ -14,18 +14,21 @@ local Color = require("Color")
 ---@param node Node The Node that this Text is attached to.
 ---@param data table? The data to be used for this Text.
 function Text:new(node, data)
+    self.node = node
+
     self.PROPERTY_LIST = {
-        {name = "Text", key = "text", type = "string"},
-        {name = "Scale", key = "scale", type = "number"},
-        {name = "Color", key = "color", type = "color"},
+        {name = "Font", key = "font", type = "Font", defaultValue = _FONTS.standard},
+        {name = "Text", key = "text", type = "string", defaultValue = "Text"},
+        {name = "Scale", key = "scale", type = "number", defaultValue = 1},
+        {name = "Color", key = "color", type = "color", defaultValue = _COLORS.white},
         {name = "Hover Color", key = "hoverColor", type = "color", nullable = true},
-        {name = "Alpha", key = "alpha", type = "number"},
+        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true},
-        {name = "Shadow Alpha", key = "shadowAlpha", type = "number"},
-        {name = "Boldness", key = "boldness", type = "number"},
-        {name = "Underline", key = "underline", type = "boolean"},
-        {name = "Strikethrough", key = "strikethrough", type = "boolean"},
-        {name = "Character Separation", key = "characterSeparation", type = "number"},
+        {name = "Shadow Alpha", key = "shadowAlpha", type = "number", defaultValue = 0.5},
+        {name = "Boldness", key = "boldness", type = "number", defaultValue = 1},
+        {name = "Underline", key = "underline", type = "boolean", defaultValue = false},
+        {name = "Strikethrough", key = "strikethrough", type = "boolean", defaultValue = false},
+        {name = "Character Separation", key = "characterSeparation", type = "number", defaultValue = 0},
         {name = "Wave Amplitude", key = "waveAmplitude", type = "number", nullable = true},
         {name = "Wave Frequency", key = "waveFrequency", type = "number", nullable = true},
         {name = "Wave Speed", key = "waveSpeed", type = "number", nullable = true},
@@ -33,32 +36,45 @@ function Text:new(node, data)
         {name = "Gradient Wave Frequency", key = "gradientWaveFrequency", type = "number", nullable = true},
         {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number", nullable = true}
     }
-    data = data or {}
-
-    self.node = node
-
-    self.font = _FONTS[data.font] or _FONTS.standard
-    self.text = data.text or "Text"
-    self.scale = data.scale or 1
-    self.color = data.color and Color(data.color) or _COLORS.white
-    self.hoverColor = data.hoverColor and Color(data.hoverColor)
-    self.alpha = data.alpha or 1
-    self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
-    self.shadowAlpha = data.shadowAlpha or 0.5
-    self.boldness = data.boldness or 1
-    self.underline = data.underline or false
-    self.strikethrough = data.strikethrough or false
-    self.characterSeparation = data.characterSeparation or 0
-
-    self.waveAmplitude = data.waveAmplitude
-    self.waveFrequency = data.waveFrequency
-    self.waveSpeed = data.waveSpeed
-
-    self.gradientWaveColor = data.gradientWaveColor and Color(data.gradientWaveColor)
-    self.gradientWaveFrequency = data.gradientWaveFrequency
-    self.gradientWaveSpeed = data.gradientWaveSpeed
+    self.properties = PropertyList(self.PROPERTY_LIST, data)
 
     self.time = 0
+end
+
+
+
+---Returns the given property of this Text.
+---@param key string The property key.
+---@return any?
+function Text:getProp(key)
+    return self.properties:getValue(key)
+end
+
+
+
+---Sets the given property of this Text to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Text:setProp(key, value)
+    self.properties:setValue(key, value)
+end
+
+
+
+---Returns the given property base of this Text.
+---@param key string The property key.
+---@return any?
+function Text:getPropBase(key)
+    return self.properties:getBaseValue(key)
+end
+
+
+
+---Sets the given property base of this Text to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Text:setPropBase(key, value)
+    self.properties:setBaseValue(key, value)
 end
 
 
@@ -68,9 +84,9 @@ end
 ---@param frequency number? The horizontal distance between two wave peaks, in pixels.
 ---@param speed number? How fast the wave should travel, in pixels per second.
 function Text:setWave(amplitude, frequency, speed)
-    self.waveAmplitude = amplitude
-    self.waveFrequency = frequency
-    self.waveSpeed = speed
+    self:setProp("waveAmplitude", amplitude)
+    self:setProp("waveFrequency", frequency)
+    self:setProp("waveSpeed", speed)
 end
 
 
@@ -80,9 +96,9 @@ end
 ---@param frequency number? The horizontal distance between two wave peaks, in pixels.
 ---@param speed number? How fast the wave should travel, in pixels per second.
 function Text:setGradientWave(color, frequency, speed)
-    self.gradientWaveColor = color
-    self.gradientWaveFrequency = frequency
-    self.gradientWaveSpeed = speed
+    self:setProp("gradientWaveColor", color)
+    self:setProp("gradientWaveFrequency", frequency)
+    self:setProp("gradientWaveSpeed", speed)
 end
 
 
@@ -90,7 +106,11 @@ end
 ---Returns the size of this Text.
 ---@return Vector2
 function Text:getSize()
-    return Vec2(self.font:getWidth(self.text) - 1, self.font:getHeight()) * self.scale + Vec2(self:getEffectiveCharacterSeparation() * (utf8.len(self.text) - 1) + self.boldness - 1, 0)
+    local font = self:getProp("font")
+    local text = self:getProp("text")
+    local scale = self:getProp("scale")
+    local boldness = self:getProp("boldness")
+    return Vec2(font:getWidth(text) - 1, font:getHeight()) * scale + Vec2(self:getEffectiveCharacterSeparation() * (utf8.len(text) - 1) + boldness - 1, 0)
 end
 
 
@@ -122,7 +142,7 @@ end
 ---Returns the effective character separation of this Text, as both the character separation but also boldness will push the characters apart.
 ---@return integer
 function Text:getEffectiveCharacterSeparation()
-    return self.boldness + self.characterSeparation - 1
+    return self:getProp("boldness") + self:getProp("characterSeparation") - 1
 end
 
 
@@ -130,7 +150,7 @@ end
 ---Returns `true` if the Text can be rendered as a whole batch, instead of having to be drawn character by character.
 ---@return boolean
 function Text:isSimpleRendered()
-    if self.waveAmplitude or self.gradientWaveColor or self.characterSeparation ~= 0 or self.boldness ~= 1 then
+    if self:getProp("waveAmplitude") or self:getProp("gradientWaveColor") or self:getProp("characterSeparation") ~= 0 or self:getProp("boldness") ~= 1 then
         return false
     end
     return true
@@ -141,82 +161,99 @@ end
 ---Draws the Text on the screen.
 function Text:draw()
     local pos = self.node:getGlobalPos()
-    love.graphics.setFont(self.font)
-    local color = self.color
-    if self.hoverColor and self.node:isHovered() then
-        color = self.hoverColor
+    local font = self:getProp("font")
+    local text = self:getProp("text")
+    local scale = self:getProp("scale")
+    local color = self:getProp("color")
+    local hoverColor = self:getProp("hoverColor")
+    local alpha = self:getProp("alpha")
+    local shadowOffset = self:getProp("shadowOffset")
+    local shadowAlpha = self:getProp("shadowAlpha")
+    local boldness = self:getProp("boldness")
+    local underline = self:getProp("underline")
+    local strikethrough = self:getProp("strikethrough")
+    local waveAmplitude = self:getProp("waveAmplitude")
+    local waveFrequency = self:getProp("waveFrequency")
+    local waveSpeed = self:getProp("waveSpeed")
+    local gradientWaveColor = self:getProp("gradientWaveColor")
+    local gradientWaveFrequency = self:getProp("gradientWaveFrequency")
+    local gradientWaveSpeed = self:getProp("gradientWaveSpeed")
+
+    love.graphics.setFont(font)
+    if hoverColor and self.node:isHovered() then
+        color = hoverColor
     end
     if self:isSimpleRendered() then
         -- Optimize drawing if there are no effects which require drawing each character separately.
-        if self.shadowOffset then
-            love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
-            love.graphics.print(self.text, math.floor(pos.x + self.shadowOffset.x + 0.5), math.floor(pos.y + self.shadowOffset.y + 0.5), 0, self.scale)
+        if shadowOffset then
+            love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
+            love.graphics.print(text, math.floor(pos.x + shadowOffset.x + 0.5), math.floor(pos.y + shadowOffset.y + 0.5), 0, scale)
         end
-        love.graphics.setColor(color.r, color.g, color.b, self.alpha)
-        love.graphics.print(self.text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, self.scale)
+        love.graphics.setColor(color.r, color.g, color.b, alpha)
+        love.graphics.print(text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, scale)
     else
         -- Draw everything character by character.
         local x = 0
         local sep = self:getEffectiveCharacterSeparation()
-        for i = 1, utf8.len(self.text) do
-            local chr = self.text:sub(utf8.offset(self.text, i), utf8.offset(self.text, i + 1) - 1)
-            local w = self.font:getWidth(chr) * self.scale
+        for i = 1, utf8.len(text) do
+            local chr = text:sub(utf8.offset(text, i), utf8.offset(text, i + 1) - 1)
+            local w = font:getWidth(chr) * scale
             local y = 0
-            if self.waveAmplitude then
-                y = _Utils.getWavePoint(self.waveFrequency, self.waveSpeed, x, self.time) * self.waveAmplitude
+            if waveAmplitude then
+                y = _Utils.getWavePoint(waveFrequency, waveSpeed, x, self.time) * waveAmplitude
             end
             local charColor = color
-            if self.gradientWaveColor then
+            if gradientWaveColor then
                 local t
-                if self.gradientWaveSpeed then
-                    t = (_Utils.getWavePoint(self.gradientWaveFrequency, self.gradientWaveSpeed, x, self.time) + 1) / 2
+                if gradientWaveSpeed then
+                    t = (_Utils.getWavePoint(gradientWaveFrequency, gradientWaveSpeed, x, self.time) + 1) / 2
                 else
-                    t = (_Utils.getWavePoint(1 / self.gradientWaveFrequency, 1, 0, self.time) + 1) / 2
+                    t = (_Utils.getWavePoint(1 / gradientWaveFrequency, 1, 0, self.time) + 1) / 2
                 end
-                charColor = _Utils.interpolate(color, self.gradientWaveColor, t)
+                charColor = _Utils.interpolate(color, gradientWaveColor, t)
             end
 
-            if self.shadowOffset then
-                for j = 1, self.boldness do
+            if shadowOffset then
+                for j = 1, boldness do
                     local bx = j - 1
-                    love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
-                    love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5 + self.shadowOffset.x), math.floor(pos.y + y + 0.5 + self.shadowOffset.y), 0, self.scale)
+                    love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
+                    love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5 + shadowOffset.x), math.floor(pos.y + y + 0.5 + shadowOffset.y), 0, scale)
                 end
             end
-            for j = 1, self.boldness do
+            for j = 1, boldness do
                 local bx = j - 1
-                love.graphics.setColor(charColor.r, charColor.g, charColor.b, self.alpha)
-                love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5), math.floor(pos.y + y + 0.5), 0, self.scale)
+                love.graphics.setColor(charColor.r, charColor.g, charColor.b, alpha)
+                love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5), math.floor(pos.y + y + 0.5), 0, scale)
             end
             x = x + w + sep
         end
     end
 
-    if self.underline then
+    if underline then
         local size = self:getSize()
         local x1 = pos.x + 0.5
         local x2 = pos.x + size.x + 0.5
         local y = pos.y + size.y + 0.5
-        love.graphics.setLineWidth(self.scale)
-        if self.shadowOffset then
-            love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
-            love.graphics.line(math.floor(x1 + self.shadowOffset.x), math.floor(y + self.shadowOffset.y), math.floor(x2 + self.shadowOffset.x), math.floor(y + self.shadowOffset.y))
+        love.graphics.setLineWidth(scale)
+        if shadowOffset then
+            love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
+            love.graphics.line(math.floor(x1 + shadowOffset.x), math.floor(y + shadowOffset.y), math.floor(x2 + shadowOffset.x), math.floor(y + shadowOffset.y))
         end
-        love.graphics.setColor(self.color.r, self.color.g, self.color.b, self.alpha)
+        love.graphics.setColor(color.r, color.g, color.b, alpha)
         love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
     end
 
-    if self.strikethrough then
+    if strikethrough then
         local size = self:getSize()
         local x1 = pos.x + 0.5
         local x2 = pos.x + size.x + 0.5
         local y = pos.y + size.y / 2 + 0.5
-        love.graphics.setLineWidth(self.scale)
-        if self.shadowOffset then
-            love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
-            love.graphics.line(math.floor(x1 + self.shadowOffset.x), math.floor(y + self.shadowOffset.y), math.floor(x2 + self.shadowOffset.x), math.floor(y + self.shadowOffset.y))
+        love.graphics.setLineWidth(scale)
+        if shadowOffset then
+            love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
+            love.graphics.line(math.floor(x1 + shadowOffset.x), math.floor(y + shadowOffset.y), math.floor(x2 + shadowOffset.x), math.floor(y + shadowOffset.y))
         end
-        love.graphics.setColor(self.color.r, self.color.g, self.color.b, self.alpha)
+        love.graphics.setColor(color.r, color.g, color.b, alpha)
         love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
     end
 end
@@ -226,30 +263,7 @@ end
 ---Returns the Text's data to be used for loading later.
 ---@return table
 function Text:serialize()
-    local data = {}
-
-    data.font = _FONT_LOOKUP[self.font]
-    data.text = self.text
-    data.scale = self.scale ~= 1 and self.scale or nil
-    data.color = self.color ~= _COLORS.white and self.color:getHex() or nil
-    data.hoverColor = self.hoverColor and self.hoverColor:getHex()
-    data.alpha = self.alpha ~= 1 and self.alpha or nil
-    data.shadowOffset = self.shadowOffset and {self.shadowOffset.x, self.shadowOffset.y}
-    data.shadowAlpha = self.shadowAlpha ~= 0.5 and self.shadowAlpha or nil
-    data.boldness = self.boldness ~= 1 and self.boldness or nil
-    data.underline = self.underline or nil
-    data.strikethrough = self.strikethrough or nil
-    data.characterSeparation = self.characterSeparation ~= 0 and self.characterSeparation or nil
-
-    data.waveAmplitude = self.waveAmplitude
-    data.waveFrequency = self.waveFrequency
-    data.waveSpeed = self.waveSpeed
-
-    data.gradientWaveColor = self.gradientWaveColor and self.gradientWaveColor:getHex()
-    data.gradientWaveFrequency = self.gradientWaveFrequency
-    data.gradientWaveSpeed = self.gradientWaveSpeed
-
-    return data
+    return self.properties:serialize()
 end
 
 

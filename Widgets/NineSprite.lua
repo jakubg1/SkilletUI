@@ -5,6 +5,7 @@ local class = require "com.class"
 local NineSprite = class:derive("NineSprite")
 
 local Vec2 = require("Vector2")
+local PropertyList = require("PropertyList")
 
 
 
@@ -12,30 +13,56 @@ local Vec2 = require("Vector2")
 ---@param node Node The Node that this NineSprite is attached to.
 ---@param data table? The data to be used for this NineSprite.
 function NineSprite:new(node, data)
+    self.node = node
+
     self.PROPERTY_LIST = {
-        {name = "Image", key = "image", type = "Image"},
+        {name = "Image", key = "image", type = "Image", defaultValueNoData = _IMAGES.ed_button},
         {name = "Hover Image", key = "hoverImage", type = "Image", nullable = true},
         {name = "Click Image", key = "clickImage", type = "Image", nullable = true},
         {name = "Disabled Image", key = "disabledImage", type = "Image", nullable = true},
-        {name = "Size", key = "size", type = "Vector2"},
-        {name = "Scale", key = "scale", type = "number"},
-        {name = "Alpha", key = "alpha", type = "number"},
+        {name = "Size", key = "size", type = "Vector2", defaultValue = Vec2(10)},
+        {name = "Scale", key = "scale", type = "number", defaultValue = 1},
+        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true},
-        {name = "Shadow Alpha", key = "shadowAlpha", type = "number"}
+        {name = "Shadow Alpha", key = "shadowAlpha", type = "number", defaultValue = 0.5}
     }
-    data = data or {image = "ed_button"}
+    self.properties = PropertyList(self.PROPERTY_LIST, data)
+end
 
-    self.node = node
 
-    self.image = _IMAGES[data.image]
-    self.hoverImage = data.hoverImage and _IMAGES[data.hoverImage]
-    self.clickImage = data.clickImage and _IMAGES[data.clickImage]
-    self.disabledImage = data.disabledImage and _IMAGES[data.disabledImage]
-    self.size = data.size and Vec2(data.size) or Vec2(10)
-    self.scale = data.scale or 1
-    self.alpha = data.alpha or 1
-    self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
-    self.shadowAlpha = data.shadowAlpha or 0.5
+
+---Returns the given property of this NineSprite.
+---@param key string The property key.
+---@return any?
+function NineSprite:getProp(key)
+    return self.properties:getValue(key)
+end
+
+
+
+---Sets the given property of this NineSprite to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function NineSprite:setProp(key, value)
+    self.properties:setValue(key, value)
+end
+
+
+
+---Returns the given property base of this NineSprite.
+---@param key string The property key.
+---@return any?
+function NineSprite:getPropBase(key)
+    return self.properties:getBaseValue(key)
+end
+
+
+
+---Sets the given property base of this NineSprite to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function NineSprite:setPropBase(key, value)
+    self.properties:setBaseValue(key, value)
 end
 
 
@@ -43,7 +70,7 @@ end
 ---Returns the size of this NineSprite.
 ---@return Vector2
 function NineSprite:getSize()
-    return self.size
+    return self:getProp("size")
 end
 
 
@@ -51,7 +78,7 @@ end
 ---Sets the size of this NineSprite.
 ---@param size Vector2 The new size of this NineSprite.
 function NineSprite:setSize(size)
-    self.size = size
+    self:setProp("size", size)
 end
 
 
@@ -75,21 +102,26 @@ end
 ---Draws the NineSprite on the screen.
 function NineSprite:draw()
     local pos = self.node:getGlobalPos()
-    local image = self.image
+    local image = self:getProp("image")
     if self.node:isDisabled() then
-        image = self.disabledImage or image
+        image = self:getProp("disabledImage") or image
     elseif self.node:isHovered() then
-        image = self.hoverImage or image
+        image = self:getProp("hoverImage") or image
         if self.node.clicked then
-            image = self.clickImage or image
+            image = self:getProp("clickImage") or image
         end
     end
-    if self.shadowOffset then
-        love.graphics.setColor(0, 0, 0, self.alpha * self.shadowAlpha)
-        image:draw(pos + self.shadowOffset, self.size, self.scale)
+    local size = self:getProp("size")
+    local scale = self:getProp("scale")
+    local alpha = self:getProp("alpha")
+    local shadowOffset = self:getProp("shadowOffset")
+    local shadowAlpha = self:getProp("shadowAlpha")
+    if shadowOffset then
+        love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
+        image:draw(pos + shadowOffset, size, scale)
     end
-    love.graphics.setColor(1, 1, 1, self.alpha)
-    image:draw(pos, self.size, self.scale)
+    love.graphics.setColor(1, 1, 1, alpha)
+    image:draw(pos, size, scale)
 end
 
 
@@ -97,19 +129,7 @@ end
 ---Returns the NineSprite's data to be used for loading later.
 ---@return table
 function NineSprite:serialize()
-    local data = {}
-
-    data.image = _IMAGE_LOOKUP[self.image]
-    data.hoverImage = self.hoverImage and _IMAGE_LOOKUP[self.hoverImage]
-    data.clickImage = self.clickImage and _IMAGE_LOOKUP[self.clickImage]
-    data.disabledImage = self.disabledImage and _IMAGE_LOOKUP[self.disabledImage]
-    data.size = {self.size.x, self.size.y}
-    data.scale = self.scale ~= 1 and self.scale or nil
-    data.alpha = self.alpha ~= 1 and self.alpha or nil
-    data.shadowOffset = self.shadowOffset and {self.shadowOffset.x, self.shadowOffset.y}
-    data.shadowAlpha = self.shadowAlpha ~= 0.5 and self.shadowAlpha or nil
-
-    return data
+    return self.properties:serialize()
 end
 
 

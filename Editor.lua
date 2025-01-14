@@ -228,22 +228,9 @@ function Editor:generateNodePropertyUI(node)
                 currentRow = currentRow + 1
                 propertiesUI:addChild(propertyHeaderUI)
                 for i, property in ipairs(properties) do
-                    local inputValue
-                    if property.nodeKeys then
-                        -- If we have multiple widgets attached to this property, fetch the value from the first one of them. Not elegant.
-                        -- TODO: Figure out a way to fetch from all of them and to signal somehow whether they are different (they shouldn't).
-                        inputValue = widget[property.nodeKeys[1]].widget[property.key]
-                    else
-                        inputValue = widget[property.key]
-                    end
+                    local inputValue = widget.properties:getBaseValue(property.key)
                     local inputFunction = function(input)
-                        if property.nodeKeys then
-                            for j, node in ipairs(property.nodeKeys) do
-                                self:setNodeWidgetProperty(widget[node], property.key, input)
-                            end
-                        else
-                            self:setSelectedNodeWidgetProperty(property.key, input)
-                        end
+                        self:setSelectedNodeWidgetProperty(property.key, input)
                     end
                     local propertyUI = Node({name = "input", pos = {20, currentRow * 20}})
                     currentRow = currentRow + 1

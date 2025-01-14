@@ -7,6 +7,7 @@ local TitleDigit = class:derive("TitleDigit")
 -- Place your imports here
 local Vec2 = require("Vector2")
 local Color = require("Color")
+local PropertyList = require("PropertyList")
 
 
 
@@ -14,12 +15,13 @@ local Color = require("Color")
 ---@param node Node The Node that this digit is attached to.
 ---@param data table? The data to be used for this Title Digit.
 function TitleDigit:new(node, data)
-    data = data or {}
-
     self.node = node
 
-    self.alpha = data.alpha or 1
-    self.shadowOffset = data.shadowOffset and Vec2(data.shadowOffset)
+    self.PROPERTY_LIST = {
+        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1},
+        {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true}
+    }
+    self.properties = PropertyList(self.PROPERTY_LIST, data)
 
     self.SIZE = Vec2(6, 7)
     self.MAIN_COLOR = Color(1, 0.8, 0)
@@ -38,6 +40,42 @@ function TitleDigit:new(node, data)
     self.CUBE_SIZE = 6
 
     self.time = 0
+end
+
+
+
+---Returns the given property of this TitleDigit.
+---@param key string The property key.
+---@return any?
+function TitleDigit:getProp(key)
+    return self.properties:getValue(key)
+end
+
+
+
+---Sets the given property of this TitleDigit to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function TitleDigit:setProp(key, value)
+    self.properties:setValue(key, value)
+end
+
+
+
+---Returns the given property base of this TitleDigit.
+---@param key string The property key.
+---@return any?
+function TitleDigit:getPropBase(key)
+    return self.properties:getBaseValue(key)
+end
+
+
+
+---Sets the given property base of this TitleDigit to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function TitleDigit:setPropBase(key, value)
+    self.properties:setBaseValue(key, value)
 end
 
 
@@ -69,7 +107,7 @@ function TitleDigit:drawCube(pos, angle, alpha, shadow)
     local c2 = self.SECONDARY_COLOR
     local c3 = self.TERNARY_COLOR
     if shadow then
-        pos = pos + self.shadowOffset
+        pos = pos + self:getProp("shadowOffset")
         a = 0.5
         c1 = self.SHADOW_COLOR
         c2 = self.SHADOW_COLOR
@@ -149,18 +187,18 @@ function TitleDigit:draw()
     local u = (angle + math.pi / 2) % (math.pi * 2) - math.pi
     table.sort(self.CUBE_POSITIONS, function(a, b) return a.y * -10 + a.x * u < b.y * -10 + b.x * u end)
     --[[
-    if self.shadowOffset then
+    if self:getProp("shadowOffset") then
         for i, cubePos in ipairs(self.CUBE_POSITIONS) do
             local offsetX = cubePos.x - (self.SIZE.x - 1) / 2
             local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
-            self:drawCube(cubePos2, angle, self.alpha, true)
+            self:drawCube(cubePos2, angle, self:getProp("alpha"), true)
         end
     end
     ]]
     for i, cubePos in ipairs(self.CUBE_POSITIONS) do
         local offsetX = cubePos.x - (self.SIZE.x - 1) / 2
         local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
-        self:drawCube(cubePos2, angle, self.alpha)
+        self:drawCube(cubePos2, angle, self:getProp("alpha"))
     end
 end
 
@@ -169,12 +207,7 @@ end
 ---Returns the TitleDigit's data to be used for loading later.
 ---@return table
 function TitleDigit:serialize()
-    local data = {}
-
-    data.alpha = self.alpha ~= 1 and self.alpha or nil
-    data.shadowOffset = self.shadowOffset and {self.shadowOffset.x, self.shadowOffset.y}
-
-    return data
+    return self.properties:serialize()
 end
 
 

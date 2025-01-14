@@ -403,7 +403,7 @@ end
 ---@return string?
 function Node:getText()
     if self.type == "text" then
-        return self.widget.text
+        return self.widget:getProp("text")
     end
 end
 
@@ -414,7 +414,7 @@ end
 function Node:setText(text)
     assert(type(text) == "string", string.format("Cannot set the text to a non-string: %s!", text))
     if self.type == "text" then
-        self.widget.text = text
+        self.widget:setProp("text", text)
     end
 end
 
@@ -424,7 +424,7 @@ end
 ---@return Color?
 function Node:getColor()
     if self.type == "text" or self.type == "box" then
-        return self.widget.color
+        return self.widget:getProp("color")
     end
 end
 
@@ -434,7 +434,7 @@ end
 ---@param color Color The color to be set on this Node's widget.
 function Node:setColor(color)
     if self.type == "text" or self.type == "box" then
-        self.widget.color = color
+        self.widget:setProp("color", color)
     end
 end
 

@@ -12,6 +12,8 @@ local Vec2 = require("Vector2")
 ---@param node Node The Node that this InputText is attached to.
 ---@param data table? The data to be used for this InputText.
 function InputText:new(node, data)
+    self.node = node
+
     self.PROPERTY_LIST = {
         {name = "Size", key = "size", nodeKeys = {"spriteNode"}, type = "Vector2"},
         {name = "Text", key = "text", nodeKeys = {"textNode"}, type = "string"},
@@ -19,9 +21,7 @@ function InputText:new(node, data)
         {name = "Color", key = "color", nodeKeys = {"textNode"}, type = "color"},
         {name = "Nullable", key = "nullable", type = "boolean"}
     }
-    data = data or {}
 
-    self.node = node
     self.textNode = self.node:findChildByName("text")
     assert(self.textNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Text Widget named \"text\" to work!", self.node.name))
     self.colorNode = self.node:findChildByName("color")
@@ -38,6 +38,50 @@ end
 
 
 
+---Returns the given property of this InputText.
+---@param key string The property key.
+---@return any?
+function InputText:getProp(key)
+    return self.textNode.widget.properties:getValue(key)
+end
+
+
+
+---Sets the given property of this InputText to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function InputText:setProp(key, value)
+    self.textNode.widget.properties:setValue(key, value)
+    self.colorNode.widget.properties:setValue(key, value)
+    self.spriteNode.widget.properties:setValue(key, value)
+    self.nullifyButtonNode.widget.properties:setValue(key, value)
+end
+
+
+
+---Returns the given property base of this InputText.
+---@param key string The property key.
+---@return any?
+function InputText:getPropBase(key)
+    return self.textNode.widget.properties:getBaseValue(key)
+end
+
+
+
+---Sets the given property base of this InputText to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function InputText:setPropBase(key, value)
+    self.textNode.widget.properties:setBaseValue(key, value)
+    self.colorNode.widget.properties:setBaseValue(key, value)
+    self.spriteNode.widget.properties:setBaseValue(key, value)
+    self.nullifyButtonNode.widget.properties:setBaseValue(key, value)
+end
+
+
+
+---Returns the current type of this InputText.
+---@return string
 function InputText:getType()
     return self.type
 end

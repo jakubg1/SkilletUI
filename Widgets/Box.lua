@@ -5,7 +5,7 @@ local class = require "com.class"
 local Box = class:derive("Box")
 
 local Vec2 = require("Vector2")
-local Color = require("Color")
+local PropertyList = require("PropertyList")
 
 
 
@@ -13,22 +13,56 @@ local Color = require("Color")
 ---@param node Node The Node that this Box is attached to.
 ---@param data table? The data to be used for this Box.
 function Box:new(node, data)
-    self.PROPERTY_LIST = {
-        {name = "Size", key = "size", type = "Vector2"},
-        {name = "Color", key = "color", type = "color", nullable = true},
-        {name = "Alpha", key = "alpha", type = "number"},
-        {name = "Border Color", key = "borderColor", type = "color", nullable = true},
-        {name = "Border Alpha", key = "borderAlpha", type = "number"}
-    }
-    data = data or {color = _COLORS.white}
-
     self.node = node
 
-    self.size = data.size and Vec2(data.size) or Vec2(10)
-    self.color = data.color and Color(data.color)
-    self.alpha = data.alpha or 1
-    self.borderColor = data.borderColor and Color(data.borderColor)
-    self.borderAlpha = data.borderAlpha or 1
+    self.PROPERTY_LIST = {
+        {name = "Size", key = "size", type = "Vector2", defaultValue = Vec2(10)},
+        {name = "Color", key = "color", type = "color", nullable = true, defaultValueNoData = _COLORS.white},
+        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1},
+        {name = "Border Color", key = "borderColor", type = "color", nullable = true},
+        {name = "Border Alpha", key = "borderAlpha", type = "number", defaultValue = 1}
+    }
+    self.properties = PropertyList(self.PROPERTY_LIST, data)
+
+    self.animations = {
+        {property = "alpha", startValue = 1, finalValue = 0, maxTime = 0.5, time = 0.24972874}
+    }
+end
+
+
+
+---Returns the given property of this Box.
+---@param key string The property key.
+---@return any?
+function Box:getProp(key)
+    return self.properties:getValue(key)
+end
+
+
+
+---Sets the given property of this Box to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Box:setProp(key, value)
+    self.properties:setValue(key, value)
+end
+
+
+
+---Returns the given property base of this Box.
+---@param key string The property key.
+---@return any?
+function Box:getPropBase(key)
+    return self.properties:getBaseValue(key)
+end
+
+
+
+---Sets the given property base of this Box to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Box:setPropBase(key, value)
+    self.properties:setBaseValue(key, value)
 end
 
 
@@ -36,7 +70,7 @@ end
 ---Returns the size of this Box.
 ---@return Vector2
 function Box:getSize()
-    return self.size
+    return self:getProp("size")
 end
 
 
@@ -44,7 +78,7 @@ end
 ---Sets the size of this Box.
 ---@param size Vector2 The new size of this Box.
 function Box:setSize(size)
-    self.size = size
+    self:setProp("size", size)
 end
 
 
@@ -68,14 +102,19 @@ end
 ---Draws the Box on the screen.
 function Box:draw()
     local pos = self.node:getGlobalPos()
-    if self.color then
-        love.graphics.setColor(self.color.r, self.color.g, self.color.b, self.alpha)
-        love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, self.size.x, self.size.y)
+    local size = self:getProp("size")
+    local color = self:getProp("color")
+    local alpha = self:getProp("alpha")
+    local borderColor = self:getProp("borderColor")
+    local borderAlpha = self:getProp("borderAlpha")
+    if color then
+        love.graphics.setColor(color.r, color.g, color.b, alpha)
+        love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, size.x, size.y)
     end
-    if self.borderColor then
-        love.graphics.setColor(self.borderColor.r, self.borderColor.g, self.borderColor.b, self.borderAlpha)
+    if borderColor then
+        love.graphics.setColor(borderColor.r, borderColor.g, borderColor.b, borderAlpha)
         love.graphics.setLineWidth(1)
-        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, self.size.x - 0.5, self.size.y - 0.5)
+        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 0.5, size.y - 0.5)
     end
 end
 
@@ -84,15 +123,7 @@ end
 ---Returns the Box's data to be used for loading later.
 ---@return table
 function Box:serialize()
-    local data = {}
-
-    data.size = {self.size.x, self.size.y}
-    data.color = self.color and self.color:getHex()
-    data.alpha = self.alpha
-    data.borderColor = self.borderColor and self.borderColor:getHex()
-    data.borderAlpha = self.borderAlpha
-
-    return data
+    return self.properties:serialize()
 end
 
 
