@@ -157,7 +157,7 @@ function Editor:getHoveredNode()
         return hoveredNode
     end
     -- Already selected nodes take over the hover, regardless of whatever is over it.
-    if self.selectedNode and self.selectedNode:isHovered() then
+    if self.selectedNode and (self.selectedNode:isHovered() or self.selectedNode:getHoveredResizeHandleID()) then
         return self.selectedNode
     end
     -- Finally, look if any node is directly hovered.
@@ -196,7 +196,7 @@ function Editor:generateNodePropertyUI(node)
     end
     -- Make a new property list UI.
     if node then
-        local propertiesUI = Node({name = "properties", pos = {1220, 60}})
+        local propertiesUI = Node({name = "properties", pos = {1200, 60}})
         local currentRow = 0
         local nodeProperties = node:getPropertyList()
         local propertyHeaderUI = self:label(0, currentRow * 20, "Node Properties")
@@ -209,10 +209,10 @@ function Editor:generateNodePropertyUI(node)
             local inputFunction = function(input)
                 self:setSelectedNodeProperty(property.key, input)
             end
-            local propertyUI = Node({name = "input", pos = {0, currentRow * 20}})
+            local propertyUI = Node({name = "input", pos = {20, currentRow * 20}})
             currentRow = currentRow + 1
             local propertyText = self:label(0, 0, property.name)
-            local propertyInput = self:input(150, 0, 200, property.type, inputValue, property.nullable, inputFunction)
+            local propertyInput = self:input(200, 0, 150, property.type, inputValue, property.nullable, inputFunction)
             self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (node:isControlled() and property.disabledIfControlled))
             propertyUI:addChild(propertyText)
             propertyUI:addChild(propertyInput)
@@ -245,10 +245,10 @@ function Editor:generateNodePropertyUI(node)
                             self:setSelectedNodeWidgetProperty(property.key, input)
                         end
                     end
-                    local propertyUI = Node({name = "input", pos = {0, currentRow * 20}})
+                    local propertyUI = Node({name = "input", pos = {20, currentRow * 20}})
                     currentRow = currentRow + 1
                     local propertyText = self:label(0, 0, property.name)
-                    local propertyInput = self:input(150, 0, 200, property.type, inputValue, property.nullable, inputFunction)
+                    local propertyInput = self:input(200, 0, 150, property.type, inputValue, property.nullable, inputFunction)
                     self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property))
                     propertyUI:addChild(propertyText)
                     propertyUI:addChild(propertyInput)
@@ -888,6 +888,8 @@ function Editor:update(dt)
         local posVector = ((self.nodeResizeDirection - 1) / 2 + self.selectedNode:getAlign()) * self.nodeResizeDirection
         self.selectedNode:setPos(((self.nodeResizeOriginalPos + movement * posVector) + 0.5):floor())
         self.selectedNode:setSize(self.nodeResizeOriginalSize + movement * self.nodeResizeDirection)
+        -- Do not hover any other node while resizing the selected node.
+        self.hoveredNode = nil
     end
 
     self.uiTree:update(dt)

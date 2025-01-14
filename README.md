@@ -9,6 +9,7 @@ A work-in-progress UI engine for LOVE2D, intended for implementation into OpenSM
 - Node creation, duplication, removal, ordering, parenting
 - Node and widget manipulation with a list of properties
 - Layout loading and saving
+- Fully functional undo/redo stack with working transactions/groups that will be undone at once
 
 ## What's To Do
 
