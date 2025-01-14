@@ -17,8 +17,10 @@ love.graphics.setBackgroundColor(0.2, 0.5, 0.9)
 -- Globals
 _VEC2S_PER_FRAME = 0
 _WINDOW_SIZE = Vec2(1600, 900)
-_CANVAS_SIZE = Vec2(960, 540)
-_CANVAS_OFFSET = Vec2(230, 40)
+_CANVAS_SIZE_EDITOR = Vec2(960, 540)
+_CANVAS_OFFSET_EDITOR = Vec2(230, 40)
+_CANVAS_SIZE_PRESENTATION = _WINDOW_SIZE
+_CANVAS_OFFSET_PRESENTATION = Vec2()
 _MousePos = Vec2()
 _MouseCPos = Vec2()
 
@@ -76,6 +78,7 @@ _ALIGNMENTS = {
 _CANVAS = MainCanvas()
 _BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
+_UI = nil
 _EDITOR = Editor()
 
 _BackgroundEnabled = true
@@ -185,7 +188,6 @@ end
 
 
 function love.draw()
-	_VEC2S_PER_FRAME = 0
 	local t = love.timer.getTime()
 	_CANVAS:activate()
 	-- Start of main drawing routine
@@ -236,6 +238,9 @@ function love.keypressed(key)
 		end
 	end
 	_EDITOR:keypressed(key)
+	-- Full-screen presentation mode!
+	_CANVAS.pos = _EDITOR.enabled and _CANVAS_OFFSET_EDITOR or _CANVAS_OFFSET_PRESENTATION
+	_CANVAS.size = _EDITOR.enabled and _CANVAS_SIZE_EDITOR or _CANVAS_SIZE_PRESENTATION
 end
 
 

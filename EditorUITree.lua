@@ -198,7 +198,8 @@ function EditorUITree:draw()
         local bgColor = nil
         if line.node == self.editor.selectedNode then
             bgColor = _COLORS.cyan
-        elseif line.node == self.editor.hoveredNode then
+        elseif line.node == self.editor.hoveredNode and (not self.dragOrigin or not (self.hoverTop or self.hoverBottom)) then
+            -- The additional condition above makes it extra clear what are you doing when arranging the nodes around in the tree.
             bgColor = _COLORS.yellow
         end
         local alpha = 1

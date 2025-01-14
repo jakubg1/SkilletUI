@@ -16,7 +16,7 @@ function TransitionTest:new()
     self.state = false
 
     self.SEGMENT_COUNT = Vec2(24, 13)
-    self.SEGMENT_SIZE = _CANVAS.SIZE / self.SEGMENT_COUNT
+    self.SEGMENT_SIZE = _CANVAS.resolution / self.SEGMENT_COUNT
     self.DELAY_BETWEEN_SEGMENTS = 0.05
     self.SEGMENT_TIME = 0.2
 end
@@ -62,7 +62,7 @@ function TransitionTest:draw()
     love.graphics.setColor(0, 0, 0)
     if self.time == 0 then
         if self.state then
-            love.graphics.rectangle("fill", 0, 0, _CANVAS.SIZE.x, _CANVAS.SIZE.y)
+            love.graphics.rectangle("fill", 0, 0, _CANVAS.resolution.x, _CANVAS.resolution.y)
         end
     else
         for i = 1, self.SEGMENT_COUNT.x do

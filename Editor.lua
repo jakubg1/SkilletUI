@@ -911,6 +911,7 @@ function Editor:draw()
     self.UI:findChildByName("drawtime"):setText(string.format("Drawing took approximately %.1fms", _DrawTime * 1000))
     self.UI:findChildByName("pos"):setText(string.format("Mouse position: %s", _MouseCPos))
     self.UI:findChildByName("line3"):setText(string.format("Vecs per frame: %s", _VEC2S_PER_FRAME))
+    _VEC2S_PER_FRAME = 0
     self.UI:findChildByName("hovText"):setText("")
     self.UI:findChildByName("selText"):setText("")
     self.UI:findChildByName("lb_file"):setText(string.format("File: %s%s", self.currentSceneFile or "(none)", self.isSceneModified and "*" or ""))

@@ -9,14 +9,16 @@ local Vec2 = require("Vector2")
 
 
 function MainCanvas:new()
-    self.SIZE = Vec2(320, 180)
-    self.canvas = love.graphics.newCanvas(self.SIZE.x, self.SIZE.y)
+    self.pos = _CANVAS_OFFSET_EDITOR
+    self.size = _CANVAS_SIZE_EDITOR
+    self.resolution = Vec2(320, 180)
+    self.canvas = love.graphics.newCanvas(self.resolution.x, self.resolution.y)
 end
 
 
 
 function MainCanvas:posToPixel(pos)
-    return ((pos - _CANVAS_OFFSET) / _CANVAS_SIZE * self.SIZE):floor()
+    return ((pos - self.pos) / self.size * self.resolution):floor()
 end
 
 
@@ -24,7 +26,7 @@ end
 function MainCanvas:activate()
     love.graphics.setCanvas(self.canvas)
     love.graphics.setColor(0, 0, 0)
-    love.graphics.rectangle("fill", 0, 0, self.SIZE.x, self.SIZE.y)
+    love.graphics.rectangle("fill", 0, 0, self.resolution.x, self.resolution.y)
 end
 
 
@@ -32,7 +34,7 @@ end
 function MainCanvas:draw()
     love.graphics.setColor(1, 1, 1)
     love.graphics.setCanvas()
-    love.graphics.draw(self.canvas, _CANVAS_OFFSET.x, _CANVAS_OFFSET.y, 0, _CANVAS_SIZE.x / self.SIZE.x, _CANVAS_SIZE.y / self.SIZE.y)
+    love.graphics.draw(self.canvas, self.pos.x, self.pos.y, 0, self.size.x / self.resolution.x, self.size.y / self.resolution.y)
 end
 
 
