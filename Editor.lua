@@ -1062,6 +1062,7 @@ end
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
 function Editor:wheelmoved(x, y)
+    self.INPUT_DIALOG:wheelmoved(x, y)
     self.uiTree:wheelmoved(x, y)
 end
 

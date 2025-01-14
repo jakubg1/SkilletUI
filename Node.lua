@@ -986,7 +986,9 @@ function Node:serialize()
     data.pos = self.pos ~= Vec2() and {self.pos.x, self.pos.y} or nil
     data.align = self.align ~= _ALIGNMENTS.topLeft and {self.align.x, self.align.y} or nil
     data.parentAlign = self.parentAlign ~= _ALIGNMENTS.topLeft and {self.parentAlign.x, self.parentAlign.y} or nil
-    data.visible = self.visible ~= true and self.visible or nil
+    if not self.visible then
+        data.visible = false
+    end
     data.shortcut = self.shortcut
     data.canvasInputMode = self.canvasInputMode
     data.signalOnClick = self.signalOnClick

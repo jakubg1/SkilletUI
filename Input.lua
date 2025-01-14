@@ -28,6 +28,9 @@ function Input:new()
 	self.colorDragging = nil
 	self.inputExtensions = nil
 	self.fileList = nil
+	self.fileListOffset = 0
+	self.FILE_LIST_ENTRY_HEIGHT = 20
+	self.FILE_LIST_MAX_ENTRIES = 16
 	self.fileWarnWhenExists = false
 	self.fileWarningActive = false
 	self.shortcut = nil
@@ -104,6 +107,15 @@ end
 
 
 
+function Input:wheelmoved(x, y)
+	if self.inputType == "file" then
+		local maxY = math.max(#self.fileList - self.FILE_LIST_MAX_ENTRIES, 0)
+		self.fileListOffset = math.min(math.max(self.fileListOffset - y * 3, 0), maxY)
+	end
+end
+
+
+
 function Input:keypressed(key)
 	if not self.inputType then
 		return false
@@ -161,6 +173,7 @@ function Input:inputAsk(type, value, extensions, warnWhenFileExists)
 			self.inputExtensions = extensions
 			self.fileWarnWhenExists = warnWhenFileExists
 			self.fileList = self:getFileList()
+			self.fileListOffset = 0
 		elseif type == "shortcut" then
 			self.shortcut = value
 		end
@@ -408,12 +421,12 @@ function Input:getHoveredFileEntryIndex()
 	if not self:isFileInputBoxHovered() then
 		return nil
 	end
-	local idx = math.floor((_MousePos.y - posY - 75) / 20) + 1
+	local idx = math.floor((_MousePos.y - posY - 75) / self.FILE_LIST_ENTRY_HEIGHT) + 1
 	-- No entry here.
 	if idx > #self.fileList then
 		return nil
 	end
-	return idx
+	return idx + self.fileListOffset
 end
 
 
@@ -529,13 +542,14 @@ function Input:draw()
 		local hoveredEntry = self:getHoveredFileEntryIndex()
 		-- File list
 		love.graphics.rectangle("line", posX + 20, posY + 70, sizeX - 40, 330)
-		for i, file in ipairs(self.fileList) do
-			if hoveredEntry == i then
+		for i = 1, math.min(#self.fileList, self.FILE_LIST_MAX_ENTRIES) do
+			local file = self.fileList[i + self.fileListOffset]
+			if hoveredEntry == i + self.fileListOffset then
 				love.graphics.setColor(0, 1, 1)
 			else
 				love.graphics.setColor(1, 1, 1)
 			end
-			love.graphics.print(file, posX + 30, posY + 75 + (i - 1) * 20)
+			love.graphics.print(file, posX + 30, posY + 75 + (i - 1) * self.FILE_LIST_ENTRY_HEIGHT)
 		end
 		-- Input box
 		love.graphics.setColor(1, 1, 1)
