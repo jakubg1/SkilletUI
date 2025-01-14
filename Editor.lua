@@ -161,7 +161,7 @@ function Editor:getHoveredNode()
         return self.selectedNode
     end
     -- Finally, look if any node is directly hovered.
-	return _UI:findChildByPixelDepthFirst(_MouseCPos, true)
+    return _UI:findChildByPixelDepthFirst(_MouseCPos, true)
 end
 
 
@@ -871,17 +871,17 @@ function Editor:update(dt)
     self.hoveredNode = self:getHoveredNode()
 
     -- Handle the node dragging.
-	if self.selectedNode and self.nodeDragOrigin then
-		local movement = _MouseCPos - self.nodeDragOrigin
-		if self.nodeDragSnap then
-			if movement:len() >= 5 then
+    if self.selectedNode and self.nodeDragOrigin then
+        local movement = _MouseCPos - self.nodeDragOrigin
+        if self.nodeDragSnap then
+            if movement:len() >= 5 then
                 self.nodeDragSnap = false
-			end
-		else
-			self.selectedNode:setPos(self.nodeDragOriginalPos + movement)
+            end
+        else
+            self.selectedNode:setPos(self.nodeDragOriginalPos + movement)
             self:updateUI()
-		end
-	end
+        end
+    end
 
     -- Handle the node resizing.
     if self.selectedNode and self.nodeResizeOrigin then
@@ -908,11 +908,11 @@ function Editor:draw()
     if not self.enabled then
         return
     end
-	self.UI:findChildByName("drawtime"):setText(string.format("Drawing took approximately %.1fms", _DrawTime * 1000))
-	self.UI:findChildByName("pos"):setText(string.format("Mouse position: %s", _MouseCPos))
-	self.UI:findChildByName("line3"):setText(string.format("Vecs per frame: %s", _VEC2S_PER_FRAME))
-	self.UI:findChildByName("hovText"):setText("")
-	self.UI:findChildByName("selText"):setText("")
+    self.UI:findChildByName("drawtime"):setText(string.format("Drawing took approximately %.1fms", _DrawTime * 1000))
+    self.UI:findChildByName("pos"):setText(string.format("Mouse position: %s", _MouseCPos))
+    self.UI:findChildByName("line3"):setText(string.format("Vecs per frame: %s", _VEC2S_PER_FRAME))
+    self.UI:findChildByName("hovText"):setText("")
+    self.UI:findChildByName("selText"):setText("")
     self.UI:findChildByName("lb_file"):setText(string.format("File: %s%s", self.currentSceneFile or "(none)", self.isSceneModified and "*" or ""))
 
     -- Hovered and selected node
@@ -922,7 +922,7 @@ function Editor:draw()
     if self.selectedNode then
         self.UI:findChildByName("selText"):setText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()))
     end
-	self.UI:draw()
+    self.UI:draw()
 
     -- Other UI that will be hardcoded for now.
     love.graphics.setFont(_FONTS.editor)
@@ -953,12 +953,12 @@ end
 
 ---Draws the Editor during the main UI pass. Used for correct scaling.
 function Editor:drawUIPass()
-	if self.enabled and self.hoveredNode then
-		self.hoveredNode:drawHitbox()
-	end
-	if self.enabled and self.selectedNode then
-		self.selectedNode:drawSelected()
-	end
+    if self.enabled and self.hoveredNode then
+        self.hoveredNode:drawHitbox()
+    end
+    if self.enabled and self.selectedNode then
+        self.selectedNode:drawSelected()
+    end
 end
 
 
@@ -1007,7 +1007,7 @@ function Editor:mousepressed(x, y, button, istouch, presses)
     if self.uiTree:mousepressed(x, y, button, istouch, presses) then
         return
     end
-	if button == 1 and not self:isUIHovered() then
+    if button == 1 and not self:isUIHovered() then
         local resizeHandleID = self.selectedNode and self.selectedNode:getHoveredResizeHandleID()
         if _IsShiftPressed() then
             -- Shift+Click parents the selected node instead.
@@ -1036,7 +1036,7 @@ function Editor:mousepressed(x, y, button, istouch, presses)
         self:cancelDraggingSelectedNode()
         self:cancelResizingSelectedNode()
         self.uiTree:cancelDraggingSelectedNodeInNodeTree()
-	end
+    end
 end
 
 
@@ -1077,8 +1077,8 @@ function Editor:keypressed(key)
     if self.uiTree:keypressed(key) then
         return
     end
-	if key == "tab" then
-		self.enabled = not self.enabled
+    if key == "tab" then
+        self.enabled = not self.enabled
     elseif key == "p" then
         self.uiTreeShowsInternalUI = not self.uiTreeShowsInternalUI
     elseif key == "up" then
@@ -1091,7 +1091,7 @@ function Editor:keypressed(key)
         self:moveSelectedNode(Vec2(_IsShiftPressed() and 10 or 1, 0))
     elseif key == "p" and _IsCtrlPressed() then
         self:printInternalUITreeInfo()
-	end
+    end
 end
 
 
