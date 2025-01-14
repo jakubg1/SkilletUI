@@ -1,0 +1,136 @@
+{
+	"children": [
+		{
+			"widget": {
+				"text": "UI Editor To-Do List",
+				"color": "#f9a400",
+				"font": "standard",
+				"underline": true,
+				"boldness": 2
+			},
+			"type": "text",
+			"name": "Text#2",
+			"pos": [
+				5,
+				2
+			]
+		},
+		{
+			"widget": {
+				"text": "- Timelines and transitions and all that cool stuff!!!",
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"gradientWaveFrequency": 100,
+				"font": "standard",
+				"gradientWaveSpeed": 100
+			},
+			"type": "text",
+			"name": "Text",
+			"pos": [
+				10,
+				15
+			]
+		},
+		{
+			"widget": {
+				"text": "- This will throw a lot of life into the UIs, much more than just",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#3",
+			"pos": [
+				17,
+				26
+			]
+		},
+		{
+			"widget": {
+				"text": "that fancy green text above!",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#4",
+			"pos": [
+				25,
+				37
+			]
+		},
+		{
+			"widget": {
+				"text": "- The idea is to make them fully component-based, so that",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#5",
+			"pos": [
+				17,
+				48
+			]
+		},
+		{
+			"widget": {
+				"text": "the implementation can be as straightforward as possible!",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#6",
+			"pos": [
+				25,
+				59
+			]
+		},
+		{
+			"widget": {
+				"text": "- Oh, we will need scene nesting, so probably project files...",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#7",
+			"pos": [
+				25,
+				81
+			]
+		},
+		{
+			"widget": {
+				"text": "- Also, project files will allow me to add different resolutions!",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#8",
+			"pos": [
+				25,
+				92
+			]
+		},
+		{
+			"widget": {
+				"text": "- Where do we store them? Project files? Transitions per scene?",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#10",
+			"pos": [
+				17,
+				70
+			]
+		},
+		{
+			"pos": [
+				10,
+				160
+			],
+			"widget": {
+				"text": "<<< Previous Page",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff",
+				"font": "standard"
+			},
+			"signalOnClick": "page3",
+			"name": "Text#15",
+			"type": "text"
+		}
+	],
+	"name": "root",
+	"canvasInputMode": true
+}

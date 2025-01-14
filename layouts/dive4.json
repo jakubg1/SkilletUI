@@ -1,0 +1,268 @@
+{
+	"canvasInputMode": true,
+	"children": [
+		{
+			"pos": [
+				5,
+				2
+			],
+			"widget": {
+				"text": "Feature Overview",
+				"font": "standard",
+				"underline": true,
+				"color": "#f9a400",
+				"boldness": 2
+			},
+			"name": "Text#2",
+			"type": "text"
+		},
+		{
+			"pos": [
+				10,
+				15
+			],
+			"widget": {
+				"text": "- Node Manipulation (part 2)!",
+				"font": "standard",
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"gradientWaveFrequency": 100,
+				"gradientWaveSpeed": 100
+			},
+			"name": "Text",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				26
+			],
+			"widget": {
+				"text": "When a Node is selected, you can also move it using the",
+				"font": "standard"
+			},
+			"name": "Text#3",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "cursor keys. Shift will additionally move it by 10 pixels!",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				37
+			],
+			"children": [
+				{
+					"widget": {
+						"text": "cursor keys",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#10",
+					"type": "text"
+				},
+				{
+					"pos": [
+						58,
+						0
+					],
+					"widget": {
+						"text": "Shift",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#11",
+					"type": "text"
+				}
+			],
+			"name": "Text#4",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				48
+			],
+			"widget": {
+				"text": "It's very handy for precise placements!",
+				"font": "standard"
+			},
+			"name": "Text#5",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				92
+			],
+			"widget": {
+				"text": "of the tree will cover the Nodes below!",
+				"font": "standard"
+			},
+			"name": "Text#9",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "Pressing Page Up or Page Down will move the selected Node",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				70
+			],
+			"children": [
+				{
+					"pos": [
+						41,
+						0
+					],
+					"widget": {
+						"text": "Page Up",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#12",
+					"type": "text"
+				},
+				{
+					"pos": [
+						94,
+						0
+					],
+					"widget": {
+						"text": "Page Down",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#13",
+					"type": "text"
+				}
+			],
+			"name": "Text#10",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				114
+			],
+			"widget": {
+				"text": "The node tree allows you also to change the node hierarchy",
+				"font": "standard"
+			},
+			"name": "Text#12",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "Next Page >>>",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"pos": [
+				310,
+				160
+			],
+			"type": "text",
+			"name": "Text#13",
+			"align": [
+				1,
+				0
+			],
+			"signalOnClick": "dive5"
+		},
+		{
+			"widget": {
+				"text": "<<< Previous Page",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"name": "Text#15",
+			"pos": [
+				10,
+				160
+			],
+			"type": "text",
+			"signalOnClick": "dive3"
+		},
+		{
+			"widget": {
+				"text": "by dragging any of the Nodes onto or between other Nodes!",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				125
+			],
+			"children": [
+				{
+					"pos": [
+						14,
+						0
+					],
+					"widget": {
+						"text": "dragging",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#12",
+					"type": "text"
+				}
+			],
+			"name": "Text#14",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				81
+			],
+			"widget": {
+				"text": "up or down the tree. This is important as the Nodes at the top",
+				"font": "standard"
+			},
+			"name": "Text#16",
+			"type": "text"
+		},
+		{
+			"pos": [
+				174,
+				86
+			],
+			"widget": {
+				"size": [
+					66,
+					22
+				],
+				"color": "#0047ff",
+				"alpha": 1,
+				"borderAlpha": 1
+			},
+			"name": "Box",
+			"type": "box"
+		},
+		{
+			"pos": [
+				215,
+				94
+			],
+			"widget": {
+				"size": [
+					66,
+					22
+				],
+				"color": "#ff0072",
+				"alpha": 1,
+				"borderAlpha": 1
+			},
+			"name": "Box#2",
+			"type": "box"
+		}
+	],
+	"name": "root"
+}

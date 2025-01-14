@@ -1,0 +1,209 @@
+{
+	"canvasInputMode": true,
+	"children": [
+		{
+			"pos": [
+				5,
+				2
+			],
+			"widget": {
+				"text": "Feature Overview",
+				"font": "standard",
+				"underline": true,
+				"color": "#f9a400",
+				"boldness": 2
+			},
+			"name": "Text#2",
+			"type": "text"
+		},
+		{
+			"pos": [
+				10,
+				15
+			],
+			"widget": {
+				"text": "- Node Manipulation (part 3)!",
+				"font": "standard",
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"gradientWaveFrequency": 100,
+				"gradientWaveSpeed": 100
+			},
+			"name": "Text",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				48
+			],
+			"widget": {
+				"text": "widgets. To add new Nodes, use the buttons above the node tree!",
+				"font": "standard"
+			},
+			"name": "Text#9",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				26
+			],
+			"widget": {
+				"text": "You can also, of course, create new Nodes. However, this feature",
+				"font": "standard"
+			},
+			"name": "Text#10",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				114
+			],
+			"widget": {
+				"text": "And, finally, the most cruel thing you can do to a Node",
+				"font": "standard"
+			},
+			"name": "Text#12",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "Next Page >>>",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"pos": [
+				310,
+				160
+			],
+			"type": "text",
+			"name": "Text#13",
+			"align": [
+				1,
+				0
+			],
+			"signalOnClick": "dive6"
+		},
+		{
+			"widget": {
+				"text": "<<< Previous Page",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"name": "Text#15",
+			"pos": [
+				10,
+				160
+			],
+			"type": "text",
+			"signalOnClick": "dive4"
+		},
+		{
+			"widget": {
+				"text": "is to brutally delete it using Delete.",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				125
+			],
+			"children": [
+				{
+					"pos": [
+						126,
+						0
+					],
+					"widget": {
+						"text": "Delete",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#12",
+					"type": "text"
+				}
+			],
+			"name": "Text#14",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				37
+			],
+			"widget": {
+				"text": "is pretty much limited for now, it only fully works for Box and Text",
+				"font": "standard"
+			},
+			"name": "Text#16",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				70
+			],
+			"widget": {
+				"text": "You can also copy and paste the Nodes! This is very powerful",
+				"font": "standard"
+			},
+			"name": "Text#11",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				81
+			],
+			"widget": {
+				"text": "as it allows you to move Nodes between different scenes!",
+				"font": "standard"
+			},
+			"name": "Text#17",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "Also, you can duplicate a Node by dragging it while holding Ctrl!",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				92
+			],
+			"children": [
+				{
+					"pos": [
+						260,
+						0
+					],
+					"widget": {
+						"text": "Ctrl",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#13",
+					"type": "text"
+				}
+			],
+			"name": "Text#18",
+			"type": "text"
+		},
+		{
+			"pos": [
+				16,
+				136
+			],
+			"widget": {
+				"text": "All operations are also listed on the buttons below.",
+				"font": "standard"
+			},
+			"name": "Text#19",
+			"type": "text"
+		}
+	],
+	"name": "root"
+}

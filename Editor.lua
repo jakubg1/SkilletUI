@@ -170,7 +170,7 @@ end
 ---@param property table The property in its entirety, as an item of the `Widget:getPropertyList()` result table.
 ---@return boolean
 function Editor:isNodePropertySupported(property)
-    return property.type == "string" or property.type == "number" or property.type == "color"
+    return property.type == "string" or property.type == "number" or property.type == "color" or property.type == "boolean"
 end
 
 
@@ -178,7 +178,7 @@ end
 ---Refreshes all critical UI for Editors, for example the node properties.
 function Editor:refreshUI()
     -- If the selected node has been removed, deselect it.
-    if not _UI:findChild(self.selectedNode) then
+    if _UI ~= self.selectedNode and not _UI:findChild(self.selectedNode) and self.UI ~= self.selectedNode and not self.UI:findChild(self.selectedNode) then
         self.selectedNode = nil
     end
     self:generateNodePropertyUI(self.selectedNode)
@@ -200,11 +200,12 @@ function Editor:generateNodePropertyUI(node)
         local currentRow = 0
         local nodeProperties = node:getPropertyList()
         local propertyHeaderUI = self:label(0, currentRow * 20, "Node Properties")
+        propertyHeaderUI.widget.underline = true
+        propertyHeaderUI.widget.characterSeparation = 2
         currentRow = currentRow + 1
         propertiesUI:addChild(propertyHeaderUI)
         for i, property in ipairs(nodeProperties) do
-            local inputValue
-            inputValue = node[property.key]
+            local inputValue = node[property.key]
             local inputFunction = function(input)
                 self:setSelectedNodeProperty(property.key, input)
             end
@@ -222,6 +223,8 @@ function Editor:generateNodePropertyUI(node)
             if widget.getPropertyList then
                 local properties = widget:getPropertyList()
                 local propertyHeaderUI = self:label(0, currentRow * 20, "Widget Properties")
+                propertyHeaderUI.widget.underline = true
+                propertyHeaderUI.widget.characterSeparation = 2
                 currentRow = currentRow + 1
                 propertiesUI:addChild(propertyHeaderUI)
                 for i, property in ipairs(properties) do
@@ -232,9 +235,6 @@ function Editor:generateNodePropertyUI(node)
                         inputValue = widget[property.nodeKeys[1]].widget[property.key]
                     else
                         inputValue = widget[property.key]
-                    end
-                    if property.type == "Image" and inputValue then
-                        inputValue = tostring(inputValue)
                     end
                     local inputFunction = function(input)
                         if property.nodeKeys then
@@ -721,7 +721,8 @@ function Editor:input(x, y, w, type, value, nullable, fn, extensions)
         }
     }
     local input = Node(data)
-    input.widget.nullable = nullable
+    input.widget.nullable = nullable or false
+    input.widget:setType(type)
     input.widget:setValue(value)
     input:setOnClick(function() self:askForInput(input, type, extensions) end)
     if nullable and fn then
@@ -750,17 +751,22 @@ end
 ---@param warnWhenFileExists boolean? If `type` == `"file"`, whether a file overwrite warning should be shown if the file exists.
 function Editor:askForInput(input, inputType, extensions, warnWhenFileExists)
     self.activeInput = input
-    local value = ""
-    if type(input) ~= "string" then
-        value = input.widget:getValue()
+    if inputType == "boolean" then
+        -- HACK: When asking for a boolean.... why would you do that? Let's just immediately flip the value instead.
+        self:onInputReceived(not input.widget:getValue())
+    else
+        local value = ""
+        if type(input) ~= "string" then
+            value = input.widget:getValue()
+        end
+        self.INPUT_DIALOG:inputAsk(inputType, value, extensions, warnWhenFileExists)
     end
-    self.INPUT_DIALOG:inputAsk(inputType, value, extensions, warnWhenFileExists)
 end
 
 
 
 ---Executed when an input has been submitted for a certain editor input field.
----@param result string|number|Color The value that has been submitted for this input.
+---@param result string|number|Color|boolean The value that has been submitted for this input.
 function Editor:onInputReceived(result)
     if type(self.activeInput) == "string" then
         if self.activeInput == "save" then

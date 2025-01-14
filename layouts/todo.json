@@ -1,0 +1,191 @@
+{
+	"children": [
+		{
+			"widget": {
+				"text": "UI Editor To-Do List",
+				"color": "#f9a400",
+				"font": "standard",
+				"underline": true,
+				"boldness": 2
+			},
+			"type": "text",
+			"name": "Text#2",
+			"pos": [
+				5,
+				2
+			]
+		},
+		{
+			"widget": {
+				"text": "- Revise inputs and support for more input types!",
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"gradientWaveFrequency": 100,
+				"font": "standard",
+				"gradientWaveSpeed": 100
+			},
+			"type": "text",
+			"name": "Text",
+			"pos": [
+				10,
+				15
+			]
+		},
+		{
+			"widget": {
+				"text": "- Images: make an image picker, we probably need distinction",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#3",
+			"pos": [
+				17,
+				26
+			]
+		},
+		{
+			"widget": {
+				"text": "between 9-sprites and regular sprites :>",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#4",
+			"pos": [
+				25,
+				37
+			]
+		},
+		{
+			"widget": {
+				"text": "- Live editing for any parameters that can be done like that",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#5",
+			"pos": [
+				17,
+				48
+			]
+		},
+		{
+			"widget": {
+				"text": "(strings, numbers, vectors with exceptions? what about align?)",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#6",
+			"pos": [
+				25,
+				59
+			]
+		},
+		{
+			"widget": {
+				"text": "- Multi-line strings? Might be actually handy :>",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#7",
+			"pos": [
+				17,
+				81
+			]
+		},
+		{
+			"widget": {
+				"text": "- Also selecting a part of the string and also moving the cursor",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#8",
+			"pos": [
+				17,
+				92
+			]
+		},
+		{
+			"widget": {
+				"text": "around...",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#9",
+			"pos": [
+				25,
+				103
+			]
+		},
+		{
+			"widget": {
+				"text": "and allow moving the window for color, image and font pickers",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#10",
+			"pos": [
+				25,
+				70
+			]
+		},
+		{
+			"widget": {
+				"text": "- ...Also copying the value (no matter what type) from one",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#11",
+			"pos": [
+				17,
+				114
+			]
+		},
+		{
+			"widget": {
+				"text": "property to another!",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#12",
+			"pos": [
+				25,
+				125
+			]
+		},
+		{
+			"widget": {
+				"text": "Next Page >>>",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff",
+				"font": "standard"
+			},
+			"signalOnClick": "page2",
+			"pos": [
+				310,
+				160
+			],
+			"type": "text",
+			"name": "Text#13",
+			"align": [
+				1,
+				0
+			]
+		},
+		{
+			"pos": [
+				10,
+				160
+			],
+			"widget": {
+				"text": "Go Back",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff",
+				"font": "standard"
+			},
+			"signalOnClick": "main",
+			"name": "Text#15",
+			"type": "text"
+		}
+	],
+	"name": "root",
+	"canvasInputMode": true
+}

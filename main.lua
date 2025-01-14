@@ -78,6 +78,8 @@ _BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
 _EDITOR = Editor()
 
+_BackgroundEnabled = true
+
 
 
 function _PrepareResourceLookups()
@@ -110,9 +112,51 @@ end
 
 
 
+---Executed whenever a signal is fired by a Node.
+---TODO: Move that somewhere else. UI Script, perhaps. Remember about sandboxing...
+---@param name string The signal name.
+function _OnSignal(name)
+	if name == "main" then
+		_EDITOR:loadScene("layouts/welcome.json")
+	elseif name == "page1" then
+		_EDITOR:loadScene("layouts/todo.json")
+	elseif name == "page2" then
+		_EDITOR:loadScene("layouts/todo2.json")
+	elseif name == "page3" then
+		_EDITOR:loadScene("layouts/todo3.json")
+	elseif name == "page4" then
+		_EDITOR:loadScene("layouts/todo4.json")
+	elseif name == "dive1" then
+		_EDITOR:loadScene("layouts/dive1.json")
+	elseif name == "dive2" then
+		_EDITOR:loadScene("layouts/dive2.json")
+	elseif name == "dive3" then
+		_EDITOR:loadScene("layouts/dive3.json")
+	elseif name == "dive4" then
+		_EDITOR:loadScene("layouts/dive4.json")
+	elseif name == "dive5" then
+		_EDITOR:loadScene("layouts/dive5.json")
+	elseif name == "dive6" then
+		_EDITOR:loadScene("layouts/dive6.json")
+	elseif name == "dive7" then
+		_EDITOR:loadScene("layouts/dive7.json")
+	elseif name == "dive8" then
+		_EDITOR:loadScene("layouts/dive8.json")
+	elseif name == "dive9" then
+		_EDITOR:loadScene("layouts/dive9.json")
+	elseif name == "dive10" then
+		_EDITOR:loadScene("layouts/dive10.json")
+	end
+end
+
+
+
 function love.load()
 	love.window.setMode(_WINDOW_SIZE.x, _WINDOW_SIZE.y)
 	_PrepareResourceLookups()
+	_EDITOR:load()
+	_EDITOR:loadScene("layouts/welcome.json")
+	--[[
 	_UI = _LoadUI("ui.json")
 	_UI:findChildByName("btn1"):setOnClick(function ()
 		if _TRANSITION.state then
@@ -121,7 +165,7 @@ function love.load()
 			_TRANSITION:show()
 		end
 	end)
-	_EDITOR:load()
+	]]
 end
 
 
@@ -145,7 +189,7 @@ function love.draw()
 	local t = love.timer.getTime()
 	_CANVAS:activate()
 	-- Start of main drawing routine
-	if not _EDITOR.enabled then
+	if not _EDITOR.enabled and _BackgroundEnabled then
 		_BACKGROUND:draw()
 	end
 	_UI:draw()
@@ -187,6 +231,9 @@ end
 function love.keypressed(key)
 	if not _EDITOR.enabled then
 		_UI:keypressed(key)
+		if key == "`" then
+			_BackgroundEnabled = not _BackgroundEnabled
+		end
 	end
 	_EDITOR:keypressed(key)
 end

@@ -1,0 +1,338 @@
+{
+	"canvasInputMode": true,
+	"name": "root",
+	"children": [
+		{
+			"widget": {
+				"underline": true,
+				"color": "#f9a400",
+				"font": "standard",
+				"boldness": 2,
+				"text": "Feature Overview"
+			},
+			"name": "Text#2",
+			"pos": [
+				5,
+				2
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"font": "standard",
+				"gradientWaveSpeed": 100,
+				"gradientWaveFrequency": 100,
+				"text": "- Parenting and Alignment (part 2)"
+			},
+			"name": "Text",
+			"pos": [
+				10,
+				15
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "counting actually starts. The purple line is essentially a vector"
+			},
+			"name": "Text#9",
+			"pos": [
+				17,
+				48
+			],
+			"children": [
+				{
+					"widget": {
+						"font": "standard",
+						"text": "purple",
+						"color": "#7f00ff"
+					},
+					"name": "Text#23",
+					"pos": [
+						130,
+						0
+					],
+					"type": "text"
+				}
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "The pink cross, on the other hand, is the parent alignment origin."
+			},
+			"name": "Text#10",
+			"pos": [
+				17,
+				26
+			],
+			"children": [
+				{
+					"widget": {
+						"font": "standard",
+						"text": "pink",
+						"color": "#ff00fc"
+					},
+					"name": "Text#21",
+					"pos": [
+						20,
+						0
+					],
+					"type": "text"
+				},
+				{
+					"widget": {
+						"font": "standard",
+						"text": "parent alignment origin",
+						"color": "#05ff00"
+					},
+					"name": "Text#22",
+					"pos": [
+						187,
+						0
+					],
+					"type": "text"
+				}
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"hoverColor": "#ffffff",
+				"font": "standard",
+				"color": "#f2ff00",
+				"text": "Next Page >>>"
+			},
+			"name": "Text#13",
+			"align": [
+				1,
+				0
+			],
+			"pos": [
+				310,
+				160
+			],
+			"signalOnClick": "dive10",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"hoverColor": "#ffffff",
+				"font": "standard",
+				"color": "#f2ff00",
+				"text": "<<< Previous Page"
+			},
+			"name": "Text#15",
+			"pos": [
+				10,
+				160
+			],
+			"signalOnClick": "dive8",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "It specifies the position of the parent, from which the position"
+			},
+			"name": "Text#16",
+			"pos": [
+				17,
+				37
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "Sounds confusing? The best way to solve this problem is to"
+			},
+			"name": "Text#17",
+			"pos": [
+				17,
+				81
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "illustrate it! Feel free to toy around with the red box below:"
+			},
+			"name": "Text#18",
+			"pos": [
+				17,
+				92
+			],
+			"children": [
+				{
+					"widget": {
+						"font": "standard",
+						"text": "red",
+						"color": "#ff0000"
+					},
+					"name": "Text#24",
+					"pos": [
+						201,
+						0
+					],
+					"type": "text"
+				}
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "of the length of the Node's position!"
+			},
+			"name": "Text#24",
+			"pos": [
+				17,
+				59
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"size": [
+					91,
+					36
+				],
+				"borderAlpha": 1,
+				"color": "#ff0000",
+				"alpha": 1
+			},
+			"name": "Box",
+			"pos": [
+				119,
+				117
+			],
+			"children": [
+				{
+					"widget": {
+						"size": [
+							10,
+							10
+						],
+						"borderAlpha": 1,
+						"color": "#ffffff",
+						"alpha": 1
+					},
+					"name": "Box#2",
+					"type": "box"
+				},
+				{
+					"parentAlign": [
+						1,
+						1
+					],
+					"name": "Box#4",
+					"widget": {
+						"size": [
+							10,
+							10
+						],
+						"borderAlpha": 1,
+						"color": "#ffffff",
+						"alpha": 1
+					},
+					"type": "box"
+				},
+				{
+					"widget": {
+						"size": [
+							10,
+							10
+						],
+						"borderAlpha": 1,
+						"color": "#ffffff",
+						"alpha": 1
+					},
+					"name": "Box#5",
+					"align": [
+						1,
+						1
+					],
+					"parentAlign": [
+						1,
+						1
+					],
+					"type": "box"
+				},
+				{
+					"widget": {
+						"size": [
+							10,
+							10
+						],
+						"borderAlpha": 1,
+						"color": "#ffffff",
+						"alpha": 1
+					},
+					"name": "Box#6",
+					"align": [
+						0.5,
+						0.5
+					],
+					"parentAlign": [
+						0.5,
+						0.5
+					],
+					"type": "box"
+				},
+				{
+					"widget": {
+						"size": [
+							10,
+							10
+						],
+						"borderAlpha": 1,
+						"color": "#ffffff",
+						"alpha": 1
+					},
+					"name": "Box#7",
+					"align": [
+						0.5,
+						0.5
+					],
+					"parentAlign": [
+						1,
+						0
+					],
+					"type": "box"
+				},
+				{
+					"widget": {
+						"size": [
+							10,
+							10
+						],
+						"borderAlpha": 1,
+						"color": "#6575ff",
+						"alpha": 1
+					},
+					"name": "Box#8",
+					"align": [
+						0.5,
+						0.5
+					],
+					"parentAlign": [
+						1,
+						0.5
+					],
+					"pos": [
+						-78,
+						14
+					],
+					"type": "box"
+				}
+			],
+			"type": "box"
+		}
+	]
+}

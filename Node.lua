@@ -37,7 +37,9 @@ function Node:new(data, parent)
         {name = "Position", key = "pos", type = "Vector2"},
         {name = "Align", key = "align", type = "Vector2"},
         {name = "Parent Align", key = "parentAlign", type = "Vector2"},
-        {name = "Visible", key = "visible", type = "boolean"}
+        {name = "Visible", key = "visible", type = "boolean"},
+        {name = "Shortcut", key = "shortcut", type = "Shortcut", nullable = true},
+        {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true}
     }
 
     self.name = "ERROR"
@@ -48,6 +50,7 @@ function Node:new(data, parent)
     self.visible = false
     self.shortcut = nil
     self.canvasInputMode = false
+    self.signalOnClick = nil
 
     self.clicked = false
     self.onClick = nil
@@ -288,6 +291,20 @@ end
 
 
 
+---Fires the callback specified in the `onClick` and `signalOnClick` fields if these fields have been defined.
+---If `onClick` is defined, it will be executed without any parameters.
+---If `signalOnClick` is defined, it will send a signal, for now hardcoded to the `_OnSignal(signalOnClick)` call.
+function Node:click()
+    if self.onClick then
+        self.onClick()
+    end
+    if self.signalOnClick then
+        _OnSignal(self.signalOnClick)
+    end
+end
+
+
+
 ---Returns the list of properties on this Node. This list is always the same.
 ---This function does NOT return properties belonging to its Widget. For that, call `node.widget:getPropertyList()`.
 ---Make sure to wrap this call as the node or the function might not exist!
@@ -341,14 +358,6 @@ end
 
 
 
----Sets whether this Node should be disabled.
----@param disabled boolean Whether this Node should be disabled.
-function Node:setDisabled(disabled)
-    self.disabled = disabled
-end
-
-
-
 ---Returns whether this Node or any of the Nodes up the tree is disabled.
 ---
 ---Disabled Nodes can still be hovered, but their `onClick` callbacks will not fire if the mouse button or a keyboard shortcut has been pressed.
@@ -363,10 +372,10 @@ end
 
 
 
----Sets whether this Node (and all its children!) should be visible.
----@param visible boolean Whether this Node should be visible. If a Node is not visible, it cannot be seen, including all its children.
-function Node:setVisible(visible)
-    self.visible = visible
+---Sets whether this Node should be disabled.
+---@param disabled boolean Whether this Node should be disabled.
+function Node:setDisabled(disabled)
+    self.disabled = disabled
 end
 
 
@@ -378,6 +387,14 @@ function Node:isVisible()
         return self.parent:isVisible() or self.visible
     end
     return self.visible
+end
+
+
+
+---Sets whether this Node (and all its children!) should be visible.
+---@param visible boolean Whether this Node should be visible. If a Node is not visible, it cannot be seen, including all its children.
+function Node:setVisible(visible)
+    self.visible = visible
 end
 
 
@@ -395,6 +412,7 @@ end
 ---Sets the given text on this Node's widget. Works only with `text` widgets.
 ---@param text string The text to be set on this Node's widget.
 function Node:setText(text)
+    assert(type(text) == "string", string.format("Cannot set the text to a non-string: %s!", text))
     if self.type == "text" then
         self.widget.text = text
     end
@@ -935,9 +953,7 @@ function Node:mousereleased(x, y, button)
         self.clicked = false
         -- We don't want the click function to occur if the cursor was released outside of the node.
         if self:isHovered() then
-            if self.onClick then
-                self.onClick()
-            end
+            self:click()
         end
     end
     for i, child in ipairs(self.children) do
@@ -951,9 +967,7 @@ end
 ---@param key string Code of the key that has been pressed.
 function Node:keypressed(key)
     if self.shortcut and self.shortcut.key == key and (self.shortcut.ctrl or false) == _IsCtrlPressed() and (self.shortcut.shift or false) == _IsShiftPressed() then
-        if self.onClick then
-            self.onClick()
-        end
+        self:click()
     end
     for i, child in ipairs(self.children) do
         child:keypressed(key)
@@ -975,6 +989,7 @@ function Node:serialize()
     data.visible = self.visible ~= true and self.visible or nil
     data.shortcut = self.shortcut
     data.canvasInputMode = self.canvasInputMode
+    data.signalOnClick = self.signalOnClick
 
     data.widget = self.widget and self.widget:serialize()
 
@@ -1002,6 +1017,7 @@ function Node:deserialize(data)
     self.visible = data.visible ~= false
     self.shortcut = data.shortcut
     self.canvasInputMode = data.canvasInputMode
+    self.signalOnClick = data.signalOnClick
 
     if data.children then
     	for i, child in ipairs(data.children) do

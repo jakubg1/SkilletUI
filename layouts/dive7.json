@@ -1,0 +1,296 @@
+{
+	"children": [
+		{
+			"widget": {
+				"boldness": 2,
+				"text": "Feature Overview",
+				"underline": true,
+				"font": "standard",
+				"color": "#f9a400"
+			},
+			"pos": [
+				5,
+				2
+			],
+			"name": "Text#2",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"gradientWaveSpeed": 100,
+				"text": "- Widget Manipulation - Examples!",
+				"gradientWaveFrequency": 100,
+				"gradientWaveColor": "#40de20",
+				"font": "standard",
+				"color": "#99ff5b"
+			},
+			"pos": [
+				10,
+				15
+			],
+			"name": "Text",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "Here's some fun examples for the Text Widgets!"
+			},
+			"pos": [
+				17,
+				26
+			],
+			"name": "Text#10",
+			"type": "text"
+		},
+		{
+			"align": [
+				1,
+				0
+			],
+			"signalOnClick": "dive8",
+			"widget": {
+				"text": "Next Page >>>",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"pos": [
+				310,
+				160
+			],
+			"name": "Text#13",
+			"type": "text"
+		},
+		{
+			"pos": [
+				10,
+				160
+			],
+			"widget": {
+				"text": "<<< Previous Page",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"signalOnClick": "dive6",
+			"name": "Text#15",
+			"type": "text"
+		},
+		{
+			"children": [
+				{
+					"widget": {
+						"shadowOffset": [
+							1,
+							1
+						],
+						"font": "standard",
+						"text": "Text shadow!"
+					},
+					"pos": [
+						16,
+						11
+					],
+					"name": "Text#3",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"text": "Bolder text shadow!",
+						"font": "standard",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"shadowAlpha": 1
+					},
+					"pos": [
+						17,
+						26
+					],
+					"name": "Text#4",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"waveFrequency": 70,
+						"text": "Wave! WOOOOOOOO!!!",
+						"waveSpeed": 90,
+						"font": "standard",
+						"waveAmplitude": 5
+					},
+					"pos": [
+						48,
+						46
+					],
+					"name": "Text#5",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"waveFrequency": 70,
+						"waveSpeed": 50,
+						"gradientWaveColor": "#d4952a",
+						"gradientWaveFrequency": 100,
+						"gradientWaveSpeed": 50,
+						"text": "COLORS!!!!!",
+						"font": "standard",
+						"color": "#0c14ce",
+						"waveAmplitude": 5
+					},
+					"pos": [
+						149,
+						20
+					],
+					"name": "Text#6",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"underline": true,
+						"text": "Underline!",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"font": "standard",
+						"shadowAlpha": 1
+					},
+					"pos": [
+						10,
+						64
+					],
+					"name": "Text#7",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"text": "Strikethrough!",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"strikethrough": true,
+						"shadowAlpha": 1,
+						"font": "standard",
+						"color": "#ff0000"
+					},
+					"pos": [
+						217,
+						36
+					],
+					"name": "Text#8",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"waveFrequency": 140,
+						"waveSpeed": 90,
+						"shadowOffset": [
+							3,
+							3
+						],
+						"characterSeparation": 10,
+						"boldness": 2,
+						"text": "Bold separation!",
+						"font": "standard",
+						"waveAmplitude": 5
+					},
+					"pos": [
+						30,
+						94
+					],
+					"name": "Text#9",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"text": "Hover me!!!",
+						"font": "standard",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"shadowAlpha": 1,
+						"characterSeparation": 2,
+						"hoverColor": "#ffcb47"
+					},
+					"pos": [
+						207,
+						6
+					],
+					"name": "Text#10",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"gradientWaveSpeed": 100,
+						"waveFrequency": 40,
+						"shadowAlpha": 1,
+						"alpha": 0.5,
+						"shadowOffset": [
+							1,
+							1
+						],
+						"gradientWaveColor": "#00ff02",
+						"underline": true,
+						"gradientWaveFrequency": 300,
+						"waveSpeed": -50,
+						"boldness": 3,
+						"text": "All at once! Break it down!",
+						"hoverColor": "#f2ff00",
+						"strikethrough": true,
+						"font": "standard",
+						"color": "#ff0000",
+						"waveAmplitude": 2
+					},
+					"pos": [
+						105,
+						71
+					],
+					"name": "Text#11",
+					"type": "text"
+				},
+				{
+					"widget": {
+						"gradientWaveFrequency": 1,
+						"text": "Flash without any waves!",
+						"gradientWaveColor": "#ffdd00",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"shadowAlpha": 1,
+						"font": "standard",
+						"color": "#ff0000"
+					},
+					"pos": [
+						159,
+						53
+					],
+					"name": "Text#12",
+					"type": "text"
+				}
+			],
+			"widget": {
+				"alpha": 1,
+				"borderAlpha": 1,
+				"borderColor": "#cd7808",
+				"size": [
+					295,
+					117
+				],
+				"color": "#3c7d50"
+			},
+			"pos": [
+				12,
+				41
+			],
+			"name": "Box",
+			"type": "box"
+		}
+	],
+	"name": "root",
+	"canvasInputMode": true
+}

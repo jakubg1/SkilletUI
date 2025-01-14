@@ -33,6 +33,10 @@ function EditorUITree:new(editor)
     self.dragOrigin = nil
     self.dragSnap = false
 
+    -- Stores the node that if clicked the second time will actually be name edited.
+    -- This is because you could click elsewhere the second time and still activate that node's input box,
+    -- even if that particular node was clicked just once.
+    self.nameEditLastClickedNode = nil
     self.nameEditNode = nil
     self.nameEditValue = nil
 end
@@ -295,10 +299,22 @@ function EditorUITree:mousepressed(x, y, button, istouch, presses)
         end
         if presses >= 2 then
             if node then
-                self.nameEditNode = node
-                self.nameEditValue = node:getName()
-                return true
+                if node == self.nameEditLastClickedNode then
+                    -- We've clicked this actual Node the second time. Enable the name edit box.
+                    self.nameEditNode = node
+                    self.nameEditValue = node:getName()
+                    return true
+                else
+                    -- We've clicked a different Node. If that one will be clicked the second time now, its name could be edited.
+                    self.nameEditLastClickedNode = node
+                end
             end
+        else
+            if self.nameEditNode then
+                self.nameEditNode = nil
+                self.nameEditValue = nil
+            end
+            self.nameEditLastClickedNode = node
         end
     end
     return false

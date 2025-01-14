@@ -1,0 +1,209 @@
+{
+	"children": [
+		{
+			"widget": {
+				"boldness": 2,
+				"text": "Feature Overview",
+				"underline": true,
+				"font": "standard",
+				"color": "#f9a400"
+			},
+			"pos": [
+				5,
+				2
+			],
+			"name": "Text#2",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"gradientWaveSpeed": 100,
+				"text": "- Widget Manipulation!",
+				"gradientWaveFrequency": 100,
+				"gradientWaveColor": "#40de20",
+				"font": "standard",
+				"color": "#99ff5b"
+			},
+			"pos": [
+				10,
+				15
+			],
+			"name": "Text",
+			"type": "text"
+		},
+		{
+			"children": [
+				{
+					"widget": {
+						"font": "standard",
+						"text": "Properties",
+						"color": "#05ff00"
+					},
+					"pos": [
+						70,
+						0
+					],
+					"name": "Text#14",
+					"type": "text"
+				}
+			],
+			"widget": {
+				"font": "standard",
+				"text": "That's a list of Properties, both for the Node and for the Widget!"
+			},
+			"pos": [
+				17,
+				48
+			],
+			"name": "Text#9",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "When you selected a Node, you have probably seen a lot of"
+			},
+			"pos": [
+				17,
+				26
+			],
+			"name": "Text#10",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "Clicking on an editable field will bring up an ugly prompt, where you"
+			},
+			"pos": [
+				17,
+				114
+			],
+			"name": "Text#12",
+			"type": "text"
+		},
+		{
+			"align": [
+				1,
+				0
+			],
+			"signalOnClick": "dive7",
+			"widget": {
+				"text": "Next Page >>>",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"pos": [
+				310,
+				160
+			],
+			"name": "Text#13",
+			"type": "text"
+		},
+		{
+			"pos": [
+				10,
+				160
+			],
+			"widget": {
+				"text": "<<< Previous Page",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"signalOnClick": "dive5",
+			"name": "Text#15",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "can set the text, number or color to be set for the property."
+			},
+			"pos": [
+				17,
+				125
+			],
+			"name": "Text#14",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "interesting things appear on the right side of your screen."
+			},
+			"pos": [
+				17,
+				37
+			],
+			"name": "Text#16",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "Each property has a value. Some of them can be edited, while"
+			},
+			"pos": [
+				17,
+				70
+			],
+			"name": "Text#11",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "others are not editable because this editor is a work in progress"
+			},
+			"pos": [
+				17,
+				81
+			],
+			"name": "Text#17",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "and I didn't write the code for that yet!"
+			},
+			"pos": [
+				17,
+				92
+			],
+			"name": "Text#18",
+			"type": "text"
+		},
+		{
+			"children": [
+				{
+					"widget": {
+						"font": "standard",
+						"text": "Ctrl + Z",
+						"color": "#05ff00"
+					},
+					"pos": [
+						218,
+						0
+					],
+					"name": "Text#20",
+					"type": "text"
+				}
+			],
+			"widget": {
+				"font": "standard",
+				"text": "Remember that you can undo your changes using Ctrl + Z!"
+			},
+			"pos": [
+				17,
+				136
+			],
+			"name": "Text#19",
+			"type": "text"
+		}
+	],
+	"name": "root",
+	"canvasInputMode": true
+}

@@ -1,0 +1,119 @@
+{
+	"canvasInputMode": true,
+	"name": "root",
+	"children": [
+		{
+			"widget": {
+				"underline": true,
+				"color": "#f9a400",
+				"font": "standard",
+				"boldness": 2,
+				"text": "Feature Overview"
+			},
+			"name": "Text#2",
+			"pos": [
+				5,
+				2
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"font": "standard",
+				"gradientWaveSpeed": 100,
+				"gradientWaveFrequency": 100,
+				"text": "- Thank you!"
+			},
+			"name": "Text",
+			"pos": [
+				10,
+				15
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "in production. For now, you can look at the ideas list!"
+			},
+			"name": "Text#9",
+			"pos": [
+				17,
+				48
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "And that pretty much wraps it for now! There is a lot more"
+			},
+			"name": "Text#10",
+			"pos": [
+				17,
+				26
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"hoverColor": "#ffffff",
+				"font": "standard",
+				"color": "#f2ff00",
+				"text": "To-Do List! >>>"
+			},
+			"name": "Text#13",
+			"align": [
+				1,
+				0
+			],
+			"pos": [
+				310,
+				160
+			],
+			"signalOnClick": "page1",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"hoverColor": "#ffffff",
+				"font": "standard",
+				"color": "#f2ff00",
+				"text": "<<< Previous Page"
+			},
+			"name": "Text#15",
+			"pos": [
+				10,
+				160
+			],
+			"signalOnClick": "dive9",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "to be done which will make the UI system actually useful"
+			},
+			"name": "Text#16",
+			"pos": [
+				17,
+				37
+			],
+			"type": "text"
+		},
+		{
+			"widget": {
+				"font": "standard",
+				"text": "Simply click the right button:"
+			},
+			"name": "Text#11",
+			"pos": [
+				17,
+				114
+			],
+			"type": "text"
+		}
+	]
+}

@@ -1,460 +1,321 @@
 {
+	"canvasInputMode": true,
 	"children": [
 		{
-			"children": [
-				{
-					"children": [],
-					"pos": {
-						"x": 0,
-						"y": 0
-					},
-					"align": {
-						"x": 0.5,
-						"y": 0
-					},
-					"alpha": 1,
-					"parentAlign": {
-						"x": 0.5,
-						"y": 0
-					},
-					"name": "box",
-					"widget": {
-						"color": {
-							"b": 0.1,
-							"r": 0.1,
-							"g": 0.6
-						},
-						"size": {
-							"x": 320,
-							"y": 1
-						}
-					},
-					"type": "box"
-				}
+			"pos": [
+				80,
+				80
 			],
-			"pos": {
-				"x": 160,
-				"y": 180
-			},
-			"align": {
-				"x": 0.5,
-				"y": 1
-			},
-			"alpha": 0.4,
-			"parentAlign": {
-				"x": 0,
-				"y": 0
-			},
-			"name": "box",
-			"widget": {
-				"color": {
-					"b": 0.1,
-					"r": 0.1,
-					"g": 0.6
-				},
-				"size": {
-					"x": 320,
-					"y": 30
-				}
-			},
-			"type": "box"
-		},
-		{
-			"children": [
-				{
-					"children": [],
-					"pos": {
-						"x": 0,
-						"y": 0
-					},
-					"align": {
-						"x": 0.5,
-						"y": 0.5
-					},
-					"alpha": 1,
-					"parentAlign": {
-						"x": 0.5,
-						"y": 0.5
-					},
-					"name": "text",
-					"widget": {
-						"color": {
-							"b": 1,
-							"r": 1,
-							"g": 1
-						},
-						"shadowAlpha": 0.5,
-						"scale": 1,
-						"font": "standard",
-						"shadowOffset": {
-							"x": 1,
-							"y": 1
-						},
-						"text": "Play!"
-					},
-					"type": "text"
-				},
-				{
-					"children": [],
-					"pos": {
-						"x": 0,
-						"y": 0
-					},
-					"align": {
-						"x": 0.5,
-						"y": 0.5
-					},
-					"alpha": 1,
-					"parentAlign": {
-						"x": 0.5,
-						"y": 0.5
-					},
-					"name": "sprite",
-					"widget": {
-						"shadowOffset": {
-							"x": 1,
-							"y": 1
-						},
-						"hoverImage": "button_hover",
-						"scale": 1,
-						"shadowAlpha": 0.5,
-						"size": {
-							"x": 100,
-							"y": 14
-						},
-						"image": "button",
-						"clickImage": "button_click"
-					},
-					"type": "9sprite"
-				}
-			],
-			"align": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"alpha": 1,
-			"parentAlign": {
-				"x": 0,
-				"y": 0
-			},
-			"pos": {
-				"x": 80,
-				"y": 80
-			},
 			"name": "btn0",
-			"type": "button"
-		},
-		{
+			"type": "button",
 			"children": [
 				{
-					"children": [],
-					"pos": {
-						"x": 0,
-						"y": 0
-					},
-					"align": {
-						"x": 0.5,
-						"y": 0.5
-					},
-					"alpha": 1,
-					"parentAlign": {
-						"x": 0.5,
-						"y": 0.5
-					},
-					"name": "#",
+					"parentAlign": [
+						0.5,
+						0.5
+					],
+					"name": "text",
+					"type": "text",
 					"widget": {
-						"color": {
-							"b": 1,
-							"r": 1,
-							"g": 1
-						},
-						"shadowAlpha": 0.5,
-						"scale": 1,
-						"font": "standard",
-						"shadowOffset": {
-							"x": 1,
-							"y": 1
-						},
-						"text": "Play!"
+						"text": "Play!",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"font": "standard"
 					},
-					"type": "text"
+					"align": [
+						0.5,
+						0.5
+					]
+				},
+				{
+					"parentAlign": [
+						0.5,
+						0.5
+					],
+					"name": "sprite",
+					"type": "9sprite",
+					"widget": {
+						"image": "button",
+						"size": [
+							100,
+							14
+						],
+						"hoverImage": "button_hover",
+						"clickImage": "button_click",
+						"shadowOffset": [
+							1,
+							1
+						]
+					},
+					"align": [
+						0.5,
+						0.5
+					]
 				}
 			],
-			"pos": {
-				"x": 160,
-				"y": 80
-			},
-			"align": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"alpha": 1,
-			"parentAlign": {
-				"x": 0,
-				"y": 0
-			},
+			"align": [
+				0.5,
+				0.5
+			]
+		},
+		{
+			"pos": [
+				160,
+				80
+			],
 			"name": "btn1",
-			"widget": {
-				"shadowOffset": {
-					"x": 1,
-					"y": 1
-				},
-				"hoverImage": "button_hover",
-				"scale": 1,
-				"shadowAlpha": 0.5,
-				"size": {
-					"x": 100,
-					"y": 14
-				},
-				"image": "button",
-				"clickImage": "button_click"
-			},
-			"type": "9sprite"
-		},
-		{
+			"type": "9sprite",
 			"children": [
 				{
-					"children": [],
-					"pos": {
-						"x": 0,
-						"y": 0
-					},
-					"align": {
-						"x": 0.5,
-						"y": 0.5
-					},
-					"alpha": 1,
-					"parentAlign": {
-						"x": 0.5,
-						"y": 0.5
-					},
+					"parentAlign": [
+						0.5,
+						0.5
+					],
 					"name": "#",
+					"type": "text",
 					"widget": {
-						"color": {
-							"b": 1,
-							"r": 1,
-							"g": 1
-						},
-						"shadowAlpha": 0.5,
-						"scale": 1,
-						"font": "standard",
-						"shadowOffset": {
-							"x": 1,
-							"y": 1
-						},
-						"text": "New Game"
+						"text": "Play!",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"font": "standard"
 					},
-					"type": "text"
+					"align": [
+						0.5,
+						0.5
+					]
 				}
 			],
-			"pos": {
-				"x": 160,
-				"y": 100
+			"widget": {
+				"image": "button",
+				"size": [
+					100,
+					14
+				],
+				"hoverImage": "button_hover",
+				"clickImage": "button_click",
+				"shadowOffset": [
+					1,
+					1
+				]
 			},
-			"align": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"alpha": 1,
-			"parentAlign": {
-				"x": 0,
-				"y": 0
-			},
+			"align": [
+				0.5,
+				0.5
+			]
+		},
+		{
+			"pos": [
+				160,
+				100
+			],
 			"name": "btn2",
-			"widget": {
-				"shadowOffset": {
-					"x": 1,
-					"y": 1
-				},
-				"hoverImage": "button_hover",
-				"scale": 1,
-				"shadowAlpha": 0.5,
-				"size": {
-					"x": 100,
-					"y": 14
-				},
-				"image": "button",
-				"clickImage": "button_click"
-			},
-			"type": "9sprite"
-		},
-		{
+			"type": "9sprite",
 			"children": [
 				{
-					"children": [],
-					"pos": {
-						"x": 0,
-						"y": 0
-					},
-					"align": {
-						"x": 0.5,
-						"y": 0.5
-					},
-					"alpha": 1,
-					"parentAlign": {
-						"x": 0.5,
-						"y": 0.5
-					},
+					"parentAlign": [
+						0.5,
+						0.5
+					],
 					"name": "#",
+					"type": "text",
 					"widget": {
-						"color": {
-							"b": 1,
-							"r": 1,
-							"g": 1
-						},
-						"shadowAlpha": 0.5,
-						"scale": 1,
-						"font": "standard",
-						"shadowOffset": {
-							"x": 1,
-							"y": 1
-						},
-						"text": "Hi-Scores"
+						"text": "New Game",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"font": "standard"
 					},
-					"type": "text"
+					"align": [
+						0.5,
+						0.5
+					]
 				}
 			],
-			"pos": {
-				"x": 160,
-				"y": 120
-			},
-			"align": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"alpha": 1,
-			"parentAlign": {
-				"x": 0,
-				"y": 0
-			},
-			"name": "btn3",
 			"widget": {
-				"shadowOffset": {
-					"x": 1,
-					"y": 1
-				},
-				"hoverImage": "button_hover",
-				"scale": 1,
-				"shadowAlpha": 0.5,
-				"size": {
-					"x": 100,
-					"y": 14
-				},
 				"image": "button",
-				"clickImage": "button_click"
+				"size": [
+					100,
+					14
+				],
+				"hoverImage": "button_hover",
+				"clickImage": "button_click",
+				"shadowOffset": [
+					1,
+					1
+				]
 			},
-			"type": "9sprite"
+			"align": [
+				0.5,
+				0.5
+			]
 		},
 		{
-			"children": [],
-			"pos": {
-				"x": 220,
-				"y": 160
+			"pos": [
+				160,
+				120
+			],
+			"name": "btn3",
+			"type": "9sprite",
+			"children": [
+				{
+					"parentAlign": [
+						0.5,
+						0.5
+					],
+					"name": "#",
+					"type": "text",
+					"widget": {
+						"text": "Hi-Scores",
+						"shadowOffset": [
+							1,
+							1
+						],
+						"font": "standard"
+					},
+					"align": [
+						0.5,
+						0.5
+					]
+				}
+			],
+			"widget": {
+				"image": "button",
+				"size": [
+					100,
+					14
+				],
+				"hoverImage": "button_hover",
+				"clickImage": "button_click",
+				"shadowOffset": [
+					1,
+					1
+				]
 			},
-			"align": {
-				"x": 0,
-				"y": 0
-			},
-			"alpha": 1,
-			"parentAlign": {
-				"x": 0,
-				"y": 0
-			},
+			"align": [
+				0.5,
+				0.5
+			]
+		},
+		{
+			"type": "text",
+			"pos": [
+				220,
+				160
+			],
 			"name": "text",
 			"widget": {
-				"color": {
-					"b": 1,
-					"r": 1,
-					"g": 1
-				},
-				"scale": 1,
-				"font": "standard",
-				"waveFrequency": 80,
 				"waveSpeed": 60,
-				"text": "Let's write some code!",
-				"shadowOffset": {
-					"x": 1,
-					"y": 1
-				},
-				"shadowAlpha": 0.5,
-				"waveAmplitude": 5
-			},
-			"type": "text"
-		},
-		{
-			"children": [],
-			"pos": {
-				"x": 160,
-				"y": 35
-			},
-			"align": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"alpha": 1,
-			"parentAlign": {
-				"x": 0,
-				"y": 0
-			},
-			"name": "title",
-			"widget": {
-				"color": {
-					"b": 0.3,
-					"r": 0.3,
-					"g": 1
-				},
-				"scale": 4,
+				"shadowOffset": [
+					1,
+					1
+				],
 				"font": "standard",
-				"gradientWaveColor": {
-					"b": 0.1,
-					"r": 0.1,
-					"g": 0.6
-				},
-				"shadowOffset": {
-					"x": 2,
-					"y": 2
-				},
-				"shadowAlpha": 0.5,
-				"gradientWaveSpeed": 100,
-				"text": "Chain Blast",
-				"gradientWaveFrequency": 200
-			},
-			"type": "text"
+				"waveAmplitude": 5,
+				"text": "Let's write some code!",
+				"waveFrequency": 80
+			}
 		},
 		{
-			"children": [],
-			"pos": {
-				"x": 162,
-				"y": 35
+			"pos": [
+				160,
+				35
+			],
+			"name": "title",
+			"type": "text",
+			"widget": {
+				"shadowOffset": [
+					2,
+					2
+				],
+				"scale": 4,
+				"text": "Chain Blast",
+				"gradientWaveColor": "#199919",
+				"color": "#4cff4c",
+				"gradientWaveFrequency": 200,
+				"font": "standard",
+				"gradientWaveSpeed": 100
 			},
-			"align": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"alpha": 1,
-			"parentAlign": {
-				"x": 0,
-				"y": 0
-			},
+			"align": [
+				0.5,
+				0.5
+			]
+		},
+		{
+			"pos": [
+				162,
+				35
+			],
 			"name": "titleDigit",
+			"type": "@titleDigit",
 			"widget": [],
-			"type": "@titleDigit"
+			"align": [
+				0.5,
+				0.5
+			]
+		},
+		{
+			"type": "box",
+			"widget": {
+				"borderColor": "#e6a018",
+				"size": [
+					320,
+					180
+				],
+				"alpha": 0.3,
+				"color": "#e7ac14",
+				"borderAlpha": 1
+			},
+			"name": "Box"
+		},
+		{
+			"pos": [
+				160,
+				180
+			],
+			"name": "box",
+			"type": "box",
+			"children": [
+				{
+					"parentAlign": [
+						0.5,
+						0
+					],
+					"name": "box",
+					"type": "box",
+					"widget": {
+						"borderAlpha": 1,
+						"alpha": 1,
+						"size": [
+							320,
+							1
+						],
+						"color": "#199919"
+					},
+					"align": [
+						0.5,
+						0
+					]
+				}
+			],
+			"widget": {
+				"borderAlpha": 1,
+				"alpha": 0.4,
+				"size": [
+					320,
+					30
+				],
+				"color": "#199919"
+			},
+			"align": [
+				0.5,
+				1
+			]
 		}
 	],
-	"pos": {
-		"x": 0,
-		"y": 0
-	},
-	"align": {
-		"x": 0,
-		"y": 0
-	},
-	"alpha": 1,
-	"parentAlign": {
-		"x": 0,
-		"y": 0
-	},
-	"canvasInputMode": true,
-	"name": "root",
-	"type": "none"
+	"name": "root"
 }

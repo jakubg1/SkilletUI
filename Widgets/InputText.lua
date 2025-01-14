@@ -31,8 +31,26 @@ function InputText:new(node, data)
     self.nullifyButtonNode = self.node:findChildByName("nullifyButton")
     assert(self.nullifyButtonNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Button Widget named \"nullifyButton\" to work!", self.node.name))
 
+    self.type = "string"
     self.value = nil
     self.nullable = false
+end
+
+
+
+function InputText:getType()
+    return self.type
+end
+
+
+
+---Sets the current type of this InputText.
+---The type determines the form of display and what happens when this Widget is clicked.
+---Allowed values are: `"string"`, `"number"`, `"boolean"`, `"color"`, `"Vector2"`, `"Image"`, `"Shortcut"`.
+---@param type string The new type for this InputText.
+function InputText:setType(type)
+    self.type = type
+    self:updateUI()
 end
 
 
@@ -56,24 +74,26 @@ end
 
 ---Updates the internal UI of this InputText. Call when fiddling with the Node's attributes.
 function InputText:updateUI()
-    if self.value then
+    if self.value ~= nil then
         local textValue = "ERROR"
         local showColor = false
         local darkColorText = false
-        if type(self.value) == "string" then
+        if self.type == "string" then
             textValue = self.value
-        elseif type(self.value) == "number" then
-            textValue = tostring(self.value)
-        elseif type(self.value) == "table" then
-            if self.value.x then
-                -- Vector2
-                textValue = tostring(self.value)
-            elseif self.value.r then
-                -- Color
-                textValue = self.value:getHex()
-                showColor = true
-                darkColorText = self.value.r * 0.2 + self.value.g + self.value.b * 0.1 > 0.7 and self.value.r + self.value.b > self.value.g / 2
+        elseif self.type == "color" then
+            textValue = self.value:getHex()
+            showColor = true
+            darkColorText = self.value.r * 0.2 + self.value.g + self.value.b * 0.1 > 0.7 and self.value.r + self.value.b > self.value.g / 2
+        elseif self.type == "Shortcut" then
+            textValue = string.format("[%s]", self.value.key)
+            if self.value.shift then
+                textValue = "Shift + " .. textValue
             end
+            if self.value.ctrl then
+                textValue = "Ctrl + " .. textValue
+            end
+        else
+            textValue = tostring(self.value)
         end
         self.textNode:setText(textValue)
         self.textNode:setPos(Vec2(4, -1))

@@ -1,0 +1,209 @@
+{
+	"canvasInputMode": true,
+	"children": [
+		{
+			"pos": [
+				5,
+				2
+			],
+			"widget": {
+				"text": "Feature Overview",
+				"font": "standard",
+				"underline": true,
+				"color": "#f9a400",
+				"boldness": 2
+			},
+			"name": "Text#2",
+			"type": "text"
+		},
+		{
+			"pos": [
+				10,
+				15
+			],
+			"widget": {
+				"text": "- Preliminary stuff and the Node Tree!",
+				"font": "standard",
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"gradientWaveFrequency": 100,
+				"gradientWaveSpeed": 100
+			},
+			"name": "Text",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				26
+			],
+			"widget": {
+				"text": "What's an UI? Well, the first thing that I need to explain is that",
+				"font": "standard"
+			},
+			"name": "Text#3",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "big list of texts to the left! That's the node tree.",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				37
+			],
+			"children": [
+				{
+					"pos": [
+						175,
+						0
+					],
+					"widget": {
+						"text": "node tree",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#8",
+					"type": "text"
+				}
+			],
+			"name": "Text#4",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				48
+			],
+			"widget": {
+				"text": "You don't see it? Oh, that's because by pressing TAB you've",
+				"font": "standard"
+			},
+			"name": "Text#5",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				59
+			],
+			"widget": {
+				"text": "disabled the editor! Press TAB again to go back to the edit mode.",
+				"font": "standard"
+			},
+			"name": "Text#6",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				81
+			],
+			"widget": {
+				"text": "with any defined UI functionality (like pressing buttons)!",
+				"font": "standard"
+			},
+			"name": "Text#7",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				103
+			],
+			"widget": {
+				"text": "Regardless, nodes can be nested one in another and that's what",
+				"font": "standard"
+			},
+			"name": "Text#9",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "In the edit mode, you can edit the layout, but you cannot interact",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				70
+			],
+			"children": [
+				{
+					"pos": [
+						31,
+						0
+					],
+					"widget": {
+						"text": "edit mode",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#9",
+					"type": "text"
+				}
+			],
+			"name": "Text#10",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				114
+			],
+			"widget": {
+				"text": "you can observe by certain nodes being indented further to",
+				"font": "standard"
+			},
+			"name": "Text#11",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				125
+			],
+			"widget": {
+				"text": "the right. It works pretty much like folders!",
+				"font": "standard"
+			},
+			"name": "Text#12",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "Next Page (remember to press TAB btw :) ) >>>",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"pos": [
+				310,
+				160
+			],
+			"type": "text",
+			"name": "Text#13",
+			"align": [
+				1,
+				0
+			],
+			"signalOnClick": "dive2"
+		},
+		{
+			"widget": {
+				"text": "Go Back",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"name": "Text#15",
+			"pos": [
+				10,
+				160
+			],
+			"type": "text",
+			"signalOnClick": "main"
+		}
+	],
+	"name": "root"
+}

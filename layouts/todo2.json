@@ -1,0 +1,155 @@
+{
+	"children": [
+		{
+			"widget": {
+				"text": "UI Editor To-Do List",
+				"color": "#f9a400",
+				"font": "standard",
+				"underline": true,
+				"boldness": 2
+			},
+			"type": "text",
+			"name": "Text#2",
+			"pos": [
+				5,
+				2
+			]
+		},
+		{
+			"widget": {
+				"text": "- General improvements!",
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"gradientWaveFrequency": 100,
+				"font": "standard",
+				"gradientWaveSpeed": 100
+			},
+			"type": "text",
+			"name": "Text",
+			"pos": [
+				10,
+				15
+			]
+		},
+		{
+			"widget": {
+				"text": "- Multi-selection! What can we do with it?",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#3",
+			"pos": [
+				17,
+				26
+			]
+		},
+		{
+			"widget": {
+				"text": "- Changing properties in bulk! (like the shadow flag!)",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#4",
+			"pos": [
+				25,
+				37
+			]
+		},
+		{
+			"widget": {
+				"text": "- Moving nodes in bulk!",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#5",
+			"pos": [
+				25,
+				48
+			]
+		},
+		{
+			"widget": {
+				"text": "- Some alignment helpers!",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#6",
+			"pos": [
+				17,
+				59
+			]
+		},
+		{
+			"widget": {
+				"text": "- Snap nodes like this very one to the edge of the one on top!",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#7",
+			"pos": [
+				25,
+				81
+			]
+		},
+		{
+			"widget": {
+				"text": "- I actually can't think of anything else for now!",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#8",
+			"pos": [
+				17,
+				92
+			]
+		},
+		{
+			"widget": {
+				"text": "- Snap to other nodes directly! (also show its frame)",
+				"font": "standard"
+			},
+			"type": "text",
+			"name": "Text#10",
+			"pos": [
+				25,
+				70
+			]
+		},
+		{
+			"widget": {
+				"text": "Next Page >>>",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff",
+				"font": "standard"
+			},
+			"signalOnClick": "page3",
+			"pos": [
+				310,
+				160
+			],
+			"type": "text",
+			"name": "Text#13",
+			"align": [
+				1,
+				0
+			]
+		},
+		{
+			"pos": [
+				10,
+				160
+			],
+			"widget": {
+				"text": "<<< Previous Page",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff",
+				"font": "standard"
+			},
+			"signalOnClick": "page1",
+			"name": "Text#15",
+			"type": "text"
+		}
+	],
+	"name": "root",
+	"canvasInputMode": true
+}

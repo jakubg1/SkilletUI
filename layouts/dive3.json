@@ -1,0 +1,241 @@
+{
+	"canvasInputMode": true,
+	"children": [
+		{
+			"pos": [
+				5,
+				2
+			],
+			"widget": {
+				"text": "Feature Overview",
+				"font": "standard",
+				"underline": true,
+				"color": "#f9a400",
+				"boldness": 2
+			},
+			"name": "Text#2",
+			"type": "text"
+		},
+		{
+			"pos": [
+				10,
+				15
+			],
+			"widget": {
+				"text": "- Node Manipulation!",
+				"font": "standard",
+				"gradientWaveColor": "#40de20",
+				"color": "#99ff5b",
+				"gradientWaveFrequency": 100,
+				"gradientWaveSpeed": 100
+			},
+			"name": "Text",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				26
+			],
+			"widget": {
+				"text": "In the Edit Mode, you can hover over the Widgets that are",
+				"font": "standard"
+			},
+			"name": "Text#3",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				37
+			],
+			"widget": {
+				"text": "present on the screen, or hover an entry in the node tree.",
+				"font": "standard"
+			},
+			"name": "Text#4",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				48
+			],
+			"widget": {
+				"text": "Clicking on any widget will obviously select the Node connected to it!",
+				"font": "standard"
+			},
+			"name": "Text#5",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				59
+			],
+			"widget": {
+				"text": "When you've selected the Node, you can drag it around.",
+				"font": "standard"
+			},
+			"name": "Text#6",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				92
+			],
+			"widget": {
+				"text": "Any manipulations you make to the layout will not be saved",
+				"font": "standard"
+			},
+			"name": "Text#9",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				70
+			],
+			"widget": {
+				"text": "Go ahead, enter the Edit Mode and drag this text around! :)",
+				"font": "standard",
+				"color": "#ff0000"
+			},
+			"name": "Text#10",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "until you press Ctrl + S to save the layout to a file.",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				103
+			],
+			"children": [
+				{
+					"pos": [
+						69,
+						0
+					],
+					"widget": {
+						"text": "Ctrl + S",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#9",
+					"type": "text"
+				}
+			],
+			"name": "Text#11",
+			"type": "text"
+		},
+		{
+			"pos": [
+				17,
+				114
+			],
+			"widget": {
+				"text": "The currently opened file is specified at the top of the screen.",
+				"font": "standard"
+			},
+			"name": "Text#12",
+			"type": "text"
+		},
+		{
+			"widget": {
+				"text": "Next Page >>>",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"pos": [
+				310,
+				160
+			],
+			"type": "text",
+			"name": "Text#13",
+			"align": [
+				1,
+				0
+			],
+			"signalOnClick": "dive4"
+		},
+		{
+			"widget": {
+				"text": "<<< Previous Page",
+				"font": "standard",
+				"color": "#f2ff00",
+				"hoverColor": "#ffffff"
+			},
+			"name": "Text#15",
+			"pos": [
+				10,
+				160
+			],
+			"type": "text",
+			"signalOnClick": "dive2"
+		},
+		{
+			"widget": {
+				"text": "You can also undo your changes by pressing Ctrl + Z!",
+				"font": "standard"
+			},
+			"pos": [
+				17,
+				125
+			],
+			"children": [
+				{
+					"pos": [
+						200,
+						0
+					],
+					"widget": {
+						"text": "Ctrl + Z",
+						"font": "standard",
+						"color": "#05ff00"
+					},
+					"name": "Text#10",
+					"type": "text"
+				}
+			],
+			"name": "Text#14",
+			"type": "text"
+		},
+		{
+			"pos": [
+				98,
+				142
+			],
+			"widget": {
+				"text": "<-- That's a Box Widget. You can resize it!",
+				"font": "standard",
+				"color": "#05ff00"
+			},
+			"name": "Text#11",
+			"type": "text"
+		},
+		{
+			"pos": [
+				49,
+				140
+			],
+			"widget": {
+				"borderAlpha": 1,
+				"size": [
+					45,
+					18
+				],
+				"color": "#3b42e6",
+				"alpha": 1,
+				"borderColor": "#1ce29b"
+			},
+			"name": "Box",
+			"type": "box"
+		}
+	],
+	"name": "root"
+}
