@@ -30,6 +30,7 @@ function Input:new()
 	self.fileList = nil
 	self.fileWarnWhenExists = false
 	self.fileWarningActive = false
+	self.shortcut = nil
 	self.error = nil
 
 	self:updateSideColorPickerMeshes()
@@ -124,6 +125,9 @@ function Input:keypressed(key)
 		return true
 	end
 	if self.inputType then
+		if self.inputType == "shortcut" and not (key == "lctrl" or key == "lshift" or key == "rctrl" or key == "rshift") then
+			self.shortcut = {key = key, ctrl = _IsCtrlPressed(), shift = _IsShiftPressed()}
+		end
 		-- Do not let anything else catch the keyboard input if the input box is currently active.
 		return true
 	end
@@ -157,6 +161,8 @@ function Input:inputAsk(type, value, extensions, warnWhenFileExists)
 			self.inputExtensions = extensions
 			self.fileWarnWhenExists = warnWhenFileExists
 			self.fileList = self:getFileList()
+		elseif type == "shortcut" then
+			self.shortcut = value
 		end
 	end
 end
@@ -196,6 +202,8 @@ function Input:inputAccept()
 		end
 	elseif self.inputType == "color" then
 		result = Color(self:getInputColor())
+	elseif self.inputType == "shortcut" then
+		result = self.shortcut
 	end
 
 	if self.fileWarnWhenExists and not self.fileWarningActive and _Utils.isValueInTable(self.fileList, result) then
@@ -321,7 +329,7 @@ end
 function Input:getSize()
 	if not self.inputType then
 		return 0, 0
-	elseif self.inputType == "string" or self.inputType == "number" then
+	elseif self.inputType == "string" or self.inputType == "number" or self.inputType == "shortcut" then
 		return 400, 150
 	elseif self.inputType == "color" then
 		return 450, 300
@@ -555,6 +563,13 @@ function Input:draw()
 				love.graphics.setColor(0, 1, 1)
 			end
 			love.graphics.print("No [ Esc ]", posBX + 280, posBY + sizeBY - 30)
+		end
+	elseif self.inputType == "shortcut" then
+		if self.shortcut then
+			love.graphics.print(_Utils.getShortcutString(self.shortcut), posX + 150, posY + 70)
+		else
+			love.graphics.setColor(0.5, 0.5, 0.5)
+			love.graphics.print("[None set]", posX + 150, posY + 70)
 		end
 	end
 	love.graphics.setColor(1, 1, 1)

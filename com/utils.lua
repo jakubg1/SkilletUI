@@ -505,5 +505,22 @@ end
 
 
 
+---Takes a table with a required `key` string field and optional `ctrl` and `shift` boolean fields.
+---Returns a human-readable shortcut name.
+---@param shortcut table The shortcut to be turned into a string.
+---@return string
+function utils.getShortcutString(shortcut)
+	local value = string.format("[%s]", shortcut.key)
+	if shortcut.shift then
+		value = "Shift + " .. value
+	end
+	if shortcut.ctrl then
+		value = "Ctrl + " .. value
+	end
+	return value
+end
+
+
+
 
 return utils

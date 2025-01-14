@@ -170,13 +170,13 @@ end
 ---@param property table The property in its entirety, as an item of the `Widget:getPropertyList()` result table.
 ---@return boolean
 function Editor:isNodePropertySupported(property)
-    return property.type == "string" or property.type == "number" or property.type == "color" or property.type == "boolean"
+    return property.type == "string" or property.type == "number" or property.type == "color" or property.type == "boolean" or property.type == "shortcut"
 end
 
 
 
 ---Refreshes all critical UI for Editors, for example the node properties.
-function Editor:refreshUI()
+function Editor:updateUI()
     -- If the selected node has been removed, deselect it.
     if _UI ~= self.selectedNode and not _UI:findChild(self.selectedNode) and self.UI ~= self.selectedNode and not self.UI:findChild(self.selectedNode) then
         self.selectedNode = nil
@@ -266,7 +266,7 @@ end
 ---@param node Node? The node to be selected. If not provided, all nodes will be deselected.
 function Editor:selectNode(node)
     self.selectedNode = node
-    self:refreshUI()
+    self:updateUI()
 end
 
 
@@ -514,7 +514,7 @@ function Editor:executeCommand(command, groupID)
         -- Mark the scene as unsaved.
         self.isSceneModified = true
         -- Make sure to refresh UIs.
-        self:refreshUI()
+        self:updateUI()
     end
     return result
 end
@@ -544,7 +544,7 @@ end
 function Editor:cancelCommandTransaction()
     self.commandMgr:cancelCommandTransaction()
     -- Make sure to refresh UIs.
-    self:refreshUI()
+    self:updateUI()
 end
 
 
@@ -555,7 +555,7 @@ function Editor:undoLastCommand()
     -- Mark the scene as unsaved.
     self.isSceneModified = true
     -- Make sure to refresh UIs.
-    self:refreshUI()
+    self:updateUI()
 end
 
 
@@ -566,7 +566,7 @@ function Editor:redoLastCommand()
     -- Mark the scene as unsaved.
     self.isSceneModified = true
     -- Make sure to refresh UIs.
-    self:refreshUI()
+    self:updateUI()
 end
 
 
@@ -879,6 +879,7 @@ function Editor:update(dt)
 			end
 		else
 			self.selectedNode:setPos(self.nodeDragOriginalPos + movement)
+            self:updateUI()
 		end
 	end
 
@@ -886,10 +887,12 @@ function Editor:update(dt)
     if self.selectedNode and self.nodeResizeOrigin then
         local movement = (_MouseCPos - self.nodeResizeOrigin):floor()
         local posVector = ((self.nodeResizeDirection - 1) / 2 + self.selectedNode:getAlign()) * self.nodeResizeDirection
+        -- TODO: Unmangle this logic somehow so that holding Shift can force a square size!
         self.selectedNode:setPos(((self.nodeResizeOriginalPos + movement * posVector) + 0.5):floor())
         self.selectedNode:setSize(self.nodeResizeOriginalSize + movement * self.nodeResizeDirection)
         -- Do not hover any other node while resizing the selected node.
         self.hoveredNode = nil
+        self:updateUI()
     end
 
     self.uiTree:update(dt)

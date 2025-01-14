@@ -38,7 +38,7 @@ function Node:new(data, parent)
         {name = "Align", key = "align", type = "Vector2"},
         {name = "Parent Align", key = "parentAlign", type = "Vector2"},
         {name = "Visible", key = "visible", type = "boolean"},
-        {name = "Shortcut", key = "shortcut", type = "Shortcut", nullable = true},
+        {name = "Shortcut", key = "shortcut", type = "shortcut", nullable = true},
         {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true}
     }
 

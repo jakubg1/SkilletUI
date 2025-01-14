@@ -46,7 +46,7 @@ end
 
 ---Sets the current type of this InputText.
 ---The type determines the form of display and what happens when this Widget is clicked.
----Allowed values are: `"string"`, `"number"`, `"boolean"`, `"color"`, `"Vector2"`, `"Image"`, `"Shortcut"`.
+---Allowed values are: `"string"`, `"number"`, `"boolean"`, `"color"`, `"Vector2"`, `"Image"`, `"shortcut"`.
 ---@param type string The new type for this InputText.
 function InputText:setType(type)
     self.type = type
@@ -84,14 +84,8 @@ function InputText:updateUI()
             textValue = self.value:getHex()
             showColor = true
             darkColorText = self.value.r * 0.2 + self.value.g + self.value.b * 0.1 > 0.7 and self.value.r + self.value.b > self.value.g / 2
-        elseif self.type == "Shortcut" then
-            textValue = string.format("[%s]", self.value.key)
-            if self.value.shift then
-                textValue = "Shift + " .. textValue
-            end
-            if self.value.ctrl then
-                textValue = "Ctrl + " .. textValue
-            end
+        elseif self.type == "shortcut" then
+            textValue = _Utils.getShortcutString(self.value)
         else
             textValue = tostring(self.value)
         end
