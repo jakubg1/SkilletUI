@@ -102,12 +102,13 @@ end
 ---@param alpha number The cube opacity.
 ---@param shadow boolean? Whether to draw this as a shadow (also offsets the position accordingly).
 function TitleDigit:drawCube(pos, angle, alpha, shadow)
+    local prop = self.properties:getValues()
     local a = alpha
     local c1 = self.MAIN_COLOR
     local c2 = self.SECONDARY_COLOR
     local c3 = self.TERNARY_COLOR
     if shadow then
-        pos = pos + self:getProp("shadowOffset")
+        pos = pos + prop.shadowOffset
         a = 0.5
         c1 = self.SHADOW_COLOR
         c2 = self.SHADOW_COLOR
@@ -182,23 +183,25 @@ end
 ---Draws the Title Digit.
 function TitleDigit:draw()
     local pos = self.node:getGlobalPos()
+    local prop = self.properties:getValues()
+
     local angle = self.time % (math.pi * 2)
     love.graphics.setColor(1, 1, 1)
     local u = (angle + math.pi / 2) % (math.pi * 2) - math.pi
     table.sort(self.CUBE_POSITIONS, function(a, b) return a.y * -10 + a.x * u < b.y * -10 + b.x * u end)
     --[[
-    if self:getProp("shadowOffset") then
+    if prop.shadowOffset then
         for i, cubePos in ipairs(self.CUBE_POSITIONS) do
             local offsetX = cubePos.x - (self.SIZE.x - 1) / 2
             local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
-            self:drawCube(cubePos2, angle, self:getProp("alpha"), true)
+            self:drawCube(cubePos2, angle, prop.alpha, true)
         end
     end
     ]]
     for i, cubePos in ipairs(self.CUBE_POSITIONS) do
         local offsetX = cubePos.x - (self.SIZE.x - 1) / 2
         local cubePos2 = (Vec2(offsetX, 0):rotate(angle - math.pi / 2) * Vec2(1, 0.5) + Vec2(self.SIZE.x / 2, cubePos.y)) * self.CUBE_SIZE + pos
-        self:drawCube(cubePos2, angle, self:getProp("alpha"))
+        self:drawCube(cubePos2, angle, prop.alpha)
     end
 end
 

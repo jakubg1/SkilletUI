@@ -83,10 +83,10 @@ end
 
 ---Activates this Canvas for drawing. The canvas is automatically cleared.
 function Canvas:activate()
-    local canvasSize = self:getProp("canvasSize")
+    local prop = self.properties:getValues()
     love.graphics.setCanvas(self.canvas)
     love.graphics.setColor(0, 0, 0)
-    love.graphics.rectangle("fill", 0, 0, canvasSize.x, canvasSize.y)
+    love.graphics.rectangle("fill", 0, 0, prop.canvasSize.x, prop.canvasSize.y)
 end
 
 
@@ -102,11 +102,10 @@ end
 ---Draws the Canvas on the screen.
 function Canvas:draw()
     local pos = self.node:getGlobalPos()
-    local size = self:getProp("size")
-    local canvasSize = self:getProp("canvasSize")
+    local prop = self.properties:getValues()
     love.graphics.setColor(1, 1, 1)
     love.graphics.setCanvas()
-    love.graphics.draw(self.canvas, pos.x, pos.y, 0, size.x / canvasSize.x, size.y / canvasSize.y)
+    love.graphics.draw(self.canvas, pos.x, pos.y, 0, prop.size.x / prop.canvasSize.x, prop.size.y / prop.canvasSize.y)
 end
 
 

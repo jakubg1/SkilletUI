@@ -102,26 +102,22 @@ end
 ---Draws the NineSprite on the screen.
 function NineSprite:draw()
     local pos = self.node:getGlobalPos()
-    local image = self:getProp("image")
+    local prop = self.properties:getValues()
+    local image = prop.image
     if self.node:isDisabled() then
-        image = self:getProp("disabledImage") or image
+        image = prop.disabledImage or image
     elseif self.node:isHovered() then
-        image = self:getProp("hoverImage") or image
+        image = prop.hoverImage or image
         if self.node.clicked then
-            image = self:getProp("clickImage") or image
+            image = prop.clickImage or image
         end
     end
-    local size = self:getProp("size")
-    local scale = self:getProp("scale")
-    local alpha = self:getProp("alpha")
-    local shadowOffset = self:getProp("shadowOffset")
-    local shadowAlpha = self:getProp("shadowAlpha")
-    if shadowOffset then
-        love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
-        image:draw(pos + shadowOffset, size, scale)
+    if prop.shadowOffset then
+        love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
+        image:draw(pos + prop.shadowOffset, prop.size, prop.scale)
     end
-    love.graphics.setColor(1, 1, 1, alpha)
-    image:draw(pos, size, scale)
+    love.graphics.setColor(1, 1, 1, prop.alpha)
+    image:draw(pos, prop.size, prop.scale)
 end
 
 

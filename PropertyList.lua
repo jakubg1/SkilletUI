@@ -27,8 +27,13 @@ local Color = require("Color")
 function PropertyList:new(properties, data)
     self.properties = properties
 
-    self.values = {}
+    self.currentValues = {}
+    self.baseValues = {}
     self:deserialize(data)
+
+    self.animations = {
+        {property = "alpha", startValue = 1, finalValue = 0, maxTime = 0.5, time = 0.24972874}
+    }
 end
 
 
@@ -37,16 +42,7 @@ end
 ---@param key string The property key.
 ---@return any?
 function PropertyList:getValue(key)
-    return self.values[key].current
-end
-
-
-
----Returns the base value of the provided key. Base value is always used for serialization.
----@param key string The property key.
----@return any?
-function PropertyList:getBaseValue(key)
-    return self.values[key].base
+    return self.currentValues[key]
 end
 
 
@@ -55,7 +51,16 @@ end
 ---@param key string The property key.
 ---@param value any? The value which will be stored under that key.
 function PropertyList:setValue(key, value)
-    self.values[key].current = value
+    self.currentValues[key] = value
+end
+
+
+
+---Returns the base value of the provided key. Base value is always used for serialization.
+---@param key string The property key.
+---@return any?
+function PropertyList:getBaseValue(key)
+    return self.baseValues[key]
 end
 
 
@@ -65,10 +70,18 @@ end
 ---@param key string The property key.
 ---@param value any? The value which will be stored under that key.
 function PropertyList:setBaseValue(key, value)
-    if self.values[key].current == self.values[key].base then
-        self.values[key].current = value
+    if self.currentValues[key] == self.baseValues[key] then
+        self.currentValues[key] = value
     end
-    self.values[key].base = value
+    self.baseValues[key] = value
+end
+
+
+
+---Returns the set of current values in this property list, keyed by the property keys.
+---@return table
+function PropertyList:getValues()
+    return self.currentValues
 end
 
 
@@ -76,7 +89,7 @@ end
 ---Resets the current value of the provided key to its base value.
 ---@param key string The property key.
 function PropertyList:resetValue(key)
-    self.values[key].current = self.values[key].base
+    self.currentValues[key] = self.baseValues[key]
 end
 
 
@@ -89,7 +102,7 @@ function PropertyList:serialize()
     for i, property in ipairs(self.properties) do
         local value = nil
         -- Retrieve the current base value of this property.
-        local rawValue = self.values[property.key].base
+        local rawValue = self.baseValues[property.key]
         -- If the property value matches its default value or is equal to `nil`, we do not store it. Otherwise, proceed.
         if rawValue ~= nil and rawValue ~= property.defaultValue then
             -- Go over the types and treat the value accordingly.
@@ -121,7 +134,8 @@ end
 ---Loads provided data into this property list. If no data is provided, data from the `defaultValueNoData` fields for each supported property will be prepended.
 ---@param data table? The data to be loaded.
 function PropertyList:deserialize(data)
-    self.values = {}
+    self.currentValues = {}
+    self.baseValues = {}
     for i, property in ipairs(self.properties) do
         local value = nil
         if not data then
@@ -153,7 +167,8 @@ function PropertyList:deserialize(data)
                 end
             end
         end
-        self.values[property.key] = {base = value, current = value}
+        self.currentValues[property.key] = value
+        self.baseValues[property.key] = value
     end
 end
 

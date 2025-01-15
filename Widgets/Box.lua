@@ -23,10 +23,6 @@ function Box:new(node, data)
         {name = "Border Alpha", key = "borderAlpha", type = "number", defaultValue = 1}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
-
-    self.animations = {
-        {property = "alpha", startValue = 1, finalValue = 0, maxTime = 0.5, time = 0.24972874}
-    }
 end
 
 
@@ -102,19 +98,15 @@ end
 ---Draws the Box on the screen.
 function Box:draw()
     local pos = self.node:getGlobalPos()
-    local size = self:getProp("size")
-    local color = self:getProp("color")
-    local alpha = self:getProp("alpha")
-    local borderColor = self:getProp("borderColor")
-    local borderAlpha = self:getProp("borderAlpha")
-    if color then
-        love.graphics.setColor(color.r, color.g, color.b, alpha)
-        love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, size.x, size.y)
+    local prop = self.properties:getValues()
+    if prop.color then
+        love.graphics.setColor(prop.color.r, prop.color.g, prop.color.b, prop.alpha)
+        love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, prop.size.x, prop.size.y)
     end
-    if borderColor then
-        love.graphics.setColor(borderColor.r, borderColor.g, borderColor.b, borderAlpha)
+    if prop.borderColor then
+        love.graphics.setColor(prop.borderColor.r, prop.borderColor.g, prop.borderColor.b, prop.borderAlpha)
         love.graphics.setLineWidth(1)
-        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 0.5, size.y - 0.5)
+        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, prop.size.x - 0.5, prop.size.y - 0.5)
     end
 end
 

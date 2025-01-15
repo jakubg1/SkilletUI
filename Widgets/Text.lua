@@ -106,11 +106,8 @@ end
 ---Returns the size of this Text.
 ---@return Vector2
 function Text:getSize()
-    local font = self:getProp("font")
-    local text = self:getProp("text")
-    local scale = self:getProp("scale")
-    local boldness = self:getProp("boldness")
-    return Vec2(font:getWidth(text) - 1, font:getHeight()) * scale + Vec2(self:getEffectiveCharacterSeparation() * (utf8.len(text) - 1) + boldness - 1, 0)
+    local prop = self.properties:getValues()
+    return Vec2(prop.font:getWidth(prop.text) - 1, prop.font:getHeight()) * prop.scale + Vec2(self:getEffectiveCharacterSeparation() * (utf8.len(prop.text) - 1) + prop.boldness - 1, 0)
 end
 
 
@@ -142,7 +139,8 @@ end
 ---Returns the effective character separation of this Text, as both the character separation but also boldness will push the characters apart.
 ---@return integer
 function Text:getEffectiveCharacterSeparation()
-    return self:getProp("boldness") + self:getProp("characterSeparation") - 1
+    local prop = self.properties:getValues()
+    return prop.boldness + prop.characterSeparation - 1
 end
 
 
@@ -150,7 +148,8 @@ end
 ---Returns `true` if the Text can be rendered as a whole batch, instead of having to be drawn character by character.
 ---@return boolean
 function Text:isSimpleRendered()
-    if self:getProp("waveAmplitude") or self:getProp("gradientWaveColor") or self:getProp("characterSeparation") ~= 0 or self:getProp("boldness") ~= 1 then
+    local prop = self.properties:getValues()
+    if prop.waveAmplitude or prop.gradientWaveColor or prop.characterSeparation ~= 0 or prop.boldness ~= 1 then
         return false
     end
     return true
@@ -161,99 +160,84 @@ end
 ---Draws the Text on the screen.
 function Text:draw()
     local pos = self.node:getGlobalPos()
-    local font = self:getProp("font")
-    local text = self:getProp("text")
-    local scale = self:getProp("scale")
-    local color = self:getProp("color")
-    local hoverColor = self:getProp("hoverColor")
-    local alpha = self:getProp("alpha")
-    local shadowOffset = self:getProp("shadowOffset")
-    local shadowAlpha = self:getProp("shadowAlpha")
-    local boldness = self:getProp("boldness")
-    local underline = self:getProp("underline")
-    local strikethrough = self:getProp("strikethrough")
-    local waveAmplitude = self:getProp("waveAmplitude")
-    local waveFrequency = self:getProp("waveFrequency")
-    local waveSpeed = self:getProp("waveSpeed")
-    local gradientWaveColor = self:getProp("gradientWaveColor")
-    local gradientWaveFrequency = self:getProp("gradientWaveFrequency")
-    local gradientWaveSpeed = self:getProp("gradientWaveSpeed")
+    local prop = self.properties:getValues()
 
-    love.graphics.setFont(font)
-    if hoverColor and self.node:isHovered() then
-        color = hoverColor
+    love.graphics.setFont(prop.font)
+    local color = prop.color
+    if prop.hoverColor and self.node:isHovered() then
+        color = prop.hoverColor
     end
     if self:isSimpleRendered() then
         -- Optimize drawing if there are no effects which require drawing each character separately.
-        if shadowOffset then
-            love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
-            love.graphics.print(text, math.floor(pos.x + shadowOffset.x + 0.5), math.floor(pos.y + shadowOffset.y + 0.5), 0, scale)
+        if prop.shadowOffset then
+            love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
+            love.graphics.print(prop.text, math.floor(pos.x + prop.shadowOffset.x + 0.5), math.floor(pos.y + prop.shadowOffset.y + 0.5), 0, prop.scale)
         end
-        love.graphics.setColor(color.r, color.g, color.b, alpha)
-        love.graphics.print(text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, scale)
+        love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
+        love.graphics.print(prop.text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, prop.scale)
     else
         -- Draw everything character by character.
         local x = 0
         local sep = self:getEffectiveCharacterSeparation()
-        for i = 1, utf8.len(text) do
-            local chr = text:sub(utf8.offset(text, i), utf8.offset(text, i + 1) - 1)
-            local w = font:getWidth(chr) * scale
+        for i = 1, utf8.len(prop.text) do
+            local chr = prop.text:sub(utf8.offset(prop.text, i), utf8.offset(prop.text, i + 1) - 1)
+            local w = prop.font:getWidth(chr) * prop.scale
             local y = 0
-            if waveAmplitude then
-                y = _Utils.getWavePoint(waveFrequency, waveSpeed, x, self.time) * waveAmplitude
+            if prop.waveAmplitude then
+                y = _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, x, self.time) * prop.waveAmplitude
             end
             local charColor = color
-            if gradientWaveColor then
+            if prop.gradientWaveColor then
                 local t
-                if gradientWaveSpeed then
-                    t = (_Utils.getWavePoint(gradientWaveFrequency, gradientWaveSpeed, x, self.time) + 1) / 2
+                if prop.gradientWaveSpeed then
+                    t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, x, self.time) + 1) / 2
                 else
-                    t = (_Utils.getWavePoint(1 / gradientWaveFrequency, 1, 0, self.time) + 1) / 2
+                    t = (_Utils.getWavePoint(1 / prop.gradientWaveFrequency, 1, 0, self.time) + 1) / 2
                 end
-                charColor = _Utils.interpolate(color, gradientWaveColor, t)
+                charColor = _Utils.interpolate(color, prop.gradientWaveColor, t)
             end
 
-            if shadowOffset then
-                for j = 1, boldness do
+            if prop.shadowOffset then
+                for j = 1, prop.boldness do
                     local bx = j - 1
-                    love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
-                    love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5 + shadowOffset.x), math.floor(pos.y + y + 0.5 + shadowOffset.y), 0, scale)
+                    love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
+                    love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5 + prop.shadowOffset.x), math.floor(pos.y + y + 0.5 + prop.shadowOffset.y), 0, prop.scale)
                 end
             end
-            for j = 1, boldness do
+            for j = 1, prop.boldness do
                 local bx = j - 1
-                love.graphics.setColor(charColor.r, charColor.g, charColor.b, alpha)
-                love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5), math.floor(pos.y + y + 0.5), 0, scale)
+                love.graphics.setColor(charColor.r, charColor.g, charColor.b, prop.alpha)
+                love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5), math.floor(pos.y + y + 0.5), 0, prop.scale)
             end
             x = x + w + sep
         end
     end
 
-    if underline then
+    if prop.underline then
         local size = self:getSize()
         local x1 = pos.x + 0.5
         local x2 = pos.x + size.x + 0.5
         local y = pos.y + size.y + 0.5
-        love.graphics.setLineWidth(scale)
-        if shadowOffset then
-            love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
-            love.graphics.line(math.floor(x1 + shadowOffset.x), math.floor(y + shadowOffset.y), math.floor(x2 + shadowOffset.x), math.floor(y + shadowOffset.y))
+        love.graphics.setLineWidth(prop.scale)
+        if prop.shadowOffset then
+            love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
+            love.graphics.line(math.floor(x1 + prop.shadowOffset.x), math.floor(y + prop.shadowOffset.y), math.floor(x2 + prop.shadowOffset.x), math.floor(y + prop.shadowOffset.y))
         end
-        love.graphics.setColor(color.r, color.g, color.b, alpha)
+        love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
         love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
     end
 
-    if strikethrough then
+    if prop.strikethrough then
         local size = self:getSize()
         local x1 = pos.x + 0.5
         local x2 = pos.x + size.x + 0.5
         local y = pos.y + size.y / 2 + 0.5
-        love.graphics.setLineWidth(scale)
-        if shadowOffset then
-            love.graphics.setColor(0, 0, 0, alpha * shadowAlpha)
-            love.graphics.line(math.floor(x1 + shadowOffset.x), math.floor(y + shadowOffset.y), math.floor(x2 + shadowOffset.x), math.floor(y + shadowOffset.y))
+        love.graphics.setLineWidth(prop.scale)
+        if prop.shadowOffset then
+            love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
+            love.graphics.line(math.floor(x1 + prop.shadowOffset.x), math.floor(y + prop.shadowOffset.y), math.floor(x2 + prop.shadowOffset.x), math.floor(y + prop.shadowOffset.y))
         end
-        love.graphics.setColor(color.r, color.g, color.b, alpha)
+        love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
         love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
     end
 end
