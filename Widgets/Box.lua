@@ -90,7 +90,7 @@ end
 ---Updates the Box.
 ---@param dt number Time delta, in seconds.
 function Box:update(dt)
-    -- no-op
+    self.properties:update(dt)
 end
 
 

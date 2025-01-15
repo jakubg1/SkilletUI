@@ -22,17 +22,17 @@ function EditorCommandNodeSetProperty:execute()
     if not self.node or not self.property then
         return false
     end
-    self.oldValue = self.node[self.property]
+    self.oldValue = self.node:getPropBase(self.property)
     if self.value == self.oldValue then
         return false
     end
-    self.node[self.property] = self.value
+    self.node:setPropBase(self.property, self.value)
     return true
 end
 
 ---Undoes this command.
 function EditorCommandNodeSetProperty:undo()
-    self.node[self.property] = self.oldValue
+    self.node:setPropBase(self.property, self.oldValue)
 end
 
 return EditorCommandNodeSetProperty

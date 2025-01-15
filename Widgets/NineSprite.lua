@@ -94,7 +94,7 @@ end
 ---Updates the NineSprite.
 ---@param dt number Time delta, in seconds.
 function NineSprite:update(dt)
-    -- no-op
+    self.properties:update(dt)
 end
 
 

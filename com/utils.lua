@@ -469,6 +469,19 @@ end
 
 
 
+---Removes all dead objects from the table `t`. By dead objects we mean objects that have their `delQueue` field set to `true`.
+---The table must be a list-like. Other keysets are not supported.
+---@param t table The table to be cleaned up.
+function utils.removeDeadObjects(t)
+	for i = #t, 1, -1 do
+		if t[i].delQueue then
+			table.remove(t, i)
+		end
+	end
+end
+
+
+
 function utils.interpolate(a, b, t)
 	return a * (1 - t) + b * t
 end

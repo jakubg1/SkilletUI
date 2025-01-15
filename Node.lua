@@ -5,6 +5,7 @@ local class = require "com.class"
 local Node = class:derive("Node")
 
 local Vec2 = require("Vector2")
+local PropertyList = require("PropertyList")
 local Box = require("Widgets.Box")
 local Button = require("Widgets.Button")
 local Canvas = require("Widgets.Canvas")
@@ -33,24 +34,18 @@ function Node:new(data, parent)
     self.parent = parent
 
     self.PROPERTY_LIST = {
-        {name = "Name", key = "name", type = "string", disabledIfControlled = true},
-        {name = "Position", key = "pos", type = "Vector2"},
-        {name = "Align", key = "align", type = "Vector2"},
-        {name = "Parent Align", key = "parentAlign", type = "Vector2"},
-        {name = "Visible", key = "visible", type = "boolean"},
+        {name = "Name", key = "name", type = "string", defaultValue = "ERROR", disabledIfControlled = true},
+        {name = "Position", key = "pos", type = "Vector2", defaultValue = Vec2()},
+        {name = "Align", key = "align", type = "align", defaultValue = _ALIGNMENTS.topLeft},
+        {name = "Parent Align", key = "parentAlign", type = "align", defaultValue = _ALIGNMENTS.topLeft},
+        {name = "Visible", key = "visible", type = "boolean", defaultValue = true},
+        {name = "Canvas Input Mode", key = "canvasInputMode", type = "boolean", defaultValue = false},
         {name = "Shortcut", key = "shortcut", type = "shortcut", nullable = true},
         {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true}
     }
+    self.properties = PropertyList(self.PROPERTY_LIST, data)
 
-    self.name = "ERROR"
     self.type = "none"
-    self.pos = Vec2()
-    self.align = _ALIGNMENTS["topLeft"]
-    self.parentAlign = _ALIGNMENTS["topLeft"]
-    self.visible = false
-    self.shortcut = nil
-    self.canvasInputMode = false
-    self.signalOnClick = nil
 
     self.clicked = false
     self.onClick = nil
@@ -64,9 +59,58 @@ end
 
 
 
+---Returns the given property of this Node.
+---@param key string The property key.
+---@return any?
+function Node:getProp(key)
+    return self.properties:getValue(key)
+end
+
+
+
+---Sets the given property of this Node to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Node:setProp(key, value)
+    self.properties:setValue(key, value)
+end
+
+
+
+---Returns the given property base of this Node.
+---@param key string The property key.
+---@return any?
+function Node:getPropBase(key)
+    return self.properties:getBaseValue(key)
+end
+
+
+
+---Sets the given property base of this Node to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Node:setPropBase(key, value)
+    self.properties:setBaseValue(key, value)
+end
+
+
+
+---Resets all of the properties of this Node, its Widget, and all its children to the base values.
+function Node:resetProperties()
+    self.properties:reset()
+    if self.widget and self.widget.properties then
+        self.widget.properties:reset()
+    end
+    for i, child in ipairs(self.children) do
+        child:resetProperties()
+    end
+end
+
+
+
 ---Returns the name of this Node.
 function Node:getName()
-    return self.name
+    return self:getProp("name")
 end
 
 
@@ -79,7 +123,7 @@ function Node:setName(name)
     if self:isControlled() then
         return false
     end
-    self.name = name
+    self:setPropBase("name", name)
     return true
 end
 
@@ -91,10 +135,11 @@ function Node:ensureUniqueName()
     if not self.parent then
         return
     end
+    local prop = self.properties:getValues()
     -- Check if any other Node with this name exists.
     local found = false
     for i, child in ipairs(self.parent.children) do
-        if child ~= self and child.name == self.name then
+        if child ~= self and child.name == prop.name then
             -- We've found a sibling that has the same name as us!
             found = true
             break
@@ -104,10 +149,10 @@ function Node:ensureUniqueName()
     if not found then
         return
     end
-    local nameBase = self.name
+    local nameBase = prop.name
     local suffixNumber = 2
     -- Check if we've got a suffix already.
-    local split = _Utils.strSplit(self.name, "#")
+    local split = _Utils.strSplit(prop.name, "#")
     if #split > 1 then
         local n = tonumber(split[#split])
         if n then
@@ -124,7 +169,7 @@ function Node:ensureUniqueName()
         suffixNumber = suffixNumber + 1
     until not self.parent:findChildByName(newName)
     -- When we finally find it, set it as our new name.
-    self.name = newName
+    prop.name = newName
 end
 
 
@@ -132,7 +177,7 @@ end
 ---Returns the local position of this Node, which is relative to its parent's position.
 ---@return Vector2
 function Node:getPos()
-    return self.pos
+    return self:getProp("pos")
 end
 
 
@@ -140,7 +185,7 @@ end
 ---Sets the local position of this Node, which is relative to its parent's position.
 ---@param pos Vector2 The new local position to be set.
 function Node:setPos(pos)
-    self.pos = pos
+    self:setPropBase("pos", pos)
 end
 
 
@@ -148,7 +193,8 @@ end
 ---Returns the global position of this Node, i.e. the actual position (top left corner) after factoring in all parents' modifiers.
 ---@return Vector2
 function Node:getGlobalPos()
-    return self.pos - ((self:getSize() - 1) * self.align):ceil() + self:getParentAlignPos()
+    local prop = self.properties:getValues()
+    return prop.pos - ((self:getSize() - 1) * prop.align):ceil() + self:getParentAlignPos()
 end
 
 
@@ -156,7 +202,7 @@ end
 ---Returns the global position of this Node, which has not been adjusted for the local widget alignment.
 ---@return Vector2
 function Node:getGlobalPosWithoutLocalAlign()
-    return self.pos + self:getParentAlignPos()
+    return self:getProp("pos") + self:getParentAlignPos()
 end
 
 
@@ -165,7 +211,7 @@ end
 ---@return Vector2
 function Node:getParentAlignPos()
     if self.parent then
-        return self.parent:getGlobalPos() + ((self.parent:getSize() - 1) * self.parentAlign):ceil()
+        return self.parent:getGlobalPos() + ((self.parent:getSize() - 1) * self:getProp("parentAlign")):ceil()
     end
     return Vec2()
 end
@@ -238,7 +284,7 @@ function Node:isCanvasInputModeEnabled()
     if self.parent then
         return self.parent:isCanvasInputModeEnabled()
     end
-    return self.canvasInputMode
+    return self:getProp("canvasInputMode")
 end
 
 
@@ -246,7 +292,7 @@ end
 ---Returns the current alignment of the Node.
 ---@return Vector2
 function Node:getAlign()
-    return self.align
+    return self:getProp("align")
 end
 
 
@@ -258,7 +304,7 @@ end
 --- - `(0.5, 0.5)` aligns to the center.
 --- - Any combination is available, including going out of bounds.
 function Node:setAlign(align)
-    self.align = align
+    self:setPropBase("align", align)
 end
 
 
@@ -266,7 +312,7 @@ end
 ---Returns the current parental alignment of the Node.
 ---@return Vector2
 function Node:getParentAlign()
-    return self.parentAlign
+    return self:getProp("parentAlign")
 end
 
 
@@ -278,7 +324,7 @@ end
 --- - `(0.5, 0.5)` aligns to the center.
 --- - Any combination is available, including going out of bounds.
 function Node:setParentAlign(parentAlign)
-    self.parentAlign = parentAlign
+    self:setPropBase("parentAlign", parentAlign)
 end
 
 
@@ -298,8 +344,8 @@ function Node:click()
     if self.onClick then
         self.onClick()
     end
-    if self.signalOnClick then
-        _OnSignal(self.signalOnClick)
+    if self:getProp("signalOnClick") then
+        _OnSignal(self:getProp("signalOnClick"))
     end
 end
 
@@ -384,9 +430,9 @@ end
 ---@return boolean
 function Node:isVisible()
     if self.parent then
-        return self.parent:isVisible() or self.visible
+        return self.parent:isVisible() or self:getProp("visible")
     end
-    return self.visible
+    return self:getProp("visible")
 end
 
 
@@ -394,7 +440,7 @@ end
 ---Sets whether this Node (and all its children!) should be visible.
 ---@param visible boolean Whether this Node should be visible. If a Node is not visible, it cannot be seen, including all its children.
 function Node:setVisible(visible)
-    self.visible = visible
+    self:setPropBase("visible", visible)
 end
 
 
@@ -747,7 +793,7 @@ end
 ---@return Node?
 function Node:findChildByName(name)
     for i, child in ipairs(self.children) do
-        if child.name == name then
+        if child:getProp("name") == name then
             return child
         end
         local potentialResult = child:findChildByName(name)
@@ -816,6 +862,7 @@ end
 ---Updates this Node's widget, if it exists, and all its children.
 ---@param dt number Time delta, in seconds.
 function Node:update(dt)
+    self.properties:update(dt)
     if self.widget then
         self.widget:update(dt)
     end
@@ -833,7 +880,7 @@ end
 --- - If any child has its own children, draw them immediately after that child has been drawn.
 ---If the Node is invisible, the call immediately returns, resulting in neither this nor any children's widgets being drawn.
 function Node:draw()
-    if not self.visible then
+    if not self:getProp("visible") then
         return
     end
     if not self.isCanvas then
@@ -966,7 +1013,8 @@ end
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string Code of the key that has been pressed.
 function Node:keypressed(key)
-    if self.shortcut and self.shortcut.key == key and (self.shortcut.ctrl or false) == _IsCtrlPressed() and (self.shortcut.shift or false) == _IsShiftPressed() then
+    local shortcut = self:getProp("shortcut")
+    if shortcut and shortcut.key == key and (shortcut.ctrl or false) == _IsCtrlPressed() and (shortcut.shift or false) == _IsShiftPressed() then
         self:click()
     end
     for i, child in ipairs(self.children) do
@@ -979,20 +1027,9 @@ end
 ---Returns Node's data to be used for loading later.
 ---@return table
 function Node:serialize()
-    local data = {}
+    local data = self.properties:serialize()
 
-    data.name = self.name
     data.type = self.type ~= "none" and self.type or nil
-    data.pos = self.pos ~= Vec2() and {self.pos.x, self.pos.y} or nil
-    data.align = self.align ~= _ALIGNMENTS.topLeft and {self.align.x, self.align.y} or nil
-    data.parentAlign = self.parentAlign ~= _ALIGNMENTS.topLeft and {self.parentAlign.x, self.parentAlign.y} or nil
-    if not self.visible then
-        data.visible = false
-    end
-    data.shortcut = self.shortcut
-    data.canvasInputMode = self.canvasInputMode
-    data.signalOnClick = self.signalOnClick
-
     data.widget = self.widget and self.widget:serialize()
 
     if #self.children > 0 then
@@ -1010,16 +1047,13 @@ end
 ---Loads Node data to this Node from a previously serialized table.
 ---@param data table The data to be loaded.
 function Node:deserialize(data)
+    self.properties:deserialize(data)
+
     self.type = data.type or "none"
     local widgetData = WIDGET_TYPES[self.type]
-    self.name = data.name or widgetData.defaultName
-    self.pos = Vec2(data.pos)
-    self.align = data.align and _ALIGNMENTS[data.align] or Vec2(data.align)
-    self.parentAlign = data.parentAlign and _ALIGNMENTS[data.parentAlign] or Vec2(data.parentAlign)
-    self.visible = data.visible ~= false
-    self.shortcut = data.shortcut
-    self.canvasInputMode = data.canvasInputMode
-    self.signalOnClick = data.signalOnClick
+    if self.properties:getBaseValue("name") == "ERROR" then
+        self.properties:setBaseValue("name", widgetData.defaultName)
+    end
 
     if data.children then
     	for i, child in ipairs(data.children) do
@@ -1039,7 +1073,7 @@ function Node:deserialize(data)
 
     if widgetData.constructor then
         local success, result = pcall(function() return widgetData.constructor(self, data.widget) end)
-        assert(success, string.format("Node \"%s\": Could not make widget of type \"%s\": %s", self.name, self.type, result))
+        assert(success, string.format("Node \"%s\": Could not make widget of type \"%s\": %s", self.properties:getBaseValue("name"), self.type, result))
         self.widget = result
     end
 end

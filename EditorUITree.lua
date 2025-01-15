@@ -203,7 +203,7 @@ function EditorUITree:draw()
             bgColor = _COLORS.yellow
         end
         local alpha = 1
-        if not line.node.visible then
+        if not line.node:getProp("visible") then
             alpha = 0.5
         elseif not line.node:isVisible() then
             alpha = 0.75
@@ -235,7 +235,7 @@ function EditorUITree:draw()
             love.graphics.rectangle("line", x + 23, y + 1, self.SIZE.x - x - 20, self.ITEM_HEIGHT - 2)
             self.editor:drawShadowedText(self.nameEditValue, x + 25, y + 2, _COLORS.black, nil, alpha, true)
         else
-            self.editor:drawShadowedText(line.node.name, x + 25, y + 2, color, nil, alpha)
+            self.editor:drawShadowedText(line.node:getName(), x + 25, y + 2, color, nil, alpha)
         end
         -- If dragged over, additional signs will be shown.
         if self.dragOrigin and not self.dragSnap and line.node ~= self.editor.selectedNode and line.node == self.editor.hoveredNode then
@@ -277,7 +277,7 @@ function EditorUITree:draw()
 
     -- Dragged element in node tree
     if self.dragOrigin and not self.dragSnap then
-        self.editor:drawShadowedText(string.format("%s {%s}", self.editor.selectedNode.name, self.editor.selectedNode.type), _MousePos.x + 10, _MousePos.y + 15, _COLORS.white, _COLORS.blue)
+        self.editor:drawShadowedText(string.format("%s {%s}", self.editor.selectedNode:getName(), self.editor.selectedNode.type), _MousePos.x + 10, _MousePos.y + 15, _COLORS.white, _COLORS.blue)
     end
 end
 

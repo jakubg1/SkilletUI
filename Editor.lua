@@ -205,7 +205,7 @@ function Editor:generateNodePropertyUI(node)
         currentRow = currentRow + 1
         propertiesUI:addChild(propertyHeaderUI)
         for i, property in ipairs(nodeProperties) do
-            local inputValue = node[property.key]
+            local inputValue = node.properties:getBaseValue(property.key)
             local inputFunction = function(input)
                 self:setSelectedNodeProperty(property.key, input)
             end
@@ -807,12 +807,13 @@ function Editor:load()
         self:button(UTILITY_X, UTILITY_Y + 120, 100, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"}),
         self:button(UTILITY_X + 100, UTILITY_Y + 120, 100, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"}),
         self:label(NEW_X, NEW_Y - 20, "New Widget:"),
-        self:button(NEW_X, NEW_Y, 55, "Box", function() self:addNode(Node({type = "box"})) end),
-        self:button(NEW_X + 55, NEW_Y, 55, "Text", function() self:addNode(Node({type = "text"})) end),
-        self:button(NEW_X + 110, NEW_Y, 55, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end),
-        self:button(NEW_X + 165, NEW_Y, 55, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite"}}})) end),
+        self:button(NEW_X, NEW_Y, 55, "Node", function() self:addNode(Node({})) end),
+        self:button(NEW_X + 55, NEW_Y, 55, "Box", function() self:addNode(Node({type = "box"})) end),
+        self:button(NEW_X + 110, NEW_Y, 55, "Text", function() self:addNode(Node({type = "text"})) end),
+        self:button(NEW_X + 165, NEW_Y, 55, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end),
         self:button(NEW_X, NEW_Y + 20, 110, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end),
-        self:button(NEW_X + 110, NEW_Y + 20, 110, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end),
+        self:button(NEW_X + 110, NEW_Y + 20, 55, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite"}}})) end),
+        self:button(NEW_X + 165, NEW_Y + 20, 55, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end),
 
         self:label(ALIGN_X, ALIGN_Y, "Node Align"),
         self:button(ALIGN_X, ALIGN_Y + 20, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
@@ -1068,6 +1069,12 @@ function Editor:keypressed(key)
     end
     if key == "tab" then
         self.enabled = not self.enabled
+        if self.enabled then
+            _TIMELINE:stop()
+            _UI:resetProperties()
+        else
+            _TIMELINE:play()
+        end
     elseif key == "p" then
         self.uiTreeShowsInternalUI = not self.uiTreeShowsInternalUI
     elseif key == "up" then

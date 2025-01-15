@@ -9,6 +9,7 @@ local GridBackground = require("GridBackground")
 local TransitionTest = require("TransitionTest")
 local Editor = require("Editor")
 local Node = require("Node")
+local Timeline = require("Timeline")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 love.graphics.setLineStyle("rough")
@@ -80,6 +81,7 @@ _BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
 _UI = nil
 _EDITOR = Editor()
+_TIMELINE = Timeline()
 
 _BackgroundEnabled = true
 
@@ -183,6 +185,7 @@ function love.update(dt)
 	_TRANSITION:update(dt)
 	_UI:update(dt)
 	_EDITOR:update(dt)
+	_TIMELINE:update(dt)
 end
 
 

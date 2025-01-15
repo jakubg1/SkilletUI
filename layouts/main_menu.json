@@ -1,0 +1,172 @@
+{
+	"name": "root",
+	"canvasInputMode": true,
+	"children": [
+		{
+			"name": "Background",
+			"type": "box",
+			"children": [
+				{
+					"name": "Flash",
+					"type": "box",
+					"widget": {
+						"alpha": 0,
+						"color": "#ffffff",
+						"size": [
+							320,
+							180
+						]
+					}
+				},
+				{
+					"name": "Title",
+					"pos": [
+						160,
+						35
+					],
+					"widget": {
+						"gradientWaveSpeed": 100,
+						"text": "Chain Blast",
+						"gradientWaveFrequency": 200,
+						"color": "#4cff4c",
+						"gradientWaveColor": "#199919",
+						"scale": 4,
+						"shadowOffset": [
+							2,
+							2
+						]
+					},
+					"type": "text",
+					"visible": false,
+					"align": [
+						0.5,
+						0.5
+					]
+				},
+				{
+					"name": "TitleH1",
+					"pos": [
+						-170,
+						35
+					],
+					"type": "text",
+					"widget": {
+						"gradientWaveSpeed": 100,
+						"text": "Chain",
+						"gradientWaveFrequency": 200,
+						"color": "#4cff4c",
+						"gradientWaveColor": "#199919",
+						"scale": 4,
+						"shadowOffset": [
+							2,
+							2
+						]
+					},
+					"align": [
+						1,
+						0.5
+					]
+				},
+				{
+					"name": "TitleH2",
+					"pos": [
+						490,
+						35
+					],
+					"type": "text",
+					"widget": {
+						"gradientWaveSpeed": 100,
+						"text": "Blast",
+						"gradientWaveFrequency": 200,
+						"color": "#4cff4c",
+						"gradientWaveColor": "#199919",
+						"scale": 4,
+						"shadowOffset": [
+							2,
+							2
+						]
+					},
+					"align": [
+						0,
+						0.5
+					]
+				},
+				{
+					"name": "TitleDigit",
+					"pos": [
+						162,
+						35
+					],
+					"widget": [],
+					"type": "@titleDigit",
+					"visible": false,
+					"align": [
+						0.5,
+						0.5
+					]
+				},
+				{
+					"name": "Node",
+					"children": [
+						{
+							"name": "Text",
+							"pos": [
+								0,
+								80
+							],
+							"type": "text",
+							"widget": {
+								"text": "Main Menu"
+							},
+							"align": [
+								0.5,
+								0.5
+							]
+						},
+						{
+							"name": "Text#2",
+							"pos": [
+								0,
+								105
+							],
+							"type": "text",
+							"widget": {
+								"text": "Play the Demo!"
+							},
+							"align": [
+								0.5,
+								0.5
+							]
+						},
+						{
+							"name": "Text#3",
+							"pos": [
+								0,
+								115
+							],
+							"type": "text",
+							"widget": {
+								"text": "Exit"
+							},
+							"align": [
+								0.5,
+								0.5
+							]
+						}
+					],
+					"visible": false,
+					"parentAlign": [
+						0.5,
+						0
+					]
+				}
+			],
+			"widget": {
+				"size": [
+					320,
+					180
+				]
+			}
+		}
+	]
+}

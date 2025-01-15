@@ -132,6 +132,7 @@ end
 ---@param dt number Time delta, in seconds.
 function Text:update(dt)
     self.time = self.time + dt
+    self.properties:update(dt)
 end
 
 

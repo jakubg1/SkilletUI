@@ -94,7 +94,7 @@ end
 ---Updates the Canvas.
 ---@param dt number Time delta, in seconds.
 function Canvas:update(dt)
-    -- no-op
+    self.properties:update(dt)
 end
 
 

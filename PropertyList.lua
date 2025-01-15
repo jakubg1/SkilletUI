@@ -29,11 +29,9 @@ function PropertyList:new(properties, data)
 
     self.currentValues = {}
     self.baseValues = {}
-    self:deserialize(data)
+    self.animations = {}
 
-    self.animations = {
-        {property = "alpha", startValue = 1, finalValue = 0, maxTime = 0.5, time = 0.24972874}
-    }
+    self:deserialize(data)
 end
 
 
@@ -94,6 +92,50 @@ end
 
 
 
+---Resets all of the values in this property list to their base values and resets all animations.
+function PropertyList:reset()
+    for key, value in pairs(self.currentValues) do
+        self.currentValues[key] = self.baseValues[key]
+    end
+    self.animations = {}
+end
+
+
+
+---Animates the provided property, effective immediately.
+---@param key string The property key.
+---@param startValue any? The starting value of the animation. If not provided, the current value will be used.
+---@param finalValue any The final value of the animation.
+---@param duration number? The duration of the animation. If not specified, the property's value will be set immediately.
+function PropertyList:animateValue(key, startValue, finalValue, duration)
+    if duration then
+        startValue = startValue or self.currentValues[key]
+        table.insert(self.animations, {property = key, startValue = startValue, finalValue = finalValue, maxTime = duration, time = 0})
+    else
+        self.currentValues[key] = finalValue
+    end
+end
+
+
+
+---Updates the Property List. Dispatches animations.
+---@param dt number Time delta in seconds.
+function PropertyList:update(dt)
+    for i, animation in ipairs(self.animations) do
+        animation.time = animation.time + dt
+        if animation.time < animation.maxTime then
+            self.currentValues[animation.property] = _Utils.interpolate2(animation.startValue, animation.finalValue, 0, animation.maxTime, animation.time)
+        else
+            -- The animation is over.
+            self.currentValues[animation.property] = animation.finalValue
+            animation.delQueue = true
+        end
+    end
+    _Utils.removeDeadObjects(self.animations)
+end
+
+
+
 ---Saves currently stored data from this property list and returns it as a table.
 ---Only base values are saved!
 ---@return table
@@ -120,6 +162,9 @@ function PropertyList:serialize()
                 value = _IMAGE_LOOKUP[rawValue]
             elseif property.type == "Font" then
                 value = _FONT_LOOKUP[rawValue]
+            elseif property.type == "align" then
+                -- Alignments do not serialize back into names.
+                value = {rawValue.x, rawValue.y}
             elseif property.type == "shortcut" then
                 value = rawValue
             end
@@ -162,6 +207,8 @@ function PropertyList:deserialize(data)
                     value = _IMAGES[data[property.key]]
                 elseif property.type == "Font" then
                     value = _FONTS[data[property.key]]
+                elseif property.type == "align" then
+                    value = _ALIGNMENTS[data[property.key]] or Vec2(data[property.key])
                 elseif property.type == "shortcut" then
                     value = data[property.key]
                 end
