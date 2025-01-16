@@ -200,8 +200,8 @@ function Editor:generateNodePropertyUI(node)
         local currentRow = 0
         local nodeProperties = node:getPropertyList()
         local propertyHeaderUI = self:label(0, currentRow * 20, "Node Properties")
-        propertyHeaderUI.widget.underline = true
-        propertyHeaderUI.widget.characterSeparation = 2
+        propertyHeaderUI.widget:setProp("underline", true)
+        propertyHeaderUI.widget:setProp("characterSeparation", 2)
         currentRow = currentRow + 1
         propertiesUI:addChild(propertyHeaderUI)
         for i, property in ipairs(nodeProperties) do
@@ -223,8 +223,8 @@ function Editor:generateNodePropertyUI(node)
             if widget.getPropertyList then
                 local properties = widget:getPropertyList()
                 local propertyHeaderUI = self:label(0, currentRow * 20, "Widget Properties")
-                propertyHeaderUI.widget.underline = true
-                propertyHeaderUI.widget.characterSeparation = 2
+                propertyHeaderUI.widget:setProp("underline", true)
+                propertyHeaderUI.widget:setProp("characterSeparation", 2)
                 currentRow = currentRow + 1
                 propertiesUI:addChild(propertyHeaderUI)
                 for i, property in ipairs(properties) do

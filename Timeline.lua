@@ -24,7 +24,8 @@ function Timeline:new()
         {time = 3, type = "setNodeProperty", node = "Flash", property = "visible", value = true},
         {time = 3, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 1},
         {time = 3, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 0, duration = 1},
-        {time = 4, type = "setNodeProperty", node = "Node", property = "visible", value = true}
+        {time = 4, type = "setNodeProperty", node = "Node", property = "visible", value = true},
+        {time = 4.5, type = "setWidgetProperty", node = "TypeText", property = "typeInProgress", value = 1, duration = 1.5}
     }
 
     self.playbackTime = nil

@@ -34,7 +34,8 @@ function Text:new(node, data)
         {name = "Wave Speed", key = "waveSpeed", type = "number", nullable = true},
         {name = "Gradient Wave Color", key = "gradientWaveColor", type = "color", nullable = true},
         {name = "Gradient Wave Frequency", key = "gradientWaveFrequency", type = "number", nullable = true},
-        {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number", nullable = true}
+        {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number", nullable = true},
+        {name = "Type-in Progress", key = "typeInProgress", type = "number", nullable = true}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 
@@ -79,35 +80,12 @@ end
 
 
 
----Enables or disables the wavy effect, if no parameters are provided.
----@param amplitude number? The maximum number of pixels that each letter can go up and down.
----@param frequency number? The horizontal distance between two wave peaks, in pixels.
----@param speed number? How fast the wave should travel, in pixels per second.
-function Text:setWave(amplitude, frequency, speed)
-    self:setProp("waveAmplitude", amplitude)
-    self:setProp("waveFrequency", frequency)
-    self:setProp("waveSpeed", speed)
-end
-
-
-
----Enables or disables the wave gradient effect, if no parameters are provided.
----@param color Color? The secondary color to be interpolated to. The first one is the main text color.
----@param frequency number? The horizontal distance between two wave peaks, in pixels.
----@param speed number? How fast the wave should travel, in pixels per second.
-function Text:setGradientWave(color, frequency, speed)
-    self:setProp("gradientWaveColor", color)
-    self:setProp("gradientWaveFrequency", frequency)
-    self:setProp("gradientWaveSpeed", speed)
-end
-
-
-
 ---Returns the size of this Text.
 ---@return Vector2
 function Text:getSize()
     local prop = self.properties:getValues()
-    return Vec2(prop.font:getWidth(prop.text) - 1, prop.font:getHeight()) * prop.scale + Vec2(self:getEffectiveCharacterSeparation() * (utf8.len(prop.text) - 1) + prop.boldness - 1, 0)
+    local text = self:getText()
+    return Vec2(prop.font:getWidth(text) - 1, prop.font:getHeight()) * prop.scale + Vec2(self:getEffectiveCharacterSeparation() * (utf8.len(text) - 1) + prop.boldness - 1, 0)
 end
 
 
@@ -137,6 +115,19 @@ end
 
 
 
+---Returns the actual text that is visible on this Widget. It can differ from the real text if the `typeInProgress` property is set.
+---@return string
+function Text:getText()
+    local prop = self.properties:getValues()
+    if not prop.typeInProgress then
+        return prop.text
+    end
+    local totalCharsRendered = math.floor(_Utils.interpolateClamped(0, utf8.len(prop.text), prop.typeInProgress))
+    return prop.text:sub(0, utf8.offset(prop.text, totalCharsRendered + 1) - 1)
+end
+
+
+
 ---Returns the effective character separation of this Text, as both the character separation but also boldness will push the characters apart.
 ---@return integer
 function Text:getEffectiveCharacterSeparation()
@@ -161,6 +152,7 @@ end
 ---Draws the Text on the screen.
 function Text:draw()
     local pos = self.node:getGlobalPos()
+    local text = self:getText()
     local prop = self.properties:getValues()
 
     love.graphics.setFont(prop.font)
@@ -172,16 +164,16 @@ function Text:draw()
         -- Optimize drawing if there are no effects which require drawing each character separately.
         if prop.shadowOffset then
             love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-            love.graphics.print(prop.text, math.floor(pos.x + prop.shadowOffset.x + 0.5), math.floor(pos.y + prop.shadowOffset.y + 0.5), 0, prop.scale)
+            love.graphics.print(text, math.floor(pos.x + prop.shadowOffset.x + 0.5), math.floor(pos.y + prop.shadowOffset.y + 0.5), 0, prop.scale)
         end
         love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
-        love.graphics.print(prop.text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, prop.scale)
+        love.graphics.print(text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, prop.scale)
     else
         -- Draw everything character by character.
         local x = 0
         local sep = self:getEffectiveCharacterSeparation()
-        for i = 1, utf8.len(prop.text) do
-            local chr = prop.text:sub(utf8.offset(prop.text, i), utf8.offset(prop.text, i + 1) - 1)
+        for i = 1, utf8.len(text) do
+            local chr = text:sub(utf8.offset(text, i), utf8.offset(text, i + 1) - 1)
             local w = prop.font:getWidth(chr) * prop.scale
             local y = 0
             if prop.waveAmplitude then

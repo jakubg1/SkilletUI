@@ -1,19 +1,27 @@
 {
+	"canvasInputMode": true,
+	"name": "root",
 	"children": [
 		{
+			"widget": {
+				"size": [
+					320,
+					180
+				]
+			},
 			"children": [
 				{
 					"widget": {
-						"color": "#ffffff",
+						"alpha": 0,
 						"size": [
 							320,
 							180
 						],
-						"alpha": 0
+						"color": "#ffffff"
 					},
-					"name": "Flash",
 					"visible": false,
-					"type": "box"
+					"type": "box",
+					"name": "Flash"
 				},
 				{
 					"align": [
@@ -25,68 +33,68 @@
 						160,
 						35
 					],
-					"type": "text",
 					"visible": false,
 					"widget": {
+						"color": "#4cff4c",
+						"gradientWaveColor": "#199919",
 						"gradientWaveSpeed": 100,
 						"gradientWaveFrequency": 200,
 						"text": "Chain Blast",
-						"gradientWaveColor": "#199919",
 						"scale": 4,
 						"shadowOffset": [
 							2,
 							2
-						],
-						"color": "#4cff4c"
-					}
+						]
+					},
+					"type": "text"
 				},
 				{
 					"align": [
 						1,
 						0.5
 					],
-					"name": "TitleH1",
+					"type": "text",
 					"pos": [
 						-170,
 						35
 					],
-					"type": "text",
 					"widget": {
+						"color": "#4cff4c",
+						"gradientWaveColor": "#199919",
 						"gradientWaveSpeed": 100,
 						"gradientWaveFrequency": 200,
 						"text": "Chain",
-						"gradientWaveColor": "#199919",
 						"scale": 4,
 						"shadowOffset": [
 							2,
 							2
-						],
-						"color": "#4cff4c"
-					}
+						]
+					},
+					"name": "TitleH1"
 				},
 				{
 					"align": [
 						0,
 						0.5
 					],
-					"name": "TitleH2",
+					"type": "text",
 					"pos": [
 						490,
 						35
 					],
-					"type": "text",
 					"widget": {
+						"color": "#4cff4c",
+						"gradientWaveColor": "#199919",
 						"gradientWaveSpeed": 100,
 						"gradientWaveFrequency": 200,
 						"text": "Blast",
-						"gradientWaveColor": "#199919",
 						"scale": 4,
 						"shadowOffset": [
 							2,
 							2
-						],
-						"color": "#4cff4c"
-					}
+						]
+					},
+					"name": "TitleH2"
 				},
 				{
 					"align": [
@@ -98,9 +106,9 @@
 						162,
 						35
 					],
-					"type": "@titleDigit",
 					"visible": false,
-					"widget": []
+					"widget": [],
+					"type": "@titleDigit"
 				},
 				{
 					"children": [
@@ -109,65 +117,73 @@
 								0.5,
 								0.5
 							],
-							"name": "Text",
+							"type": "text",
 							"pos": [
 								0,
 								80
 							],
-							"type": "text",
 							"widget": {
 								"text": "Main Menu"
-							}
+							},
+							"name": "Text"
 						},
 						{
 							"align": [
 								0.5,
 								0.5
 							],
-							"name": "Text#2",
+							"type": "text",
 							"pos": [
 								0,
 								105
 							],
-							"type": "text",
 							"widget": {
 								"text": "Play the Demo!"
-							}
+							},
+							"name": "Text#2"
 						},
 						{
 							"align": [
 								0.5,
 								0.5
 							],
-							"name": "Text#3",
+							"type": "text",
 							"pos": [
 								0,
 								115
 							],
-							"type": "text",
 							"widget": {
 								"text": "Exit"
-							}
+							},
+							"name": "Text#3"
+						},
+						{
+							"align": [
+								0.5,
+								0.5
+							],
+							"type": "text",
+							"pos": [
+								0,
+								151
+							],
+							"widget": {
+								"text": "It will be a while until I get back on Chain Blast 2 gameplay dev :(",
+								"typeInProgress": 0
+							},
+							"name": "TypeText"
 						}
 					],
+					"visible": false,
 					"name": "Node",
 					"parentAlign": [
 						0.5,
 						0
-					],
-					"visible": false
+					]
 				}
 			],
 			"name": "Background",
-			"widget": {
-				"size": [
-					320,
-					180
-				]
-			},
 			"type": "box"
 		}
-	],
-	"name": "root",
-	"canvasInputMode": true
+	]
 }
