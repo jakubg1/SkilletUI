@@ -57,6 +57,7 @@ _COLORS = {
 	black = Color("000"),
 	blue = Color("00f"),
 	cyan = Color("0ff"),
+	green = Color("0f0"),
 	yellow = Color("ff0"),
 	red = Color("f00"),
 	orange = Color("f60"),

@@ -15,17 +15,26 @@ local Vec2 = require("Vector2")
 ---The first Timeline animates the positions and alphas of Nodes/Widgets.
 function Timeline:new()
     self.events = {
-        {time = 2.5, type = "setNodeProperty", node = "TitleH1", property = "pos", value = Vec2(160, 35), duration = 0.5},
-        {time = 2.5, type = "setNodeProperty", node = "TitleH2", property = "pos", value = Vec2(160, 35), duration = 0.5},
-        {time = 3, type = "setNodeProperty", node = "TitleH1", property = "visible", value = false},
-        {time = 3, type = "setNodeProperty", node = "TitleH2", property = "visible", value = false},
-        {time = 3, type = "setNodeProperty", node = "Title", property = "visible", value = true},
-        {time = 3, type = "setNodeProperty", node = "TitleDigit", property = "visible", value = true},
-        {time = 3, type = "setNodeProperty", node = "Flash", property = "visible", value = true},
-        {time = 3, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 1},
-        {time = 3, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 0, duration = 1},
-        {time = 4, type = "setNodeProperty", node = "Node", property = "visible", value = true},
-        {time = 4.5, type = "setWidgetProperty", node = "TypeText", property = "typeInProgress", value = 1, duration = 1.5}
+        {time = 1, type = "setNodeProperty", node = "TitleH1", property = "pos", value = Vec2(160, 35), duration = 0.5},
+        {time = 1, type = "setNodeProperty", node = "TitleH2", property = "pos", value = Vec2(160, 35), duration = 0.5},
+        {time = 1.5, type = "setNodeProperty", node = "TitleH1", property = "visible", value = false},
+        {time = 1.5, type = "setNodeProperty", node = "TitleH2", property = "visible", value = false},
+        {time = 1.5, type = "setNodeProperty", node = "Title", property = "visible", value = true},
+        {time = 1.5, type = "setNodeProperty", node = "TitleDigit", property = "visible", value = true},
+        {time = 1.5, type = "setNodeProperty", node = "Flash", property = "visible", value = true},
+        {time = 1.5, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 1},
+        {time = 1.5, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 0, duration = 1},
+        {time = 2.5, type = "setNodeProperty", node = "Node", property = "visible", value = true},
+        {time = 3, type = "setWidgetProperty", node = "TypeText", property = "typeInProgress", value = 1, duration = 1.5}
+    }
+    self.nodeNames = {
+        "Title",
+        "TitleH1",
+        "TitleH2",
+        "TitleDigit",
+        "Flash",
+        "Node",
+        "TypeText"
     }
 
     self.playbackTime = nil
@@ -91,6 +100,23 @@ end
 function Timeline:stop()
     self.playbackTime = nil
     self.playbackStep = nil
+end
+
+
+
+---Returns a table, keyed by node names, of all events they have, in order of being specified in the `events` list.
+---@return table
+function Timeline:getInfo()
+    local info = {}
+    for i, event in ipairs(self.events) do
+        -- Create a list for a node if that's the first time we see it.
+        if not info[event.node] then
+            info[event.node] = {}
+        end
+        -- Add the event to the appropriate list.
+        table.insert(info[event.node], event)
+    end
+    return info
 end
 
 

@@ -8,6 +8,7 @@ local Vec2 = require("Vector2")
 local Node = require("Node")
 local Input = require("Input")
 local EditorUITree = require("EditorUITree")
+local EditorKeyframes = require("EditorKeyframes")
 local EditorCommands = require("EditorCommands")
 
 local CommandNodeAdd = require("EditorCommands.NodeAdd")
@@ -99,6 +100,8 @@ function Editor:new()
     self.uiTree = EditorUITree(self)
     self.uiTreeInfo = {}
     self.uiTreeShowsInternalUI = false
+
+    self.keyframeEditor = EditorKeyframes(self)
 
     self.commandMgr = EditorCommands(self)
 end
@@ -789,10 +792,10 @@ function Editor:load()
     local NEW_Y = 100
     local UTILITY_X = 0
     local UTILITY_Y = 700
-    local ALIGN_X = 250
-    local ALIGN_Y = 600
-    local PALIGN_X = 450
-    local PALIGN_Y = 600
+    local ALIGN_X = 240
+    local ALIGN_Y = 590
+    local PALIGN_X = 360
+    local PALIGN_Y = 590
     local FILE_X = 250
     local FILE_Y = 10
     local nodes = {
@@ -836,8 +839,6 @@ function Editor:load()
         self:button(PALIGN_X, PALIGN_Y + 60, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
         self:button(PALIGN_X + 30, PALIGN_Y + 60, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
         self:button(PALIGN_X + 60, PALIGN_Y + 60, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
-
-        self:label(ALIGN_X, ALIGN_Y + 90, "Shift+Click a node to make it a parent of the currently selected node"),
 
         self:button(FILE_X, FILE_Y, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"}),
         self:button(FILE_X + 60, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false) end, {ctrl = true, key = "l"}),
@@ -894,6 +895,8 @@ end
 ---Draws the Editor.
 function Editor:draw()
     if not self.enabled then
+        love.graphics.setFont(_FONTS.editor)
+        self.keyframeEditor:draw()
         return
     end
     self.UI:findChildByName("drawtime"):setText(string.format("Drawing took approximately %.1fms", _DrawTime * 1000))
@@ -918,6 +921,9 @@ function Editor:draw()
 
     -- UI tree
     self.uiTree:draw()
+
+    -- Keyframe editor (here for now)
+    self.keyframeEditor:draw()
 
     -- Command buffer
     self.commandMgr:draw()
@@ -1000,6 +1006,7 @@ function Editor:mousepressed(x, y, button, istouch, presses)
         local resizeHandleID = self.selectedNode and self.selectedNode:getHoveredResizeHandleID()
         if _IsShiftPressed() then
             -- Shift+Click parents the selected node instead.
+            -- TODO: Multi-selection !!!
             self:parentSelectedNodeToHoveredNode()
         elseif resizeHandleID then
             -- We've grabbed a resize handle of the currently selected node!
