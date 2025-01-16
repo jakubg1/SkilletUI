@@ -834,9 +834,6 @@ function Node:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvis
             return potentialResult
         end
         if child:hasPixel(pos) and (not ignoreControlledNodes or not child:isControlled()) and (not ignoreInvisibleNodes or child:isVisible()) then
-            if ignoreInvisibleNodes then
-                print(child:getName(), child:isVisible())
-            end
             return child
         end
     end
