@@ -430,7 +430,7 @@ end
 ---@return boolean
 function Node:isVisible()
     if self.parent then
-        return self.parent:isVisible() or self:getProp("visible")
+        return self.parent:isVisible() and self:getProp("visible")
     end
     return self:getProp("visible")
 end
@@ -825,14 +825,18 @@ end
 ---Returns the first encountered child that contains the provided position (recursively, depth first), or `nil` if it is not found.
 ---@param pos Vector2 The position to be checked.
 ---@param ignoreControlledNodes boolean? If set, controlled nodes will not be returned by this function.
+---@param ignoreInvisibleNodes boolean? If set, invisible nodes will not be returned by this function.
 ---@return Node?
-function Node:findChildByPixelDepthFirst(pos, ignoreControlledNodes)
+function Node:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvisibleNodes)
     for i, child in ipairs(self.children) do
-        local potentialResult = child:findChildByPixelDepthFirst(pos, ignoreControlledNodes)
+        local potentialResult = child:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvisibleNodes)
         if potentialResult then
             return potentialResult
         end
-        if child:hasPixel(pos) and (not ignoreControlledNodes or not child:isControlled()) then
+        if child:hasPixel(pos) and (not ignoreControlledNodes or not child:isControlled()) and (not ignoreInvisibleNodes or child:isVisible()) then
+            if ignoreInvisibleNodes then
+                print(child:getName(), child:isVisible())
+            end
             return child
         end
     end

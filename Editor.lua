@@ -161,7 +161,7 @@ function Editor:getHoveredNode()
         return self.selectedNode
     end
     -- Finally, look if any node is directly hovered.
-    return _UI:findChildByPixelDepthFirst(_MouseCPos, true)
+    return _UI:findChildByPixelDepthFirst(_MouseCPos, true, true)
 end
 
 
@@ -906,10 +906,10 @@ function Editor:draw()
 
     -- Hovered and selected node
     if self.hoveredNode then
-        self.UI:findChildByName("hovText"):setText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode.name, self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()))
+        self.UI:findChildByName("hovText"):setText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode:getName(), self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()))
     end
     if self.selectedNode then
-        self.UI:findChildByName("selText"):setText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode.name, self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()))
+        self.UI:findChildByName("selText"):setText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode:getName(), self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()))
     end
     self.UI:draw()
 

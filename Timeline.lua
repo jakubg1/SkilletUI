@@ -21,6 +21,7 @@ function Timeline:new()
         {time = 3, type = "setNodeProperty", node = "TitleH2", property = "visible", value = false},
         {time = 3, type = "setNodeProperty", node = "Title", property = "visible", value = true},
         {time = 3, type = "setNodeProperty", node = "TitleDigit", property = "visible", value = true},
+        {time = 3, type = "setNodeProperty", node = "Flash", property = "visible", value = true},
         {time = 3, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 1},
         {time = 3, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 0, duration = 1},
         {time = 4, type = "setNodeProperty", node = "Node", property = "visible", value = true}

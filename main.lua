@@ -84,6 +84,7 @@ _EDITOR = Editor()
 _TIMELINE = Timeline()
 
 _BackgroundEnabled = true
+_FullscreenPresentation = false
 
 
 
@@ -238,12 +239,15 @@ function love.keypressed(key)
 		_UI:keypressed(key)
 		if key == "`" then
 			_BackgroundEnabled = not _BackgroundEnabled
+		elseif key == "f" then
+			_FullscreenPresentation = not _FullscreenPresentation
 		end
 	end
 	_EDITOR:keypressed(key)
 	-- Full-screen presentation mode!
-	_CANVAS.pos = _EDITOR.enabled and _CANVAS_OFFSET_EDITOR or _CANVAS_OFFSET_PRESENTATION
-	_CANVAS.size = _EDITOR.enabled and _CANVAS_SIZE_EDITOR or _CANVAS_SIZE_PRESENTATION
+	local fullscreen = not _EDITOR.enabled and _FullscreenPresentation
+	_CANVAS.pos = fullscreen and _CANVAS_OFFSET_PRESENTATION or _CANVAS_OFFSET_EDITOR
+	_CANVAS.size = fullscreen and _CANVAS_SIZE_PRESENTATION or _CANVAS_SIZE_EDITOR
 end
 
 

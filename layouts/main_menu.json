@@ -1,49 +1,50 @@
 {
-	"name": "root",
-	"canvasInputMode": true,
 	"children": [
 		{
-			"name": "Background",
-			"type": "box",
 			"children": [
 				{
-					"name": "Flash",
-					"type": "box",
 					"widget": {
-						"alpha": 0,
 						"color": "#ffffff",
 						"size": [
 							320,
 							180
-						]
-					}
+						],
+						"alpha": 0
+					},
+					"name": "Flash",
+					"visible": false,
+					"type": "box"
 				},
 				{
+					"align": [
+						0.5,
+						0.5
+					],
 					"name": "Title",
 					"pos": [
 						160,
 						35
 					],
+					"type": "text",
+					"visible": false,
 					"widget": {
 						"gradientWaveSpeed": 100,
-						"text": "Chain Blast",
 						"gradientWaveFrequency": 200,
-						"color": "#4cff4c",
+						"text": "Chain Blast",
 						"gradientWaveColor": "#199919",
 						"scale": 4,
 						"shadowOffset": [
 							2,
 							2
-						]
-					},
-					"type": "text",
-					"visible": false,
-					"align": [
-						0.5,
-						0.5
-					]
+						],
+						"color": "#4cff4c"
+					}
 				},
 				{
+					"align": [
+						1,
+						0.5
+					],
 					"name": "TitleH1",
 					"pos": [
 						-170,
@@ -52,22 +53,22 @@
 					"type": "text",
 					"widget": {
 						"gradientWaveSpeed": 100,
-						"text": "Chain",
 						"gradientWaveFrequency": 200,
-						"color": "#4cff4c",
+						"text": "Chain",
 						"gradientWaveColor": "#199919",
 						"scale": 4,
 						"shadowOffset": [
 							2,
 							2
-						]
-					},
-					"align": [
-						1,
-						0.5
-					]
+						],
+						"color": "#4cff4c"
+					}
 				},
 				{
+					"align": [
+						0,
+						0.5
+					],
 					"name": "TitleH2",
 					"pos": [
 						490,
@@ -76,39 +77,38 @@
 					"type": "text",
 					"widget": {
 						"gradientWaveSpeed": 100,
-						"text": "Blast",
 						"gradientWaveFrequency": 200,
-						"color": "#4cff4c",
+						"text": "Blast",
 						"gradientWaveColor": "#199919",
 						"scale": 4,
 						"shadowOffset": [
 							2,
 							2
-						]
-					},
-					"align": [
-						0,
-						0.5
-					]
+						],
+						"color": "#4cff4c"
+					}
 				},
 				{
+					"align": [
+						0.5,
+						0.5
+					],
 					"name": "TitleDigit",
 					"pos": [
 						162,
 						35
 					],
-					"widget": [],
 					"type": "@titleDigit",
 					"visible": false,
-					"align": [
-						0.5,
-						0.5
-					]
+					"widget": []
 				},
 				{
-					"name": "Node",
 					"children": [
 						{
+							"align": [
+								0.5,
+								0.5
+							],
 							"name": "Text",
 							"pos": [
 								0,
@@ -117,13 +117,13 @@
 							"type": "text",
 							"widget": {
 								"text": "Main Menu"
-							},
+							}
+						},
+						{
 							"align": [
 								0.5,
 								0.5
-							]
-						},
-						{
+							],
 							"name": "Text#2",
 							"pos": [
 								0,
@@ -132,13 +132,13 @@
 							"type": "text",
 							"widget": {
 								"text": "Play the Demo!"
-							},
+							}
+						},
+						{
 							"align": [
 								0.5,
 								0.5
-							]
-						},
-						{
+							],
 							"name": "Text#3",
 							"pos": [
 								0,
@@ -147,26 +147,27 @@
 							"type": "text",
 							"widget": {
 								"text": "Exit"
-							},
-							"align": [
-								0.5,
-								0.5
-							]
+							}
 						}
 					],
-					"visible": false,
+					"name": "Node",
 					"parentAlign": [
 						0.5,
 						0
-					]
+					],
+					"visible": false
 				}
 			],
+			"name": "Background",
 			"widget": {
 				"size": [
 					320,
 					180
 				]
-			}
+			},
+			"type": "box"
 		}
-	]
+	],
+	"name": "root",
+	"canvasInputMode": true
 }
