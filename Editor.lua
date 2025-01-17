@@ -885,6 +885,7 @@ function Editor:update(dt)
     end
 
     self.uiTree:update(dt)
+    self.keyframeEditor:update(dt)
 
     self.UI:update(dt)
     self.INPUT_DIALOG:update(dt)
@@ -1059,6 +1060,7 @@ end
 function Editor:wheelmoved(x, y)
     self.INPUT_DIALOG:wheelmoved(x, y)
     self.uiTree:wheelmoved(x, y)
+    self.keyframeEditor:wheelmoved(x, y)
 end
 
 

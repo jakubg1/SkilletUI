@@ -208,20 +208,7 @@ function EditorUITree:draw()
         elseif not line.node:isVisible() then
             alpha = 0.75
         end
-        local image = _IMAGES.widget_none
-        if line.node.type == "box" then
-            image = _IMAGES.widget_box
-        elseif line.node.type == "button" then
-            image = _IMAGES.widget_button
-        elseif line.node.type == "canvas" then
-            image = _IMAGES.widget_canvas
-        elseif line.node.type == "9sprite" then
-            image = _IMAGES.widget_ninesprite
-        elseif line.node.type == "text" then
-            image = _IMAGES.widget_text
-        elseif line.node.type == "@titleDigit" then
-            image = _IMAGES.widget_titledigit
-        end
+        local image = line.node:getIcon()
         if bgColor then
             love.graphics.setColor(bgColor.r, bgColor.g, bgColor.b, 0.3)
             love.graphics.rectangle("fill", self.POS.x, y, self.SIZE.x, self.ITEM_HEIGHT)

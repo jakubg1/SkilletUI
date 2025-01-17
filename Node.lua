@@ -14,17 +14,6 @@ local NineSprite = require("Widgets.NineSprite")
 local Text = require("Widgets.Text")
 local TitleDigit = require("Widgets.TitleDigit")
 
-local WIDGET_TYPES = {
-    none = {constructor = nil, defaultName = "Node"},
-    box = {constructor = Box, defaultName = "Box"},
-    button = {constructor = Button, defaultName = "Button"},
-    canvas = {constructor = Canvas, defaultName = "Canvas"},
-    input_text = {constructor = InputText, defaultName = "InputText"},
-    ["9sprite"] = {constructor = NineSprite, defaultName = "NineSprite"},
-    text = {constructor = Text, defaultName = "Text"},
-    ["@titleDigit"] = {constructor = TitleDigit, defaultName = "TitleDigit"}
-}
-
 
 
 ---Creates a new UI Node.
@@ -44,6 +33,17 @@ function Node:new(data, parent)
         {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
+
+    self.WIDGET_TYPES = {
+        none = {constructor = nil, defaultName = "Node", icon = _IMAGES.widget_none},
+        box = {constructor = Box, defaultName = "Box", icon = _IMAGES.widget_box},
+        button = {constructor = Button, defaultName = "Button", icon = _IMAGES.widget_button},
+        canvas = {constructor = Canvas, defaultName = "Canvas", icon = _IMAGES.widget_canvas},
+        input_text = {constructor = InputText, defaultName = "InputText", icon = _IMAGES.widget_none},
+        ["9sprite"] = {constructor = NineSprite, defaultName = "NineSprite", icon = _IMAGES.widget_ninesprite},
+        text = {constructor = Text, defaultName = "Text", icon = _IMAGES.widget_text},
+        ["@titleDigit"] = {constructor = TitleDigit, defaultName = "TitleDigit", icon = _IMAGES.widget_titledigit}
+    }
 
     self.type = "none"
 
@@ -274,6 +274,14 @@ function Node:getResizeHandlePos(id)
         return Vec2(pos.x + size.x + 1, pos.y + size.y + 1)
     end
     error(string.format("Invalid resize handle ID: %s (expected 1..8)", id))
+end
+
+
+
+---Returns this Node's icon based on its Widget's type, for use in editors.
+---@return Image
+function Node:getIcon()
+    return self.WIDGET_TYPES[self.type].icon
 end
 
 
@@ -1051,7 +1059,7 @@ function Node:deserialize(data)
     self.properties:deserialize(data)
 
     self.type = data.type or "none"
-    local widgetData = WIDGET_TYPES[self.type]
+    local widgetData = self.WIDGET_TYPES[self.type]
     if self.properties:getBaseValue("name") == "ERROR" then
         self.properties:setBaseValue("name", widgetData.defaultName)
     end
