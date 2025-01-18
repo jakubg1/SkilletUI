@@ -172,12 +172,13 @@ function EditorKeyframes:draw()
             elseif event.property == "typeInProgress" then
                 color = _COLORS.blue
             end
-            if x1 == x2 then
-                -- Instant events are drawn as a line.
+            if x1 == x2 or event.startValue then
+                -- Instant events and events with a start value are drawn as a line.
                 love.graphics.setLineWidth(3)
                 love.graphics.setColor(color.r, color.g, color.b)
                 love.graphics.line(x1, y, x1, y + self.ITEM_HEIGHT)
-            else
+            end
+            if x1 ~= x2 then
                 -- Events that have duration are drawn as a filled box.
                 love.graphics.setColor(color.r, color.g, color.b, 0.5)
                 love.graphics.rectangle("fill", x1, y, x2 - x1, self.ITEM_HEIGHT)

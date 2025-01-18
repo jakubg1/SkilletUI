@@ -26,6 +26,9 @@ function EditorUITree:new(editor)
     self.ITEM_INDENT = 20
     self.ITEM_MARGIN = 5
 
+    self.uiTreeInfo = {}
+    self.showInternalUI = false
+
     self.scrollOffset = 0
     self.maxScrollOffset = 0
     self.hoverTop = false
@@ -39,6 +42,25 @@ function EditorUITree:new(editor)
     self.nameEditLastClickedNode = nil
     self.nameEditNode = nil
     self.nameEditValue = nil
+end
+
+
+
+---Returns UI tree information.
+---This function should only be called internally. If you want to get the current UI tree info, fetch the `self.uiTreeInfo` field instead.
+---@param node Node? The UI node of which the tree should be added to the list.
+---@param tab table? The table, used internally.
+---@param indent integer? The starting indentation.
+---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
+function EditorUITree:getUITreeInfo(node, tab, indent)
+    node = node or _UI
+    tab = tab or {}
+    indent = indent or 0
+    table.insert(tab, {node = node, indent = indent})
+    for i, child in ipairs(node.children) do
+        self:getUITreeInfo(child, tab, indent + 1)
+    end
+    return tab
 end
 
 
@@ -68,7 +90,7 @@ function EditorUITree:getHoveredNode()
     end
     self.hoverTop = false
     self.hoverBottom = false
-    for i, entry in ipairs(self.editor.uiTreeInfo) do
+    for i, entry in ipairs(self.uiTreeInfo) do
         local y = self:getItemY(i)
         if _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, y), Vec2(self.SIZE.x, self.ITEM_HEIGHT)) then
             self.editor.isNodeHoverIndirect = true
@@ -160,6 +182,9 @@ end
 ---Updates the Editor UI Tree.
 ---@param dt number Time delta in seconds.
 function EditorUITree:update(dt)
+    -- Update the tree information.
+    self.uiTreeInfo = self:getUITreeInfo(self.showInternalUI and self.editor.UI or nil)
+
     -- Handle the node dragging in the node tree.
     if self.editor.selectedNode and self.dragOrigin then
         local movement = _MousePos - self.dragOrigin
@@ -171,7 +196,7 @@ function EditorUITree:update(dt)
     end
 
     -- Calculate the maximum scroll offset.
-    self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #self.editor.uiTreeInfo - self.SIZE.y, 0)
+    self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #self.uiTreeInfo - self.SIZE.y, 0)
     -- Scroll back if we've scrolled too far.
     self.scrollOffset = math.min(self.scrollOffset, self.maxScrollOffset)
 end
@@ -186,7 +211,7 @@ function EditorUITree:draw()
 
     -- Node tree
     love.graphics.setScissor(self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
-    for i, line in ipairs(self.editor.uiTreeInfo) do
+    for i, line in ipairs(self.uiTreeInfo) do
         local x = self.POS.x + self.ITEM_INDENT * line.indent
         local y = self.POS.y + self:getItemY(i)
         local color = _COLORS.white
@@ -326,21 +351,28 @@ end
 ---@param key string The key code.
 ---@return boolean
 function EditorUITree:keypressed(key)
+    if key == "p" then
+        self.showInternalUI = not self.showInternalUI
+        return true
+    end
     if not self.nameEditNode then
         return false
     end
 	if key == "backspace" then
+        -- Remove the last character in the name edit field.
         local offset = utf8.offset(self.nameEditValue, -1)
         if offset then
             self.nameEditValue = self.nameEditValue:sub(1, offset - 1)
         end
         return true
     elseif key == "return" then
+        -- Submit the current edit value in the name edit field.
         self.editor:executeCommand(CommandNodeSetProperty(self.nameEditNode, "name", self.nameEditValue))
         self.nameEditNode = nil
         self.nameEditValue = nil
         return true
     elseif key == "escape" then
+        -- Reject the current edit value in the name edit field.
         self.nameEditNode = nil
         self.nameEditValue = nil
         return true

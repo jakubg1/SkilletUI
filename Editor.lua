@@ -98,31 +98,8 @@ function Editor:new()
     self.nodeResizeDirection = nil
 
     self.uiTree = EditorUITree(self)
-    self.uiTreeInfo = {}
-    self.uiTreeShowsInternalUI = false
-
     self.keyframeEditor = EditorKeyframes(self)
-
     self.commandMgr = EditorCommands(self)
-end
-
-
-
----Returns UI tree information.
----This function should only be called internally. If you want to get the current UI tree info, fetch the `self.uiTreeInfo` field instead.
----@param node Node? The UI node of which the tree should be added to the list.
----@param tab table? The table, used internally.
----@param indent integer? The starting indentation.
----@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
-function Editor:getUITreeInfo(node, tab, indent)
-    node = node or _UI
-    tab = tab or {}
-    indent = indent or 0
-    table.insert(tab, {node = node, indent = indent})
-    for i, child in ipairs(node.children) do
-        self:getUITreeInfo(child, tab, indent + 1)
-    end
-    return tab
 end
 
 
@@ -130,7 +107,7 @@ end
 ---Prints the internal Editor UI tree to the console.
 function Editor:printInternalUITreeInfo()
     -- Node tree
-    for i, line in ipairs(self:getUITreeInfo(self.UI)) do
+    for i, line in ipairs(self.uiTree:getUITreeInfo(self.UI)) do
         local suffix = ""
         if line.node.isController then
             suffix = suffix .. " (controller)"
@@ -856,7 +833,6 @@ end
 ---Updates the Editor.
 ---@param dt number Time delta in seconds.
 function Editor:update(dt)
-    self.uiTreeInfo = self:getUITreeInfo(self.uiTreeShowsInternalUI and self.UI or nil)
     self.hoveredNode = self:getHoveredNode()
 
     -- Handle the node dragging.
@@ -1084,8 +1060,6 @@ function Editor:keypressed(key)
         else
             _TIMELINE:play()
         end
-    elseif key == "p" then
-        self.uiTreeShowsInternalUI = not self.uiTreeShowsInternalUI
     elseif key == "up" then
         self:moveSelectedNode(Vec2(0, _IsShiftPressed() and -10 or -1))
     elseif key == "down" then

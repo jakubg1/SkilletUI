@@ -22,8 +22,7 @@ function Timeline:new()
         {time = 1.5, type = "setNodeProperty", node = "Title", property = "visible", value = true},
         {time = 1.5, type = "setNodeProperty", node = "TitleDigit", property = "visible", value = true},
         {time = 1.5, type = "setNodeProperty", node = "Flash", property = "visible", value = true},
-        {time = 1.5, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 1},
-        {time = 1.5, type = "setWidgetProperty", node = "Flash", property = "alpha", value = 0, duration = 1},
+        {time = 1.5, type = "setWidgetProperty", node = "Flash", property = "alpha", startValue = 1, value = 0, duration = 1},
         {time = 2.5, type = "setNodeProperty", node = "Node", property = "visible", value = true},
         {time = 3, type = "setWidgetProperty", node = "TypeText", property = "typeInProgress", value = 1, duration = 1.5}
     }
@@ -75,14 +74,14 @@ function Timeline:processEvent(event)
             print(string.format("Could not find node %s to animate, skipping", event.node))
             return
         end
-        node.properties:animateValue(event.property, nil, event.value, event.duration)
+        node.properties:animateValue(event.property, event.startValue, event.value, event.duration)
     elseif event.type == "setWidgetProperty" then
         local node = _UI:findChildByName(event.node)
         if not node then
             print(string.format("Could not find node %s to animate, skipping", event.node))
             return
         end
-        node.widget.properties:animateValue(event.property, nil, event.value, event.duration)
+        node.widget.properties:animateValue(event.property, event.startValue, event.value, event.duration)
     end
 end
 
