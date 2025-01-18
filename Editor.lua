@@ -73,11 +73,11 @@ function Editor:new()
         Vec2(-1, -1),
         Vec2(0, -1),
         Vec2(1, -1),
-        Vec2(-1, 0),
         Vec2(1, 0),
-        Vec2(-1, 1),
+        Vec2(1, 1),
         Vec2(0, 1),
-        Vec2(1, 1)
+        Vec2(-1, 1),
+        Vec2(-1, 0)
     }
 
     self.currentSceneFile = nil
@@ -96,6 +96,7 @@ function Editor:new()
     self.nodeResizeOriginalPos = nil
     self.nodeResizeOriginalSize = nil
     self.nodeResizeDirection = nil
+    self.nodeResizeHandleID = nil
 
     self.uiTree = EditorUITree(self)
     self.keyframeEditor = EditorKeyframes(self)
@@ -352,6 +353,7 @@ function Editor:startResizingSelectedNode(handleID)
     self.nodeResizeOriginalPos = self.selectedNode:getPos()
     self.nodeResizeOriginalSize = self.selectedNode:getSize()
     self.nodeResizeDirection = self.NODE_RESIZE_DIRECTIONS[handleID]
+    self.nodeResizeHandleID = handleID
 end
 
 
@@ -366,6 +368,7 @@ function Editor:finishResizingSelectedNode()
     self.nodeResizeOriginalPos = nil
     self.nodeResizeOriginalSize = nil
     self.nodeResizeDirection = nil
+    self.nodeResizeHandleID = nil
 end
 
 
@@ -865,6 +868,22 @@ function Editor:update(dt)
 
     self.UI:update(dt)
     self.INPUT_DIALOG:update(dt)
+
+    -- Update the mouse cursor.
+    local cursor = love.mouse.getSystemCursor("arrow")
+    local resizeHandleID = self.nodeResizeHandleID or (self.hoveredNode and self.hoveredNode:getHoveredResizeHandleID())
+    if resizeHandleID then
+        if resizeHandleID % 4 == 0 then
+            cursor = love.mouse.getSystemCursor("sizewe")
+        elseif resizeHandleID % 4 == 1 then
+            cursor = love.mouse.getSystemCursor("sizenwse")
+        elseif resizeHandleID % 4 == 2 then
+            cursor = love.mouse.getSystemCursor("sizens")
+        elseif resizeHandleID % 4 == 3 then
+            cursor = love.mouse.getSystemCursor("sizenesw")
+        end
+    end
+    love.mouse.setCursor(cursor)
 end
 
 

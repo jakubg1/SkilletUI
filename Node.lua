@@ -251,7 +251,7 @@ end
 
 
 ---Returns the position of the resize handle for this Node's widget.
----@param id integer 1 to 8: top left, top middle, top right, middle left, middle right, bottom left, bottom middle, and you guessed it - bottom right.
+---@param id integer 1 to 8: 1 is top left, then clockwise.
 ---@return Vector2
 function Node:getResizeHandlePos(id)
     local pos = self:getGlobalPos()
@@ -263,15 +263,15 @@ function Node:getResizeHandlePos(id)
     elseif id == 3 then
         return Vec2(pos.x + size.x + 1, pos.y - 4)
     elseif id == 4 then
-        return Vec2(pos.x - 4, pos.y + size.y / 2 - 1)
-    elseif id == 5 then
         return Vec2(pos.x + size.x + 1, pos.y + size.y / 2 - 1)
-    elseif id == 6 then
-        return Vec2(pos.x - 4, pos.y + size.y + 1)
-    elseif id == 7 then
-        return Vec2(pos.x + size.x / 2 - 1, pos.y + size.y + 1)
-    elseif id == 8 then
+    elseif id == 5 then
         return Vec2(pos.x + size.x + 1, pos.y + size.y + 1)
+    elseif id == 6 then
+        return Vec2(pos.x + size.x / 2 - 1, pos.y + size.y + 1)
+    elseif id == 7 then
+        return Vec2(pos.x - 4, pos.y + size.y + 1)
+    elseif id == 8 then
+        return Vec2(pos.x - 4, pos.y + size.y / 2 - 1)
     end
     error(string.format("Invalid resize handle ID: %s (expected 1..8)", id))
 end
@@ -958,8 +958,8 @@ function Node:drawSelected()
     if self:isResizable() then
         local id = self:getHoveredResizeHandleID()
         for i = 1, 8 do
-            if i == id then
-                -- This handle is hovered.
+            if i == id or i == _EDITOR.nodeResizeHandleID then
+                -- This handle is hovered or being dragged.
                 love.graphics.setColor(1, 1, 1)
             else
                 love.graphics.setColor(0, 1, 1)
