@@ -176,11 +176,11 @@ function Text:draw()
             local chr = text:sub(utf8.offset(text, i), utf8.offset(text, i + 1) - 1)
             local w = prop.font:getWidth(chr) * prop.scale
             local y = 0
-            if prop.waveAmplitude then
+            if prop.waveFrequency and prop.waveAmplitude and prop.waveSpeed then
                 y = _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, x, self.time) * prop.waveAmplitude
             end
             local charColor = color
-            if prop.gradientWaveColor then
+            if prop.gradientWaveFrequency and prop.gradientWaveColor then
                 local t
                 if prop.gradientWaveSpeed then
                     t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, x, self.time) + 1) / 2

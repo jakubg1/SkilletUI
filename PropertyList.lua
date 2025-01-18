@@ -108,6 +108,9 @@ end
 ---@param finalValue any The final value of the animation.
 ---@param duration number? The duration of the animation. If not specified, the property's value will be set immediately.
 function PropertyList:animateValue(key, startValue, finalValue, duration)
+    if startValue then
+        self.currentValues[key] = startValue
+    end
     if duration then
         startValue = startValue or self.currentValues[key]
         table.insert(self.animations, {property = key, startValue = startValue, finalValue = finalValue, maxTime = duration, time = 0})

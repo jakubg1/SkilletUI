@@ -901,6 +901,8 @@ function Editor:draw()
     _VEC2S_PER_FRAME = 0
     self.UI:findChildByName("hovText"):setText("")
     self.UI:findChildByName("selText"):setText("")
+    self.UI:findChildByName("hovEvText"):setText("")
+    self.UI:findChildByName("selEvText"):setText("")
     self.UI:findChildByName("lb_file"):setText(string.format("File: %s%s", self.currentSceneFile or "(none)", self.isSceneModified and "*" or ""))
 
     -- Hovered and selected node
@@ -909,6 +911,14 @@ function Editor:draw()
     end
     if self.selectedNode then
         self.UI:findChildByName("selText"):setText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode:getName(), self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()))
+    end
+    local hoveredEvent = self.keyframeEditor.hoveredEvent
+    if hoveredEvent then
+        self.UI:findChildByName("hovEvText"):setText(string.format("Hovered: %s {%s} time: %s -> %s", hoveredEvent.type, hoveredEvent.node, hoveredEvent.time, hoveredEvent.time + (hoveredEvent.duration or 0)))
+    end
+    local selectedEvent = self.keyframeEditor.selectedEvent
+    if selectedEvent then
+        self.UI:findChildByName("selEvText"):setText(string.format("Selected: %s {%s} time: %s -> %s", selectedEvent.type, selectedEvent.node, selectedEvent.time, selectedEvent.time + (selectedEvent.duration or 0)))
     end
     self.UI:draw()
 
@@ -996,6 +1006,9 @@ function Editor:mousepressed(x, y, button, istouch, presses)
         return
     end
     if self.uiTree:mousepressed(x, y, button, istouch, presses) then
+        return
+    end
+    if self.keyframeEditor:mousepressed(x, y, button, istouch, presses) then
         return
     end
     if button == 1 and not self:isUIHovered() then

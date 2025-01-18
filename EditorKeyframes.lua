@@ -23,9 +23,35 @@ function EditorKeyframes:new(editor)
     self.ITEM_HEIGHT = 20
     self.TIME_SCALE_CONSTANT = 150
 
+    self.eventInfo = {}
+    self.hoveredEvent = nil
+    self.selectedEvent = nil
+
     self.timeOffset = 0
     self.scrollOffset = 0
     self.maxScrollOffset = 0
+end
+
+
+
+---Returns event display information, in the form of a table
+---This function should only be called internally. If you want to get the current event display info, fetch the `self.eventInfo` field instead.
+---@return table
+function EditorKeyframes:getEventInfo()
+    local tab = {}
+    local info = _TIMELINE:getInfo()
+    -- Iterate over all nodes.
+    for i, name in ipairs(_TIMELINE.nodeNames) do
+        local events = info[name]
+        local y = self:getItemY(i)
+        -- Iterate over all events belonging to that node.
+        for j, event in ipairs(events) do
+            local x1 = self:getTimeX(event.time)
+            local x2 = self:getTimeX(event.time + (event.duration or 0))
+            table.insert(tab, {event = event, pos = Vec2(x1, y), size = Vec2(x2 - x1, self.ITEM_HEIGHT)})
+        end
+    end
+    return tab
 end
 
 
@@ -63,9 +89,34 @@ end
 
 
 
+---Returns the hovered Timeline Event, if any is hovered.
+---
+---This function should only be called internally. If you want to get the currently hovered event, fetch the `self.hoveredEvent` field instead.
+---@return TimelineEvent?
+function EditorKeyframes:getHoveredEvent()
+    for i, entry in ipairs(self.eventInfo) do
+        local pos = entry.pos
+        local size = entry.size
+        if size.x == 0 then
+            -- If the event is a point on the timeline, generate a some sort of margin to be able to hover it at all.
+            pos = pos + Vec2(-5, 0)
+            size = size + Vec2(10, 0)
+        end
+        if _Utils.isPointInsideBox(_MousePos, pos, size) then
+            return entry.event
+        end
+    end
+end
+
+
+
 ---Updates the Keyframe Editor.
 ---@param dt number Time delta in seconds.
 function EditorKeyframes:update(dt)
+    -- Update the event information.
+    self.eventInfo = self:getEventInfo()
+    self.hoveredEvent = self:getHoveredEvent()
+
     -- Calculate the maximum scroll offset.
     self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #_TIMELINE.nodeNames - self.SIZE.y + self.HEADER_HEIGHT, 0)
     -- Scroll back if we've scrolled too far.
@@ -155,37 +206,36 @@ function EditorKeyframes:draw()
     end
 
     -- Events
-    for i, name in ipairs(_TIMELINE.nodeNames) do
-        local events = info[name]
-        local y = self:getItemY(i)
-        -- Events on the timeline
-        for j, event in ipairs(events) do
-            local x1 = self:getTimeX(event.time)
-            local x2 = self:getTimeX(event.time + (event.duration or 0))
-            local color = _COLORS.white
-            if event.property == "pos" then
-                color = _COLORS.green
-            elseif event.property == "alpha" then
-                color = _COLORS.red
-            elseif event.property == "visible" then
-                color = _COLORS.yellow
-            elseif event.property == "typeInProgress" then
-                color = _COLORS.blue
-            end
-            if x1 == x2 or event.startValue then
-                -- Instant events and events with a start value are drawn as a line.
-                love.graphics.setLineWidth(3)
-                love.graphics.setColor(color.r, color.g, color.b)
-                love.graphics.line(x1, y, x1, y + self.ITEM_HEIGHT)
-            end
-            if x1 ~= x2 then
-                -- Events that have duration are drawn as a filled box.
-                love.graphics.setColor(color.r, color.g, color.b, 0.5)
-                love.graphics.rectangle("fill", x1, y, x2 - x1, self.ITEM_HEIGHT)
-                love.graphics.setLineWidth(1)
-                love.graphics.setColor(color.r, color.g, color.b)
-                love.graphics.rectangle("line", x1, y, x2 - x1, self.ITEM_HEIGHT)
-            end
+    for i, entry in ipairs(self.eventInfo) do
+        local event = entry.event
+        local color = _COLORS.white
+        if event.property == "pos" then
+            color = _COLORS.green
+        elseif event.property == "alpha" then
+            color = _COLORS.red
+        elseif event.property == "visible" then
+            color = _COLORS.orange
+        elseif event.property == "typeInProgress" then
+            color = _COLORS.blue
+        end
+        if event == self.selectedEvent then
+            color = _COLORS.cyan
+        elseif event == self.hoveredEvent then
+            color = _COLORS.yellow
+        end
+        if entry.size.x == 0 or event.startValue then
+            -- Instant events and events with a start value are drawn as a line.
+            love.graphics.setLineWidth(3)
+            love.graphics.setColor(color.r, color.g, color.b)
+            love.graphics.line(entry.pos.x, entry.pos.y, entry.pos.x, entry.pos.y + entry.size.y)
+        end
+        if entry.size.x > 0 then
+            -- Events that have duration are drawn as a filled box.
+            love.graphics.setColor(color.r, color.g, color.b, 0.5)
+            love.graphics.rectangle("fill", entry.pos.x, entry.pos.y, entry.size.x, entry.size.y)
+            love.graphics.setLineWidth(1)
+            love.graphics.setColor(color.r, color.g, color.b)
+            love.graphics.rectangle("line", entry.pos.x, entry.pos.y, entry.size.x, entry.size.y)
         end
     end
     love.graphics.setScissor()
@@ -212,6 +262,27 @@ function EditorKeyframes:draw()
     love.graphics.setColor(0.5, 0.75, 1)
     love.graphics.setLineWidth(1)
     love.graphics.rectangle("line", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
+end
+
+
+
+---Executed whenever a mouse button is pressed anywhere on the screen.
+---Returns `true` if the input is consumed.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+---@param button integer The button that has been pressed.
+---@param istouch boolean Whether the press is coming from a touch input.
+---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
+---@return boolean
+function EditorKeyframes:mousepressed(x, y, button, istouch, presses)
+    if not self:isHovered() then
+        return false
+    end
+    if button == 1 then
+        self.selectedEvent = self.hoveredEvent
+        return true
+    end
+    return false
 end
 
 

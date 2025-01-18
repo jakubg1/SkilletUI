@@ -104,6 +104,42 @@
                 "x": 500,
                 "y": 610
             }
+        },
+        {
+            "name": "hovEvText",
+            "type": "text",
+            "widget": {
+                "font": "editor",
+                "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 0
+                },
+                "shadowOffset": 2,
+                "shadowAlpha": 0.8
+            },
+            "pos": {
+                "x": 500,
+                "y": 640
+            }
+        },
+        {
+            "name": "selEvText",
+            "type": "text",
+            "widget": {
+                "font": "editor",
+                "color": {
+                    "r": 0,
+                    "g": 1,
+                    "b": 1
+                },
+                "shadowOffset": 2,
+                "shadowAlpha": 0.8
+            },
+            "pos": {
+                "x": 500,
+                "y": 660
+            }
         }
     ]
 }
