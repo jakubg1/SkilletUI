@@ -234,7 +234,8 @@ end
 function InputText:submitEditing()
     local success = self:setStringValue(self.editText)
     if success then
-        self:cancelEditing()
+        self.editText = nil
+        self:updateUI()
     else
         print("Incorrect input")
     end
