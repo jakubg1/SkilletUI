@@ -19,23 +19,24 @@ function Text:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Font", key = "font", type = "Font", defaultValue = _FONTS.standard},
         {name = "Text", key = "text", type = "string", defaultValue = "Text"},
-        {name = "Scale", key = "scale", type = "number", defaultValue = 1},
+        {name = "Scale", key = "scale", type = "number", defaultValue = 1, minValue = 1, scrollStep = 1},
         {name = "Color", key = "color", type = "color", defaultValue = _COLORS.white},
         {name = "Hover Color", key = "hoverColor", type = "color", nullable = true},
-        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1},
+        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true},
-        {name = "Shadow Alpha", key = "shadowAlpha", type = "number", defaultValue = 0.5},
-        {name = "Boldness", key = "boldness", type = "number", defaultValue = 1},
+        {name = "Shadow Alpha", key = "shadowAlpha", type = "number", defaultValue = 0.5, minValue = 0, maxValue = 1, scrollStep = 0.1},
+        {name = "Boldness", key = "boldness", type = "number", defaultValue = 1, minValue = 1, scrollStep = 1},
         {name = "Underline", key = "underline", type = "boolean", defaultValue = false},
         {name = "Strikethrough", key = "strikethrough", type = "boolean", defaultValue = false},
-        {name = "Character Separation", key = "characterSeparation", type = "number", defaultValue = 0},
+        {name = "Character Separation", key = "characterSeparation", type = "number", defaultValue = 0, minValue = -1, scrollStep = 1},
         {name = "Wave Amplitude", key = "waveAmplitude", type = "number", nullable = true},
         {name = "Wave Frequency", key = "waveFrequency", type = "number", nullable = true},
         {name = "Wave Speed", key = "waveSpeed", type = "number", nullable = true},
         {name = "Gradient Wave Color", key = "gradientWaveColor", type = "color", nullable = true},
         {name = "Gradient Wave Frequency", key = "gradientWaveFrequency", type = "number", nullable = true},
         {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number", nullable = true},
-        {name = "Type-in Progress", key = "typeInProgress", type = "number", nullable = true}
+        {name = "Type-in Progress", key = "typeInProgress", type = "number", nullable = true, minValue = 0, maxValue = 1, scrollStep = 0.1},
+        {name = "Input Caret", key = "inputCaret", type = "boolean", defaultValue = false}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 
@@ -119,11 +120,12 @@ end
 ---@return string
 function Text:getText()
     local prop = self.properties:getValues()
+    local caret = (prop.inputCaret and self.time % 1 < 0.5) and "|" or ""
     if not prop.typeInProgress then
-        return prop.text
+        return prop.text .. caret
     end
     local totalCharsRendered = math.floor(_Utils.interpolateClamped(0, utf8.len(prop.text), prop.typeInProgress))
-    return prop.text:sub(0, utf8.offset(prop.text, totalCharsRendered + 1) - 1)
+    return prop.text:sub(0, utf8.offset(prop.text, totalCharsRendered + 1) - 1) .. caret
 end
 
 

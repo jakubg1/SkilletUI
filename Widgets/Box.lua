@@ -18,9 +18,9 @@ function Box:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Size", key = "size", type = "Vector2", defaultValue = Vec2(10)},
         {name = "Color", key = "color", type = "color", nullable = true, defaultValueNoData = _COLORS.white},
-        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1},
+        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1},
         {name = "Border Color", key = "borderColor", type = "color", nullable = true},
-        {name = "Border Alpha", key = "borderAlpha", type = "number", defaultValue = 1}
+        {name = "Border Alpha", key = "borderAlpha", type = "number", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 end

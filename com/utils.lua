@@ -518,6 +518,18 @@ end
 
 
 
+---Returns `true` if both provided values are close enough to be considered equal. Useful for places where there is floating point imprecision.
+---@param a number The first number to compare.
+---@param b number The second number to compare.
+---@param e number? The margin of error. Defaults to `1e-9`.
+---@return boolean
+function utils.almostEqual(a, b, e)
+	e = e or 1e-9
+	return a > b - e and a < b + e
+end
+
+
+
 ---Takes a table with a required `key` string field and optional `ctrl` and `shift` boolean fields.
 ---Returns a human-readable shortcut name.
 ---@param shortcut table The shortcut to be turned into a string.

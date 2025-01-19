@@ -151,7 +151,7 @@ function EditorKeyframes:drawEntryBase(n, nodeOrName, isGhost)
     love.graphics.setColor(0.3, 0.3, 0.3, isGhost and 0.4 or 0.8)
     love.graphics.rectangle("fill", self.KEYFRAME_AREA_X, y, self.KEYFRAME_AREA_WIDTH, self.ITEM_HEIGHT)
     love.graphics.setLineWidth(1)
-    love.graphics.setColor(0, 0, 0)
+    love.graphics.setColor(0.2, 0.2, 0.2)
     love.graphics.rectangle("line", self.KEYFRAME_AREA_X, y, self.KEYFRAME_AREA_WIDTH, self.ITEM_HEIGHT)
 end
 

@@ -984,18 +984,32 @@ end
 
 
 ---Executed whenever a mouse button is pressed anywhere on the screen.
+---Returns `true` if the input is consumed by at least one child Node or its Widget.
+---The input consumption is not greedy; this node and all its children are guaranteed to get the `mousepressed` callback as long as they are not disabled.
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
 ---@param button integer The button that has been pressed.
 ---@param istouch boolean Whether the press is coming from a touch input.
 ---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
+---@return boolean
 function Node:mousepressed(x, y, button, istouch, presses)
+    local consumed = false
     if button == 1 and self:isHovered() and not self.disabled then
         self.clicked = true
     end
-    for i, child in ipairs(self.children) do
-        child:mousepressed(x, y, button, istouch, presses)
+    if not self.disabled then
+        if self.widget and self.widget.mousepressed then
+            if self.widget:mousepressed(x, y, button, istouch, presses) then
+                consumed = true
+            end
+        end
     end
+    for i, child in ipairs(self.children) do
+        if child:mousepressed(x, y, button, istouch, presses) then
+            consumed = true
+        end
+    end
+    return consumed
 end
 
 
@@ -1011,6 +1025,9 @@ function Node:mousereleased(x, y, button)
         if self:isHovered() then
             self:click()
         end
+        if self.widget and self.widget.mousereleased then
+            self.widget:mousereleased(x, y, button)
+        end
     end
     for i, child in ipairs(self.children) do
         child:mousereleased(x, y, button)
@@ -1019,15 +1036,51 @@ end
 
 
 
+---Executed whenever a mouse wheel has been scrolled.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+function Node:wheelmoved(x, y)
+    if self:isHovered() and not self.disabled then
+        if self.widget and self.widget.wheelmoved then
+            self.widget:wheelmoved(x, y)
+        end
+    end
+    for i, child in ipairs(self.children) do
+        child:wheelmoved(x, y)
+    end
+end
+
+
+
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string Code of the key that has been pressed.
 function Node:keypressed(key)
-    local shortcut = self:getProp("shortcut")
-    if shortcut and shortcut.key == key and (shortcut.ctrl or false) == _IsCtrlPressed() and (shortcut.shift or false) == _IsShiftPressed() then
-        self:click()
+    if not self.disabled then
+        local shortcut = self:getProp("shortcut")
+        if shortcut and shortcut.key == key and (shortcut.ctrl or false) == _IsCtrlPressed() and (shortcut.shift or false) == _IsShiftPressed() then
+            self:click()
+        end
+        if self.widget and self.widget.keypressed then
+            self.widget:keypressed(key)
+        end
     end
     for i, child in ipairs(self.children) do
         child:keypressed(key)
+    end
+end
+
+
+
+---Executed whenever a certain character has been typed on the keyboard.
+---@param text string The character.
+function Node:textinput(text)
+    if not self.disabled then
+        if self.widget and self.widget.textinput then
+            self.widget:textinput(text)
+        end
+    end
+    for i, child in ipairs(self.children) do
+        child:textinput(text)
     end
 end
 

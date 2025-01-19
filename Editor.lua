@@ -187,13 +187,10 @@ function Editor:generateNodePropertyUI(node)
         propertiesUI:addChild(propertyHeaderUI)
         for i, property in ipairs(nodeProperties) do
             local inputValue = node.properties:getBaseValue(property.key)
-            local inputFunction = function(input)
-                self:setSelectedNodeProperty(property.key, input)
-            end
             local propertyUI = Node({name = "input", pos = {20, currentRow * 20}})
             currentRow = currentRow + 1
             local propertyText = self:label(0, 0, property.name)
-            local propertyInput = self:input(200, 0, 150, property.type, inputValue, property.nullable, inputFunction)
+            local propertyInput = self:input(200, 0, 150, property, inputValue, "node", nil)
             self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (node:isControlled() and property.disabledIfControlled))
             propertyUI:addChild(propertyText)
             propertyUI:addChild(propertyInput)
@@ -210,13 +207,10 @@ function Editor:generateNodePropertyUI(node)
                 propertiesUI:addChild(propertyHeaderUI)
                 for i, property in ipairs(properties) do
                     local inputValue = widget.properties:getBaseValue(property.key)
-                    local inputFunction = function(input)
-                        self:setSelectedNodeWidgetProperty(property.key, input)
-                    end
                     local propertyUI = Node({name = "input", pos = {20, currentRow * 20}})
                     currentRow = currentRow + 1
                     local propertyText = self:label(0, 0, property.name)
-                    local propertyInput = self:input(200, 0, 150, property.type, inputValue, property.nullable, inputFunction)
+                    local propertyInput = self:input(200, 0, 150, property, inputValue, "widget", nil)
                     self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property))
                     propertyUI:addChild(propertyText)
                     propertyUI:addChild(propertyInput)
@@ -404,8 +398,9 @@ end
 ---Sets a new value for the selected node property.
 ---@param property string The property to be set.
 ---@param value any? The value to be set for this property.
-function Editor:setSelectedNodeProperty(property, value)
-    self:executeCommand(CommandNodeSetProperty(self.selectedNode, property, value))
+---@param groupID string? The command group ID. Used when scrolling so that everything can be undone at once.
+function Editor:setSelectedNodeProperty(property, value, groupID)
+    self:executeCommand(CommandNodeSetProperty(self.selectedNode, property, value), groupID)
 end
 
 
@@ -413,8 +408,9 @@ end
 ---Sets a new value for the selected node's widget property.
 ---@param property string The property to be set.
 ---@param value any? The value to be set for this property.
-function Editor:setSelectedNodeWidgetProperty(property, value)
-    self:executeCommand(CommandNodeSetWidgetProperty(self.selectedNode, property, value))
+---@param groupID string? The command group ID. Used when scrolling so that everything can be undone at once.
+function Editor:setSelectedNodeWidgetProperty(property, value, groupID)
+    self:executeCommand(CommandNodeSetWidgetProperty(self.selectedNode, property, value), groupID)
 end
 
 
@@ -484,7 +480,12 @@ function Editor:executeCommand(command, groupID)
         -- Mark the scene as unsaved.
         self.isSceneModified = true
         -- Make sure to refresh UIs.
-        self:updateUI()
+        -- If the commands are grouped, UIs are not updated so that we don't pull our text input
+        -- whenever we type a single character while maintaining real-time changes.
+        -- TODO: Check the impact on this and make a better system?
+        if not groupID then
+            self:updateUI()
+        end
     end
     return result
 end
@@ -613,15 +614,14 @@ end
 ---@param x number The X coordinate of the position.
 ---@param y number The Y coordinate of the position.
 ---@param w number The width of the input field. Height is always 20.
----@param type string The input type. Can be `"string"`, `"number"`, `"color"` or `"file"`.
+---@param property table The input property data.
 ---@param value string|number|Color The value that should be initially set in the input field.
----@param nullable boolean? Whether the contents can be erased with a builtin X button.
----@param fn function? The function that will be executed when the value has been changed. The parameter will be the new text.
----@param extensions table? If `type` == `"file"`, the list of file extensions to be listed in the file picker.
+---@param affectedType "node"|"widget" Whether the specified property is belonging to the selected Node or its Widget.
+---@param extensions table? If `property.type` == `"file"`, the list of file extensions to be listed in the file picker.
 ---@return Node
-function Editor:input(x, y, w, type, value, nullable, fn, extensions)
+function Editor:input(x, y, w, property, value, affectedType, extensions)
     local data = {
-        name = "inp_" .. type,
+        name = "inp_" .. property.type,
         type = "input_text",
         pos = {x, y},
         children = {
@@ -691,14 +691,15 @@ function Editor:input(x, y, w, type, value, nullable, fn, extensions)
         }
     }
     local input = Node(data)
-    input.widget.nullable = nullable or false
-    input.widget:setType(type)
+    input.widget.propertyKey = property.key
+    input.widget.affectedType = affectedType
+    input.widget:setType(property.type)
     input.widget:setValue(value)
-    input:setOnClick(function() self:askForInput(input, type, extensions) end)
-    if nullable and fn then
-        input:findChildByName("nullifyButton"):setOnClick(function() fn(nil) end)
-    end
-    input._onChange = fn
+    input.widget.nullable = property.nullable or false
+    input.widget.minValue = property.minValue
+    input.widget.maxValue = property.maxValue
+    input.widget.scrollStep = property.scrollStep
+    input:setOnClick(function() self:askForInput(input, property.type, extensions) end)
     return input
 end
 
@@ -721,10 +722,7 @@ end
 ---@param warnWhenFileExists boolean? If `type` == `"file"`, whether a file overwrite warning should be shown if the file exists.
 function Editor:askForInput(input, inputType, extensions, warnWhenFileExists)
     self.activeInput = input
-    if inputType == "boolean" then
-        -- HACK: When asking for a boolean.... why would you do that? Let's just immediately flip the value instead.
-        self:onInputReceived(not input.widget:getValue())
-    else
+    if inputType == "color" or inputType == "shortcut" or inputType == "file" then
         local value = ""
         if type(input) ~= "string" then
             value = input.widget:getValue()
@@ -745,12 +743,7 @@ function Editor:onInputReceived(result)
             self:loadScene(result)
         end
     else
-        -- Not required for property lists, but required for file name.
         self.activeInput.widget:setValue(result)
-    
-        if self.activeInput._onChange then
-            self.activeInput._onChange(result)
-        end
     end
     self.activeInput = nil
 end
@@ -1001,7 +994,9 @@ function Editor:mousepressed(x, y, button, istouch, presses)
     if not self.enabled then
         return
     end
-    self.UI:mousepressed(x, y, button, istouch, presses)
+    if self.UI:mousepressed(x, y, button, istouch, presses) then
+        return
+    end
     if self.INPUT_DIALOG:mousepressed(x, y, button, istouch, presses) then
         return
     end
@@ -1066,6 +1061,7 @@ end
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
 function Editor:wheelmoved(x, y)
+    self.UI:wheelmoved(x, y)
     self.INPUT_DIALOG:wheelmoved(x, y)
     self.uiTree:wheelmoved(x, y)
     self.keyframeEditor:wheelmoved(x, y)
@@ -1110,6 +1106,7 @@ end
 ---Executed whenever a certain character has been typed on the keyboard.
 ---@param text string The character.
 function Editor:textinput(text)
+    self.UI:textinput(text)
     self.INPUT_DIALOG:textinput(text)
     self.uiTree:textinput(text)
 end

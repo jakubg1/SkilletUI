@@ -351,10 +351,11 @@ end
 ---@param key string The key code.
 ---@return boolean
 function EditorUITree:keypressed(key)
-    if key == "p" then
+    if key == "f3" then
         self.showInternalUI = not self.showInternalUI
         return true
     end
+    -- Anything below applies only if the name edit mode is enabled.
     if not self.nameEditNode then
         return false
     end

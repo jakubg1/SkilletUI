@@ -20,9 +20,9 @@ function Button:new(node, data)
     }
 
     self.textNode = self.node:findChildByName("text")
-    assert(self.textNode, string.format("Error in Button \"%s\": This Compound Widget must have a child Node with a Text Widget named \"text\" to work!", self.node.name))
+    assert(self.textNode, string.format("Error in Button \"%s\": This Compound Widget must have a child Node with a Text Widget named \"text\" to work!", self.node:getName()))
     self.spriteNode = self.node:findChildByName("sprite")
-    assert(self.spriteNode, string.format("Error in Button \"%s\": This Compound Widget must have a child Node with a Sprite Widget named \"sprite\" to work!", self.node.name))
+    assert(self.spriteNode, string.format("Error in Button \"%s\": This Compound Widget must have a child Node with a Sprite Widget named \"sprite\" to work!", self.node:getName()))
 end
 
 
