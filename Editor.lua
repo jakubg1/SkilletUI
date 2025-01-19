@@ -52,15 +52,17 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Proper editing of node groups (size forwarding, unable to edit their components, etc.)
 --- - Nullifying parameters
 --- - Copy/Paste and widget duplication
----
---- To Do:
+--- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
+--- - Animations and timelines
 --- - Live editing of parameters
+---
+--- To Do (arbitrary order):
 --- - Vector and image support for parameters
 --- - Node modifier system, where you could add a rule, like: "modify this node and all its children's widgets' alpha by multiplying it by 0.5"
---- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
----   - tip: have a Button class as a controller for the children which have unchangeable names and references them directly by name in the constructor
---- - Multi-selection(?)
---- - Animations and timelines
+--- - Multi-selection
+--- - Timeline editing
+--- - Fix ctrl+drag in node tree
+--- - Multiline text and inline formatting
 
 
 
