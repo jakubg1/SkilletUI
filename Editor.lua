@@ -1098,6 +1098,10 @@ function Editor:keypressed(key)
         self:moveSelectedNode(Vec2(_IsShiftPressed() and 10 or 1, 0))
     elseif key == "p" and _IsCtrlPressed() then
         self:printInternalUITreeInfo()
+    elseif key == "`" then
+        if self.enabled then
+            self.commandMgr.visible = not self.commandMgr.visible
+        end
     end
 end
 

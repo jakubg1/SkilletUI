@@ -22,6 +22,7 @@ _CANVAS_SIZE_EDITOR = Vec2(960, 540)
 _CANVAS_OFFSET_EDITOR = Vec2(230, 40)
 _CANVAS_SIZE_PRESENTATION = _WINDOW_SIZE
 _CANVAS_OFFSET_PRESENTATION = Vec2()
+_Time = 0
 _MousePos = Vec2()
 _MouseCPos = Vec2()
 
@@ -178,6 +179,9 @@ end
 
 
 function love.update(dt)
+	-- Global time
+	_Time = _Time + dt
+
 	-- Mouse position
 	_MousePos = Vec2(love.mouse.getPosition())
 	_MouseCPos = _CANVAS:posToPixel(_MousePos)

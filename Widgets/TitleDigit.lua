@@ -38,8 +38,6 @@ function TitleDigit:new(node, data)
         Vec2(0, 6), Vec2(1, 6), Vec2(2, 6), Vec2(3, 6), Vec2(4, 6), Vec2(5, 6)
     }
     self.CUBE_SIZE = 6
-
-    self.time = 0
 end
 
 
@@ -175,7 +173,6 @@ end
 ---Updates the Title Digit.
 ---@param dt number Time delta, in seconds.
 function TitleDigit:update(dt)
-    self.time = self.time + dt
     self.properties:update(dt)
 end
 
@@ -186,7 +183,7 @@ function TitleDigit:draw()
     local pos = self.node:getGlobalPos()
     local prop = self.properties:getValues()
 
-    local angle = self.time % (math.pi * 2)
+    local angle = _Time % (math.pi * 2)
     love.graphics.setColor(1, 1, 1)
     local u = (angle + math.pi / 2) % (math.pi * 2) - math.pi
     table.sort(self.CUBE_POSITIONS, function(a, b) return a.y * -10 + a.x * u < b.y * -10 + b.x * u end)

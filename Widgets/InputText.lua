@@ -392,9 +392,10 @@ function InputText:wheelmoved(x, y)
     --print(self.node:getName(), "wheelmoved", x, y)
     -- If the input box allows scrolling the value, handle it here.
     if self.scrollStep then
-        local multiple = self.value / self.scrollStep
+        local currentValue = self.value or self.minValue or self.maxValue or 0
+        local multiple = currentValue / self.scrollStep
         local newValue
-        if _Utils.almostEqual(self.value, self.scrollStep * math.floor(multiple + 0.5)) then
+        if _Utils.almostEqual(currentValue, self.scrollStep * math.floor(multiple + 0.5)) then
             -- We have an exact multiple, bring it up or down one multiple.
             newValue = self.scrollStep * (math.floor(multiple + 0.5) + y)
         else

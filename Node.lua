@@ -913,6 +913,40 @@ end
 
 
 
+---Draws a dashed line between two points. The dashes are animated and 2 pixels filled + 2 pixels empty.
+---@param p1 Vector2 The starting position of the line.
+---@param p2 Vector2 The ending position of the line.
+function Node:drawDashedLine(p1, p2)
+    local FILLED_PIXELS = 4
+    local BLANK_PIXELS = 4
+    local offset = (_Time * 4) % (FILLED_PIXELS + BLANK_PIXELS) - FILLED_PIXELS
+    local length = (p2 - p1):len()
+    while offset < length do
+        local q1 = _Utils.interpolateClamped(p1, p2, offset / length)
+        local q2 = _Utils.interpolateClamped(p1, p2, (offset + FILLED_PIXELS) / length)
+        love.graphics.line(q1.x + 0.5, q1.y + 0.5, q2.x + 0.5, q2.y + 0.5)
+        offset = offset + FILLED_PIXELS + BLANK_PIXELS
+    end
+end
+
+
+
+---Draws a dashed rectangle with the given position and size. The dashes are animated depending on the rules of `:drawDashedLine()`
+---@param pos Vector2 The rectangle position.
+---@param size Vector2 The rectangle size, in pixels.
+function Node:drawDashedRectangle(pos, size)
+    local c1 = pos
+    local c2 = pos + Vec2(size.x - 1, 0)
+    local c3 = pos + size - 1
+    local c4 = pos + Vec2(0, size.y - 1)
+    self:drawDashedLine(c1, c2)
+    self:drawDashedLine(c2, c3)
+    self:drawDashedLine(c3, c4)
+    self:drawDashedLine(c4, c1)
+end
+
+
+
 ---Draws this Node's bounding box, or a crosshair if this Node has no widget.
 ---The borders are all inclusive.
 function Node:drawHitbox()
@@ -938,7 +972,7 @@ function Node:drawSelected()
     if self.widget then
         local size = self:getSize()
         love.graphics.setColor(0, 1, 1)
-        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 1, size.y - 1)
+        self:drawDashedRectangle(pos, size)
     else
         love.graphics.setColor(1, 1, 1)
         self:drawCrosshair(pos, 2)

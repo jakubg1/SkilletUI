@@ -39,8 +39,6 @@ function Text:new(node, data)
         {name = "Input Caret", key = "inputCaret", type = "boolean", defaultValue = false}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
-
-    self.time = 0
 end
 
 
@@ -110,7 +108,6 @@ end
 ---Updates the Text. You need to do this to make sure the time-dependent effects are working correctly.
 ---@param dt number Time delta, in seconds.
 function Text:update(dt)
-    self.time = self.time + dt
     self.properties:update(dt)
 end
 
@@ -120,7 +117,7 @@ end
 ---@return string
 function Text:getText()
     local prop = self.properties:getValues()
-    local caret = (prop.inputCaret and self.time % 1 < 0.5) and "|" or ""
+    local caret = (prop.inputCaret and _Time % 1 < 0.5) and "|" or ""
     if not prop.typeInProgress then
         return prop.text .. caret
     end
@@ -179,15 +176,15 @@ function Text:draw()
             local w = prop.font:getWidth(chr) * prop.scale
             local y = 0
             if prop.waveFrequency and prop.waveAmplitude and prop.waveSpeed then
-                y = _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, x, self.time) * prop.waveAmplitude
+                y = _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, x, _Time) * prop.waveAmplitude
             end
             local charColor = color
             if prop.gradientWaveFrequency and prop.gradientWaveColor then
                 local t
                 if prop.gradientWaveSpeed then
-                    t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, x, self.time) + 1) / 2
+                    t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, x, _Time) + 1) / 2
                 else
-                    t = (_Utils.getWavePoint(1 / prop.gradientWaveFrequency, 1, 0, self.time) + 1) / 2
+                    t = (_Utils.getWavePoint(1 / prop.gradientWaveFrequency, 1, 0, _Time) + 1) / 2
                 end
                 charColor = _Utils.interpolate(color, prop.gradientWaveColor, t)
             end

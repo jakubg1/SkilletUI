@@ -14,12 +14,16 @@ local Vec2 = require("Vector2")
 function EditorCommands:new(editor)
     self.editor = editor
 
-    self.POS = Vec2(1220, 600)
-    self.ITEM_HEIGHT = 20
+    self.POS = Vec2(0, 0)
+    self.SIZE = Vec2(800, 600)
+    self.ITEM_HEIGHT = 15
+    self.MAX_ITEMS = 13
 
     self.commandHistory = {}
     self.undoCommandHistory = {}
     self.transactionMode = false
+
+    self.visible = false
 end
 
 
@@ -152,26 +156,98 @@ end
 
 ---Draws the debug contents of Editor Command Manager on the screen.
 function EditorCommands:draw()
-    -- Command buffer
+    if not self.visible then
+        return
+    end
+
+    -- Background
+    love.graphics.setColor(0, 0, 0, 0.8)
+    love.graphics.rectangle("fill", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
+
+    -- Draw the main text.
     self.editor:drawShadowedText("Command Buffer", self.POS.x, self.POS.y)
-    local y = self.POS.y + 30
+    local items = {}
+    local lastName = nil
     for i, entry in ipairs(self.commandHistory) do
         if entry.isGroup then
-            local line = entry.group and string.format("Transaction <%s> {", entry.group) or "Transaction {"
-            self.editor:drawShadowedText(line, self.POS.x, y)
-            y = y + self.ITEM_HEIGHT
+            -- We have a group. Time to hack something very dirty.
+            -- Before we do anything, we will check if we can summarize the transaction in one line.
+            -- That is, the entire contents of the transaction is just one command repeated any number of times.
+            -- Based on that information, we can choose one of two paths to add the entries in the most efficient way.
+            -- So, let's go!
+            local compact = true
+            lastName = nil
+            local count = 0
             for j, subentry in ipairs(entry.commands) do
-                self.editor:drawShadowedText(subentry.command.NAME, self.POS.x + 30, y)
-                y = y + self.ITEM_HEIGHT
+                local name = subentry.command.NAME
+                if name ~= lastName then
+                    -- Our name is different. If our slot is empty, that is the name that we are going for.
+                    if not lastName then
+                        lastName = name
+                        count = 1
+                    else
+                        -- Whoops! We've got a different name. This means we can't print a compact version of the transaction.
+                        compact = false
+                        break
+                    end
+                else
+                    count = count + 1
+                end
             end
-            if entry ~= self.commandHistory[#self.commandHistory] or not self.transactionMode then
-                self.editor:drawShadowedText("}", self.POS.x, y)
-                y = y + self.ITEM_HEIGHT
+            -- Now print a compact or non-compact version depending on what has been deduced.
+            local prefix = entry.group and string.format("Transaction <%s> {", entry.group) or "Transaction {"
+            local isGroupClosed = entry ~= self.commandHistory[#self.commandHistory] or not self.transactionMode
+            if compact then
+                local name = lastName
+                if count > 1 then
+                    name = name .. string.format(" (x%s)", count)
+                end
+                if isGroupClosed then
+                    name = name .. "}"
+                end
+                table.insert(items, {value = prefix .. name, indent = 0, count = 1})
+            else
+                -- Add a transaction group prefix.
+                table.insert(items, {value = prefix, indent = 0, count = 1})
+                lastName = nil
+                for j, subentry in ipairs(entry.commands) do
+                    -- Add a new item or modify the existing one if it's the same.
+                    local name = subentry.command.NAME
+                    if name == lastName then
+                        items[#items].count = items[#items].count + 1
+                    else
+                        table.insert(items, {value = name, indent = 1, count = 1})
+                        lastName = name
+                    end
+                end
+                if isGroupClosed then
+                    -- If the transaction has been finished, we can close it with the closing brace.
+                    table.insert(items, {value = "}", indent = 0, count = 1})
+                    lastName = nil
+                end
             end
         else
-            self.editor:drawShadowedText(entry.command.NAME, self.POS.x, y)
-            y = y + self.ITEM_HEIGHT
+            -- Add a new item or modify the existing one if it's the same.
+            local name = entry.command.NAME
+            if name == lastName then
+                items[#items].count = items[#items].count + 1
+            else
+                table.insert(items, {value = name, indent = 0, count = 1})
+                lastName = name
+            end
         end
+    end
+    -- Draw the items.
+    for i, item in ipairs(items) do
+        local name = item.value
+        if item.count > 1 then
+            name = name .. string.format(" (x%s)", item.count)
+        end
+        self.editor:drawShadowedText(name, self.POS.x + 5 + item.indent * 30, self.POS.y + 10 + (i * self.ITEM_HEIGHT))
+    end
+    -- Or a none text if there's nothing.
+    if #items == 0 then
+        self.editor:drawShadowedText("(empty)", self.POS.x + 5, self.POS.y + 25, _COLORS.gray)
     end
 end
 
