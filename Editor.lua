@@ -55,11 +55,11 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
 --- - Animations and timelines
 --- - Live editing of parameters
+--- - Multi-selection
 ---
 --- To Do (arbitrary order):
 --- - Vector and image support for parameters
 --- - Node modifier system, where you could add a rule, like: "modify this node and all its children's widgets' alpha by multiplying it by 0.5"
---- - Multi-selection
 --- - Timeline editing
 --- - Fix ctrl+drag in node tree
 --- - Multiline text and inline formatting
@@ -84,21 +84,23 @@ function Editor:new()
 
     self.currentSceneFile = nil
     self.isSceneModified = false
-    self.clipboard = nil
+    self.clipboard = {}
 
     self.enabled = true
     self.activeInput = nil -- Can be a Node, but also `"save"` or `"load"`
     self.hoveredNode = nil
     self.isNodeHoverIndirect = false
-    self.selectedNode = nil
+    self.selectedNodes = {}
     self.nodeDragOrigin = nil
-    self.nodeDragOriginalPos = nil
+    self.nodeDragOriginalPos = {}
     self.nodeDragSnap = false
     self.nodeResizeOrigin = nil
     self.nodeResizeOriginalPos = nil
     self.nodeResizeOriginalSize = nil
     self.nodeResizeDirection = nil
     self.nodeResizeHandleID = nil
+    self.nodeMultiSelectOrigin = nil
+    self.nodeMultiSelectSize = nil -- This size can be negative, be careful when drawing!
 
     self.uiTree = EditorUITree(self)
     self.keyframeEditor = EditorKeyframes(self)
@@ -140,9 +142,10 @@ function Editor:getHoveredNode()
         return hoveredNode
     end
     -- Already selected nodes take over the hover, regardless of whatever is over it.
-    if self.selectedNode and (self.selectedNode:isHovered() or self.selectedNode:getHoveredResizeHandleID()) then
-        return self.selectedNode
-    end
+    -- TODO: Is that necessary? Also, update the code for multi-selection.
+    --if self.selectedNode and (self.selectedNode:isHovered() or self.selectedNode:getHoveredResizeHandleID()) then
+    --    return self.selectedNode
+    --end
     -- Finally, look if any node is directly hovered.
     return _UI:findChildByPixelDepthFirst(_MouseCPos, true, true)
 end
@@ -158,13 +161,29 @@ end
 
 
 
+---Returns `true` if the provided Node exists anywhere either in the project's UI tree, or in the internal editor's UI tree.
+---@param node Node The node to be looked for.
+function Editor:doesNodeExistSomewhere(node)
+    return _UI == node or _UI:findChild(node) or self.UI == node or self.UI:findChild(node)
+end
+
+
+
 ---Refreshes all critical UI for Editors, for example the node properties.
 function Editor:updateUI()
-    -- If the selected node has been removed, deselect it.
-    if _UI ~= self.selectedNode and not _UI:findChild(self.selectedNode) and self.UI ~= self.selectedNode and not self.UI:findChild(self.selectedNode) then
-        self.selectedNode = nil
+    -- If any of the selected nodes have been removed, deselect them.
+    for i = #self.selectedNodes, 1, -1 do
+        if not self:doesNodeExistSomewhere(self.selectedNodes[i]) then
+            table.remove(self.selectedNodes, i)
+        end
     end
-    self:generateNodePropertyUI(self.selectedNode)
+    if #self.selectedNodes == 1 then
+        -- Display property UI only if a single node has been selected.
+        self:generateNodePropertyUI(self.selectedNodes[1])
+    else
+        -- TODO: Make property UI for multiple nodes (show common values)
+        self:generateNodePropertyUI()
+    end
 end
 
 
@@ -226,82 +245,145 @@ end
 
 
 
----Marks the provided node as selected and updates all UI in order to facilitate editing its properties.
----@param node Node? The node to be selected. If not provided, all nodes will be deselected.
+---Returns `true` if the provided node is currently selected, `false` otherwise.
+---@param node Node The node to be checked.
+---@return boolean
+function Editor:isNodeSelected(node)
+    return _Utils.isValueInTable(self.selectedNodes, node)
+end
+
+
+
+---Marks the provided nodes as selected and updates the editor UI in order to facilitate editing their properties.
+---@param node Node The node to be selected.
 function Editor:selectNode(node)
-    self.selectedNode = node
+    if self:isNodeSelected(node) then
+        -- Do nothing if the node is already selected.
+        return
+    end
+    table.insert(self.selectedNodes, node)
+    self:updateUI()
+end
+
+
+
+---Marks the provided node as unselected and updates the editor UI accordingly.
+---@param node Node The node to be deselected.
+function Editor:deselectNode(node)
+    if not self:isNodeSelected(node) then
+        -- Do nothing if the node is already not selected.
+        return
+    end
+    _Utils.removeValueFromTable(self.selectedNodes, node)
+end
+
+
+
+---Deselects all previously selected nodes and updates the editor UI.
+function Editor:deselectAllNodes()
+    self.selectedNodes = {}
     self:updateUI()
 end
 
 
 
 ---Adds the provided UI node as the currently selected node's sibling, or, if no node is selected, to the root node.
+---If more than one node is selected, nothing will happen.
 ---@param node Node The node to be added.
 function Editor:addNode(node)
-    self:executeCommand(CommandNodeAdd(node, self.selectedNode and self.selectedNode.parent or _UI))
+    if #self.selectedNodes > 1 then
+        return
+    end
+    local targetParent = self.selectedNodes[1] and self.selectedNodes[1].parent or _UI
+    self:executeCommand(CommandNodeAdd(node, targetParent))
 end
 
 
 
----Copies the currently selected UI node to the internal clipboard.
+---Copies the currently selected UI nodes to the internal clipboard.
 function Editor:copySelectedNode()
-    if not self.selectedNode then
+    if #self.selectedNodes == 0 then
+        -- We need to prevent clearing the clipboard when nothing is going to be copied.
         return
     end
-    self.clipboard = self.selectedNode:serialize()
+    self.clipboard = {}
+    for i, node in ipairs(self.selectedNodes) do
+        table.insert(self.clipboard, node:serialize())
+    end
 end
 
 
 
----Pastes the UI node which is stored in the internal clipboard and adds it as the currently selected node's sibling (or to the root node).
----The newly added Node will be selected.
+---Pastes the UI nodes which are stored in the internal clipboard and adds them as the currently selected node's sibling (or to the root node).
+---The newly added Nodes will be selected.
 function Editor:pasteNode()
-    if not self.clipboard then
+    if #self.clipboard == 0 then
+        -- We need to prevent deselecting everything when nothing is going to be pasted.
         return
     end
-    local node = Node(self.clipboard)
-    self:addNode(node)
-    self:selectNode(node)
+    self:deselectAllNodes()
+    for i, entry in ipairs(self.clipboard) do
+        local node = Node(entry)
+        self:addNode(node)
+        self:selectNode(node)
+    end
 end
 
 
 
----Duplicates the currently selected UI node and selects the newly made duplicate.
+---Duplicates the currently selected UI nodes and selects the newly made duplicates.
 function Editor:duplicateSelectedNode()
-    if not self.selectedNode then
+    if #self.selectedNodes == 0 then
+        -- We need to prevent deselecting everything when nothing is going to be pasted.
         return
     end
-    local data = self.selectedNode:serialize()
-    local node = Node(data)
-    self:addNode(node)
-    self:selectNode(node)
+    self:deselectAllNodes()
+    for i, node in ipairs(self.selectedNodes) do
+        local data = node:serialize()
+        local newNode = Node(data)
+        self:addNode(newNode)
+        self:selectNode(newNode)
+    end
 end
 
 
 
----Renames the currently selected UI node.
+---Renames the currently selected UI nodes.
+---There is no duplicate checking when renaming multiple nodes; all get the same name.
 ---@param name string The new name.
 function Editor:renameSelectedNode(name)
-    self:executeCommand(CommandNodeRename(self.selectedNode, name))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeRename(node, name))
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Moves the currently selected UI node by the given amount of pixels.
----@param offset Vector2 The movement vector the selected UI node should be moved towards.
+---Moves the currently selected UI nodes by the given amount of pixels.
+---@param offset Vector2 The movement vector the selected UI nodes should be moved towards.
 function Editor:moveSelectedNode(offset)
-    self:executeCommand(CommandNodeMove(self.selectedNode, offset), "widgetMove")
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeMove(node, offset), "widgetMove")
+    end
+    self:commitCommandTransaction()
 end
 
 
 
 ---Starts dragging the selected node, starting from the current mouse position.
 function Editor:startDraggingSelectedNode()
-    if not self.selectedNode then
+    if #self.selectedNodes == 0 then
+        -- We need to prevent dragging when nothing is selected in the first place.
         return
     end
     self.nodeDragOrigin = _MouseCPos
-    self.nodeDragOriginalPos = self.selectedNode:getPos()
+    self.nodeDragOriginalPos = {}
+    for i, node in ipairs(self.selectedNodes) do
+        table.insert(self.nodeDragOriginalPos, node:getPos())
+    end
     self.nodeDragSnap = true
 end
 
@@ -309,16 +391,22 @@ end
 
 ---Finishes dragging the selected node and pushes a command so that the movement can be undone.
 function Editor:finishDraggingSelectedNode()
-    if not self.selectedNode or not self.nodeDragOriginalPos then
+    if #self.nodeDragOriginalPos == 0 then
+        -- We don't need to do anything if there are no nodes being dragged.
         return
     end
-    self:executeCommand(CommandNodeDrag(self.selectedNode, self.nodeDragOriginalPos))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeDrag(node, self.nodeDragOriginalPos[i]))
+    end
+    self:commitCommandTransaction()
     -- If we were dragging a freshly duplicated node, we need to commit the transaction.
+    -- TODO: This is broken. Fix this somehow.
     if self.commandMgr.transactionMode then
         self:commitCommandTransaction()
     end
     self.nodeDragOrigin = nil
-    self.nodeDragOriginalPos = nil
+    self.nodeDragOriginalPos = {}
     self.nodeDragSnap = false
 end
 
@@ -326,28 +414,36 @@ end
 
 ---Restores the original selected node position and finishes the dragging process.
 function Editor:cancelDraggingSelectedNode()
-    if not self.selectedNode or not self.nodeDragOriginalPos then
+    if #self.nodeDragOriginalPos == 0 then
+        -- We don't need to do anything if there are no nodes being dragged.
         return
     end
-    self.selectedNode:setPos(self.nodeDragOriginalPos)
+    for i, node in ipairs(self.selectedNodes) do
+        node:setPos(self.nodeDragOriginalPos[i])
+    end
     -- If we were dragging a freshly duplicated node, we need to cancel the transaction.
+    -- TODO: This is broken. Fix this somehow.
     if self.commandMgr.transactionMode then
         self:cancelCommandTransaction()
     end
-    self:finishDraggingSelectedNode()
+    self.nodeDragOrigin = nil
+    self.nodeDragOriginalPos = {}
+    self.nodeDragSnap = false
 end
 
 
 
 ---Starts resizing the selected node, starting from the current mouse position.
+---Does nothing if more than one node is selected.
 ---@param handleID integer The ID of the resize handle that has been grabbed.
 function Editor:startResizingSelectedNode(handleID)
-    if not self.selectedNode then
+    if #self.selectedNodes ~= 1 then
+        -- Resizing more than one node at once or none at all does not make any sense.
         return
     end
     self.nodeResizeOrigin = _MouseCPos
-    self.nodeResizeOriginalPos = self.selectedNode:getPos()
-    self.nodeResizeOriginalSize = self.selectedNode:getSize()
+    self.nodeResizeOriginalPos = self.selectedNodes[1]:getPos()
+    self.nodeResizeOriginalSize = self.selectedNodes[1]:getSize()
     self.nodeResizeDirection = self.NODE_RESIZE_DIRECTIONS[handleID]
     self.nodeResizeHandleID = handleID
 end
@@ -356,10 +452,11 @@ end
 
 ---Finishes resizing the selected node and pushes a command so that this process can be undone.
 function Editor:finishResizingSelectedNode()
-    if not self.selectedNode or not self.nodeResizeOriginalPos then
+    if not self.nodeResizeOriginalPos then
+        -- Do nothing if no resize action is happening.
         return
     end
-    self:executeCommand(CommandNodeResize(self.selectedNode, self.nodeResizeOriginalPos, self.nodeResizeOriginalSize))
+    self:executeCommand(CommandNodeResize(self.selectedNodes[1], self.nodeResizeOriginalPos, self.nodeResizeOriginalSize))
     self.nodeResizeOrigin = nil
     self.nodeResizeOriginalPos = nil
     self.nodeResizeOriginalSize = nil
@@ -371,48 +468,69 @@ end
 
 ---Restores the original selected node's positions and size and finishes the resizing process.
 function Editor:cancelResizingSelectedNode()
-    if not self.selectedNode or not self.nodeResizeOriginalPos then
+    if not self.nodeResizeOriginalPos then
+        -- Do nothing if no resize action was happening.
         return
     end
-    self.selectedNode:setPos(self.nodeResizeOriginalPos)
-    self.selectedNode:setSize(self.nodeResizeOriginalSize)
-    self:finishResizingSelectedNode()
+    self.selectedNodes[1]:setPos(self.nodeResizeOriginalPos)
+    self.selectedNodes[1]:setSize(self.nodeResizeOriginalSize)
+    self.nodeResizeOrigin = nil
+    self.nodeResizeOriginalPos = nil
+    self.nodeResizeOriginalSize = nil
+    self.nodeResizeDirection = nil
+    self.nodeResizeHandleID = nil
 end
 
 
 
----Sets a new alignment for the selected node.
+---Sets a new alignment for the selected nodes.
 ---@param align Vector2 The new alignment value.
 function Editor:setSelectedNodeAlign(align)
-    self:executeCommand(CommandNodeSetAlign(self.selectedNode, align))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeSetAlign(node, align))
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Sets a new parental alignment for the selected node.
+---Sets a new parental alignment for the selected nodes.
 ---@param parentAlign Vector2 The new parental alignment value.
 function Editor:setSelectedNodeParentAlign(parentAlign)
-    self:executeCommand(CommandNodeSetParentAlign(self.selectedNode, parentAlign))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeSetParentAlign(node, parentAlign))
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Sets a new value for the selected node property.
+---Sets a new value for the selected nodes' property.
 ---@param property string The property to be set.
 ---@param value any? The value to be set for this property.
 ---@param groupID string? The command group ID. Used when scrolling so that everything can be undone at once.
 function Editor:setSelectedNodeProperty(property, value, groupID)
-    self:executeCommand(CommandNodeSetProperty(self.selectedNode, property, value), groupID)
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeSetProperty(node, property, value), groupID)
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Sets a new value for the selected node's widget property.
+---Sets a new value for the selected nodes' widget property.
 ---@param property string The property to be set.
 ---@param value any? The value to be set for this property.
 ---@param groupID string? The command group ID. Used when scrolling so that everything can be undone at once.
 function Editor:setSelectedNodeWidgetProperty(property, value, groupID)
-    self:executeCommand(CommandNodeSetWidgetProperty(self.selectedNode, property, value), groupID)
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeSetWidgetProperty(node, property, value), groupID)
+    end
+    self:commitCommandTransaction()
 end
 
 
@@ -427,45 +545,69 @@ end
 
 
 
----Moves the selected node up in its parent's hierarchy.
+---Moves the selected nodes up in their parents' hierarchy.
 function Editor:moveSelectedNodeUp()
-    self:executeCommand(CommandNodeMoveUp(self.selectedNode))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeMoveUp(node))
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Moves the selected node down in its parent's hierarchy.
+---Moves the selected nodes down in their parents' hierarchy.
 function Editor:moveSelectedNodeDown()
-    self:executeCommand(CommandNodeMoveDown(self.selectedNode))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeMoveDown(node))
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Moves the selected node to the top in its parent's hierarchy.
+---Moves the selected nodes to the top in their parents' hierarchy.
 function Editor:moveSelectedNodeToTop()
-    self:executeCommand(CommandNodeMoveToTop(self.selectedNode))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeMoveToTop(node))
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Moves the selected node to the bottom in its parent's hierarchy.
+---Moves the selected nodes to the bottom in their parents' hierarchy.
 function Editor:moveSelectedNodeToBottom()
-    self:executeCommand(CommandNodeMoveToBottom(self.selectedNode))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeMoveToBottom(node))
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Parents the currently selected node to the currently hovered node.
----The selected node becomes a child, and the hovered node becomes its parent.
+---Parents the currently selected nodes to the currently hovered node.
+---The selected nodes become the children, and the hovered node becomes their parent.
 function Editor:parentSelectedNodeToHoveredNode()
-    self:executeCommand(CommandNodeSetParent(self.selectedNode, self.hoveredNode))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeSetParent(node, self.hoveredNode))
+    end
+    self:commitCommandTransaction()
 end
 
 
 
----Deletes the currently selected UI node.
+---Deletes the currently selected UI nodes.
 function Editor:deleteSelectedNode()
-    self:executeCommand(CommandNodeDelete(self.selectedNode))
+    self:startCommandTransaction()
+    for i, node in ipairs(self.selectedNodes) do
+        self:executeCommand(CommandNodeDelete(node))
+    end
+    self:commitCommandTransaction()
 end
 
 
@@ -485,7 +627,7 @@ function Editor:executeCommand(command, groupID)
         -- If the commands are grouped, UIs are not updated so that we don't pull our text input
         -- whenever we type a single character while maintaining real-time changes.
         -- TODO: Check the impact on this and make a better system?
-        if not groupID then
+        if not groupID and not self.commandMgr.transactionMode then
             self:updateUI()
         end
     end
@@ -508,6 +650,8 @@ end
 ---From this point, any new commands will be added separately, as usual.
 function Editor:commitCommandTransaction()
     self.commandMgr:commitCommandTransaction()
+    -- Update the UI that we didn't do during the transaction.
+    --self:updateUI()
 end
 
 
@@ -550,7 +694,7 @@ function Editor:newScene()
     self.currentSceneFile = nil
     self.isSceneModified = false
     -- Deselect any selected nodes.
-    self:selectNode()
+    self:deselectAllNodes()
     -- Remove everything from the undo stack.
     self.commandHistory = {}
     self.undoCommandHistory = {}
@@ -565,7 +709,7 @@ function Editor:loadScene(path)
     self.currentSceneFile = path
     self.isSceneModified = false
     -- Deselect any selected nodes.
-    self:selectNode()
+    self:deselectAllNodes()
     -- Remove everything from the undo stack.
     self.commandHistory = {}
     self.undoCommandHistory = {}
@@ -834,28 +978,38 @@ function Editor:update(dt)
     self.hoveredNode = self:getHoveredNode()
 
     -- Handle the node dragging.
-    if self.selectedNode and self.nodeDragOrigin then
+    if self.nodeDragOrigin then
         local movement = _MouseCPos - self.nodeDragOrigin
         if self.nodeDragSnap then
             if movement:len() >= 5 then
                 self.nodeDragSnap = false
             end
         else
-            self.selectedNode:setPos(self.nodeDragOriginalPos + movement)
-            self:updateUI()
+            for i, node in ipairs(self.selectedNodes) do
+                node:setPos(self.nodeDragOriginalPos[i] + movement)
+                self:updateUI()
+            end
         end
     end
 
     -- Handle the node resizing.
-    if self.selectedNode and self.nodeResizeOrigin then
-        local movement = (_MouseCPos - self.nodeResizeOrigin):floor()
-        local posVector = ((self.nodeResizeDirection - 1) / 2 + self.selectedNode:getAlign()) * self.nodeResizeDirection
-        -- TODO: Unmangle this logic somehow so that holding Shift can force a square size!
-        self.selectedNode:setPos(((self.nodeResizeOriginalPos + movement * posVector) + 0.5):floor())
-        self.selectedNode:setSize(self.nodeResizeOriginalSize + movement * self.nodeResizeDirection)
-        -- Do not hover any other node while resizing the selected node.
-        self.hoveredNode = nil
-        self:updateUI()
+    if self.nodeResizeOrigin then
+        assert(#self.selectedNodes < 2, "Resizing of multiple Nodes is not supported. How did you even trigger that?")
+        for i, node in ipairs(self.selectedNodes) do
+            local movement = (_MouseCPos - self.nodeResizeOrigin):floor()
+            local posVector = ((self.nodeResizeDirection - 1) / 2 + node:getAlign()) * self.nodeResizeDirection
+            -- TODO: Unmangle this logic somehow so that holding Shift can force a square size!
+            node:setPos(((self.nodeResizeOriginalPos + movement * posVector) + 0.5):floor())
+            node:setSize(self.nodeResizeOriginalSize + movement * self.nodeResizeDirection)
+            -- Do not hover any other node while resizing the selected node.
+            self.hoveredNode = nil
+            self:updateUI()
+        end
+    end
+
+    -- Handle the multi-selection.
+    if self.nodeMultiSelectOrigin then
+        self.nodeMultiSelectSize = _MouseCPos - self.nodeMultiSelectOrigin
     end
 
     self.uiTree:update(dt)
@@ -904,8 +1058,15 @@ function Editor:draw()
     if self.hoveredNode then
         self.UI:findChildByName("hovText"):setText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode:getName(), self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()))
     end
-    if self.selectedNode then
-        self.UI:findChildByName("selText"):setText(string.format("Selected: %s {%s} pos: %s -> %s", self.selectedNode:getName(), self.selectedNode.type, self.selectedNode:getPos(), self.selectedNode:getGlobalPos()))
+    if #self.selectedNodes > 0 then
+        local text = ""
+        if #self.selectedNodes == 1 then
+            local node = self.selectedNodes[1]
+            text = string.format("Selected: %s {%s} pos: %s -> %s", node:getName(), node.type, node:getPos(), node:getGlobalPos())
+        else
+            text = string.format("Selected: [%s nodes]", #self.selectedNodes)
+        end
+        self.UI:findChildByName("selText"):setText(text)
     end
     local hoveredEvent = self.keyframeEditor.hoveredEvent
     if hoveredEvent then
@@ -930,8 +1091,9 @@ function Editor:draw()
     self.commandMgr:draw()
 
     -- Widget properties
-    if self.selectedNode then
-        local widget = self.selectedNode.widget
+    -- TODO: Move this up, to `:generateNodePropertyUI()`, and display these lines under "Widget Properties".
+    if #self.selectedNodes == 1 then
+        local widget = self.selectedNodes[1].widget
         if widget then
             if not widget.getPropertyList then
                 self:drawShadowedText("This Widget does not support properties yet!", 1220, 30)
@@ -949,11 +1111,25 @@ end
 
 ---Draws the Editor during the main UI pass. Used for correct scaling.
 function Editor:drawUIPass()
-    if self.enabled and self.hoveredNode then
+    if not self.enabled then
+        return
+    end
+    -- Draw a frame around the hovered node.
+    if self.hoveredNode then
         self.hoveredNode:drawHitbox()
     end
-    if self.enabled and self.selectedNode then
-        self.selectedNode:drawSelected()
+    -- Draw frames around the selected nodes.
+    for i, node in ipairs(self.selectedNodes) do
+        node:drawSelected()
+    end
+    -- Draw the multi-selection frame.
+    if self.nodeMultiSelectOrigin then
+        local pos = Vec2(math.min(self.nodeMultiSelectOrigin.x, self.nodeMultiSelectOrigin.x + self.nodeMultiSelectSize.x), math.min(self.nodeMultiSelectOrigin.y, self.nodeMultiSelectOrigin.y + self.nodeMultiSelectSize.y))
+        local size = self.nodeMultiSelectSize:abs()
+        love.graphics.setColor(0, 1, 1, 0.5)
+        love.graphics.rectangle("fill", pos.x, pos.y, size.x, size.y)
+        love.graphics.setColor(0, 1, 1)
+        love.graphics.rectangle("line", pos.x, pos.y, size.x, size.y)
     end
 end
 
@@ -1009,29 +1185,44 @@ function Editor:mousepressed(x, y, button, istouch, presses)
         return
     end
     if button == 1 and not self:isUIHovered() then
-        local resizeHandleID = self.selectedNode and self.selectedNode:getHoveredResizeHandleID()
-        if _IsShiftPressed() then
-            -- Shift+Click parents the selected node instead.
-            -- TODO: Multi-selection !!!
-            self:parentSelectedNodeToHoveredNode()
-        elseif resizeHandleID then
-            -- We've grabbed a resize handle of the currently selected node!
-            self:startResizingSelectedNode(resizeHandleID)
-        else
-            self:selectNode(self.hoveredNode)
-            if _IsCtrlPressed() then
-                self:startCommandTransaction()
-                self:duplicateSelectedNode()
-            end
-            if self.selectedNode then
-                if not self.isNodeHoverIndirect then
-                    -- Start dragging the actual node on the screen.
-                    self:startDraggingSelectedNode()
+        if not _IsShiftPressed() then
+            -- Selecting with Shift adds new nodes cumulatively, i.e. multi-selection.
+            -- TODO: Sometimes you should be exempt from this, i.e. imagine you've selected
+            -- three nodes and now you want to drag them.
+            -- You should be able to do this without having to keep Shift pressed.
+            self:deselectAllNodes()
+        end
+        if self.hoveredNode then
+            local resizeHandleID = #self.selectedNodes == 1 and self.selectedNodes[1]:getHoveredResizeHandleID()
+            if resizeHandleID then
+                -- We've grabbed a resize handle of the currently selected node!
+                self:startResizingSelectedNode(resizeHandleID)
+            else
+                if _IsShiftPressed() and self:isNodeSelected(self.hoveredNode) then
+                    -- Deselect a node with Shift if it has been already hovered.
+                    self:deselectNode(self.hoveredNode)
                 else
-                    -- Start dragging the node on the node tree list.
-                    self.uiTree:startDraggingSelectedNodeInNodeTree()
+                    self:selectNode(self.hoveredNode)
+                end
+                if _IsCtrlPressed() then
+                    self:startCommandTransaction()
+                    self:duplicateSelectedNode()
+                end
+                if #self.selectedNodes > 0 then
+                    if not self.isNodeHoverIndirect then
+                        -- Start dragging the actual node on the screen.
+                        self:startDraggingSelectedNode()
+                    else
+                        -- Start dragging the node on the node tree list.
+                        -- TODO: Move this call to the `EditorUITree` class.
+                        self.uiTree:startDraggingSelectedNodeInNodeTree()
+                    end
                 end
             end
+        else
+            -- If no node is hovered, start the multi-selection mode.
+            self.nodeMultiSelectOrigin = _MouseCPos
+            self.nodeMultiSelectSize = Vec2()
         end
     elseif button == 2 then
         -- Cancel dragging if the right click is received.
@@ -1054,6 +1245,12 @@ function Editor:mousereleased(x, y, button)
         self:finishDraggingSelectedNode()
         self:finishResizingSelectedNode()
         self.uiTree:finishDraggingSelectedNodeInNodeTree()
+        if self.nodeMultiSelectOrigin then
+            -- TODO: Make it actually possible to multi-select nodes by checking the boxes.
+            -- Finish multi-selecting.
+            self.nodeMultiSelectOrigin = nil
+            self.nodeMultiSelectSize = nil
+        end
     end
 end
 

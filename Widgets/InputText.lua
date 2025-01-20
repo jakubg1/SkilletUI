@@ -136,11 +136,11 @@ end
 
 
 
----Sets a new value for the currently selected Node's (or its Widget's) property.
+---Sets a new value for the currently selected Nodes' (or their Widgets') property.
 ---@param value any? The new value for the property.
 ---@param group boolean? If set, all calls from the same input field with this value set will be grouped. Used when scrolling or typing in text so that everything can be undone at once.
 function InputText:setAffectedEntityValue(value, group)
-    if _EDITOR.selectedNode and self.propertyKey then
+    if self.propertyKey then
         if self.affectedType == "node" then
             _EDITOR:setSelectedNodeProperty(self.propertyKey, value, group and self.propertyKey or nil)
         elseif self.affectedType == "widget" then

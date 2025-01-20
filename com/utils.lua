@@ -244,6 +244,25 @@ end
 
 
 
+---Removes the first matching occurence of the given value from the table.
+---@param t table The table from which the value should be removed.
+---@param v any The value to be removed.
+function utils.removeValueFromTable(t, v)
+	for i, n in pairs(t) do
+		if n == v then
+			if #t > 0 then
+				-- We need to do this in order to preserve the index continuity.
+				table.remove(t, i)
+			else
+				t[i] = nil
+			end
+			break
+		end
+	end
+end
+
+
+
 ---Returns an index of the provided weight list, randomly picked from that list.
 ---For example, providing `{1, 2, 3}` will return `0` 1/6 of the time, `1` 2/6 of the time and `2` 3/6 of the time.
 ---@param weights table A list of integers, which depict the weights.

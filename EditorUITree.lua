@@ -221,7 +221,7 @@ function EditorUITree:draw()
             color = _COLORS.lightOrange
         end
         local bgColor = nil
-        if line.node == self.editor.selectedNode then
+        if self.editor:isNodeSelected(line.node) then
             bgColor = _COLORS.cyan
         elseif line.node == self.editor.hoveredNode and (not self.dragOrigin or not (self.hoverTop or self.hoverBottom)) then
             -- The additional condition above makes it extra clear what are you doing when arranging the nodes around in the tree.
@@ -250,7 +250,7 @@ function EditorUITree:draw()
             self.editor:drawShadowedText(line.node:getName(), x + 25, y + 2, color, nil, alpha)
         end
         -- If dragged over, additional signs will be shown.
-        if self.dragOrigin and not self.dragSnap and line.node ~= self.editor.selectedNode and line.node == self.editor.hoveredNode then
+        if self.dragOrigin and not self.dragSnap and not self.editor:isNodeSelected(line.node) and line.node == self.editor.hoveredNode then
             if self.hoverTop then
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.setLineWidth(2)

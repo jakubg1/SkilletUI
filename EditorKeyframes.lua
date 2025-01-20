@@ -132,7 +132,7 @@ end
 function EditorKeyframes:drawEntryBase(n, nodeOrName, isGhost)
     local y = self:getItemY(n)
     local bgColor = nil
-    if nodeOrName == self.editor.selectedNode then
+    if type(nodeOrName) == "table" and self.editor:isNodeSelected(nodeOrName) then
         bgColor = _COLORS.cyan
     elseif nodeOrName == self.editor.hoveredNode then
         bgColor = _COLORS.yellow
@@ -181,7 +181,7 @@ function EditorKeyframes:draw()
     for i, name in ipairs(_TIMELINE.nodeNames) do
         local node = _UI:findChildByName(name)
         local hovered = node and self.editor.hoveredNode == node
-        local selected = node and self.editor.selectedNode == node
+        local selected = node and self.editor:isNodeSelected(node)
         -- Do not display the ghost node if we've selected a node that's already on the list!
         if selected then
             displayGhostNode = false
@@ -190,9 +190,9 @@ function EditorKeyframes:draw()
         self:drawEntryBase(i, node or name)
     end
 
-    -- Ghost entry
-    if displayGhostNode and self.editor.selectedNode then
-        self:drawEntryBase(#_TIMELINE.nodeNames + 1, self.editor.selectedNode, true)
+    -- Ghost entry. They are entries which are visible when exactly one node is selected and allows adding events to the timeline.
+    if displayGhostNode and #self.editor.selectedNodes == 1 then
+        self:drawEntryBase(#_TIMELINE.nodeNames + 1, self.editor.selectedNodes[1], true)
     end
 
     -- Time grid
