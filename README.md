@@ -2,6 +2,12 @@
 
 A work-in-progress UI engine for LOVE2D, intended for implementation into OpenSMCE at some point!
 
+## On Hold
+
+This project needs severe refactoring and as such is being halted for the next two weeks.
+Please do not fork this project, it is broken! Use the commit `d090a20` for the full feature set.
+Don't worry; it will come stronger than ever before!
+
 ## What's Done
 
 - Nodes
