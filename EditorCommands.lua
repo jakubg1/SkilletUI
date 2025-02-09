@@ -154,6 +154,14 @@ end
 
 
 
+---Clears the undo and redo stacks.
+function EditorCommands:clearStacks()
+    self.commandHistory = {}
+    self.undoCommandHistory = {}
+end
+
+
+
 ---Draws the debug contents of Editor Command Manager on the screen.
 function EditorCommands:draw()
     if not self.visible then

@@ -322,26 +322,27 @@ end
 
 ---Returns the position of the resize handle for this Node's widget.
 ---@param id integer 1 to 8: 1 is top left, then clockwise.
+---@param margin integer The margin, in pixels. 0 will return the positions exactly at the Node's bounding box, positive values will set them apart.
 ---@return Vector2
-function Node:getResizeHandlePos(id)
+function Node:getResizeHandlePos(id, margin)
     local pos = self:getGlobalPos()
     local size = self:getSize()
     if id == 1 then
-        return Vec2(pos.x - 4, pos.y - 4)
+        return Vec2(pos.x - margin, pos.y - margin)
     elseif id == 2 then
-        return Vec2(pos.x + size.x / 2 - 1, pos.y - 4)
+        return Vec2(pos.x + size.x / 2, pos.y - margin)
     elseif id == 3 then
-        return Vec2(pos.x + size.x + 1, pos.y - 4)
+        return Vec2(pos.x + size.x + margin, pos.y - margin)
     elseif id == 4 then
-        return Vec2(pos.x + size.x + 1, pos.y + size.y / 2 - 1)
+        return Vec2(pos.x + size.x + margin, pos.y + size.y / 2)
     elseif id == 5 then
-        return Vec2(pos.x + size.x + 1, pos.y + size.y + 1)
+        return Vec2(pos.x + size.x + margin, pos.y + size.y + margin)
     elseif id == 6 then
-        return Vec2(pos.x + size.x / 2 - 1, pos.y + size.y + 1)
+        return Vec2(pos.x + size.x / 2, pos.y + size.y + margin)
     elseif id == 7 then
-        return Vec2(pos.x - 4, pos.y + size.y + 1)
+        return Vec2(pos.x - margin, pos.y + size.y + margin)
     elseif id == 8 then
-        return Vec2(pos.x - 4, pos.y + size.y / 2 - 1)
+        return Vec2(pos.x - margin, pos.y + size.y / 2)
     end
     error(string.format("Invalid resize handle ID: %s (expected 1..8)", id))
 end
@@ -472,8 +473,8 @@ function Node:getHoveredResizeHandleID()
         return nil
     end
     for i = 1, 8 do
-        local pos = self:getResizeHandlePos(i)
-        if _Utils.isPointInsideBox(self:isCanvasInputModeEnabled() and _MouseCPos or _MousePos, pos, Vec2(3)) then
+        local pos = self:getResizeHandlePos(i, 3)
+        if _Utils.isPointInsideBox(self:isCanvasInputModeEnabled() and _MouseCPos or _MousePos, pos - 4, Vec2(8)) then
             return i
         end
     end
@@ -979,110 +980,6 @@ function Node:draw()
         end
         self.widget:draw()
     end
-end
-
-
-
----Draws a dashed line between two points. The dashes are animated and 2 pixels filled + 2 pixels empty.
----@param p1 Vector2 The starting position of the line.
----@param p2 Vector2 The ending position of the line.
-function Node:drawDashedLine(p1, p2)
-    local FILLED_PIXELS = 4
-    local BLANK_PIXELS = 4
-    local offset = (_Time * 4) % (FILLED_PIXELS + BLANK_PIXELS) - FILLED_PIXELS
-    local length = (p2 - p1):len()
-    while offset < length do
-        local q1 = _Utils.interpolateClamped(p1, p2, offset / length)
-        local q2 = _Utils.interpolateClamped(p1, p2, (offset + FILLED_PIXELS) / length)
-        love.graphics.line(q1.x + 0.5, q1.y + 0.5, q2.x + 0.5, q2.y + 0.5)
-        offset = offset + FILLED_PIXELS + BLANK_PIXELS
-    end
-end
-
-
-
----Draws a dashed rectangle with the given position and size. The dashes are animated depending on the rules of `:drawDashedLine()`
----@param pos Vector2 The rectangle position.
----@param size Vector2 The rectangle size, in pixels.
-function Node:drawDashedRectangle(pos, size)
-    local c1 = pos
-    local c2 = pos + Vec2(size.x - 1, 0)
-    local c3 = pos + size - 1
-    local c4 = pos + Vec2(0, size.y - 1)
-    self:drawDashedLine(c1, c2)
-    self:drawDashedLine(c2, c3)
-    self:drawDashedLine(c3, c4)
-    self:drawDashedLine(c4, c1)
-end
-
-
-
----Draws this Node's bounding box, or a crosshair if this Node has no widget.
----The borders are all inclusive.
-function Node:drawHitbox()
-    local pos = self:getGlobalPos()
-    love.graphics.setLineWidth(1)
-    if self.widget then
-        local size = self:getSize()
-        love.graphics.setColor(1, 1, 0)
-        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 1, size.y - 1)
-    else
-        love.graphics.setColor(0.5, 0.5, 0.5)
-        self:drawCrosshair(pos, 2)
-    end
-end
-
-
-
----Draws this Node's bounding box in a different color (or a crosshair if this Node has no widget), and some indicators around.
----The borders are all inclusive.
-function Node:drawSelected()
-    local pos = self:getGlobalPos()
-    love.graphics.setLineWidth(1)
-    if self.widget then
-        local size = self:getSize()
-        love.graphics.setColor(0, 1, 1)
-        self:drawDashedRectangle(pos, size)
-    else
-        love.graphics.setColor(1, 1, 1)
-        self:drawCrosshair(pos, 2)
-    end
-    -- Draw local crosshair.
-    local localPos = self:getGlobalPosWithoutLocalAlign()
-    love.graphics.setColor(0, 0, 1)
-    self:drawCrosshair(localPos, 2)
-    -- Draw parent align crosshair.
-    local localPos2 = self:getParentAlignPos()
-    love.graphics.setColor(1, 0, 1)
-    self:drawCrosshair(localPos2, 2)
-    -- Draw a line between them.
-    love.graphics.setColor(0.5, 0, 1)
-    love.graphics.line(localPos.x, localPos.y, localPos2.x, localPos2.y)
-    -- Draw resizing boxes if the widget can be resized.
-    if self:isResizable() then
-        local id = self:getHoveredResizeHandleID()
-        for i = 1, 8 do
-            if i == id or i == _EDITOR.nodeResizeHandleID then
-                -- This handle is hovered or being dragged.
-                love.graphics.setColor(1, 1, 1)
-            else
-                love.graphics.setColor(0, 1, 1)
-            end
-            local p = self:getResizeHandlePos(i)
-            love.graphics.rectangle("fill", p.x, p.y, 3, 3)
-        end
-    end
-end
-
-
-
----Internal function which draws a crosshair.
----@param pos Vector2 The crosshair position.
----@param size number The crosshair size, in pixels.
-function Node:drawCrosshair(pos, size)
-    pos = pos:floor() + 0.5
-    love.graphics.line(pos.x - size, pos.y, pos.x + size + 1, pos.y)
-    love.graphics.line(pos.x, pos.y - size, pos.x, pos.y + size + 1)
 end
 
 

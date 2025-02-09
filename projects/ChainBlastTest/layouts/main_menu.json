@@ -1,0 +1,189 @@
+{
+	"children": [
+		{
+			"children": [
+				{
+					"visible": false,
+					"widget": {
+						"color": "#ffffff",
+						"size": [
+							320,
+							180
+						],
+						"alpha": 0
+					},
+					"type": "box",
+					"name": "Flash"
+				},
+				{
+					"visible": false,
+					"widget": {
+						"gradientWaveFrequency": 200,
+						"shadowOffset": [
+							2,
+							2
+						],
+						"gradientWaveColor": "#199919",
+						"text": "Chain Blast",
+						"scale": 4,
+						"color": "#4cff4c",
+						"gradientWaveSpeed": 100
+					},
+					"pos": [
+						160,
+						35
+					],
+					"type": "text",
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "Title"
+				},
+				{
+					"pos": [
+						-170,
+						35
+					],
+					"type": "text",
+					"align": [
+						1,
+						0.5
+					],
+					"widget": {
+						"gradientWaveFrequency": 200,
+						"shadowOffset": [
+							2,
+							2
+						],
+						"gradientWaveColor": "#199919",
+						"text": "Chain",
+						"scale": 4,
+						"color": "#4cff4c",
+						"gradientWaveSpeed": 100
+					},
+					"name": "TitleH1"
+				},
+				{
+					"pos": [
+						490,
+						35
+					],
+					"type": "text",
+					"align": [
+						0,
+						0.5
+					],
+					"widget": {
+						"gradientWaveFrequency": 200,
+						"shadowOffset": [
+							2,
+							2
+						],
+						"gradientWaveColor": "#199919",
+						"text": "Blast",
+						"scale": 4,
+						"color": "#4cff4c",
+						"gradientWaveSpeed": 100
+					},
+					"name": "TitleH2"
+				},
+				{
+					"visible": false,
+					"widget": [],
+					"pos": [
+						162,
+						35
+					],
+					"type": "@titleDigit",
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "TitleDigit"
+				},
+				{
+					"visible": false,
+					"children": [
+						{
+							"pos": [
+								0,
+								80
+							],
+							"type": "text",
+							"align": [
+								0.5,
+								0.5
+							],
+							"widget": {
+								"text": "Main Menu"
+							},
+							"name": "Text"
+						},
+						{
+							"pos": [
+								0,
+								105
+							],
+							"type": "text",
+							"align": [
+								0.5,
+								0.5
+							],
+							"widget": {
+								"text": "Play the Demo!"
+							},
+							"name": "Text#2"
+						},
+						{
+							"pos": [
+								0,
+								115
+							],
+							"type": "text",
+							"align": [
+								0.5,
+								0.5
+							],
+							"widget": {
+								"text": "Exit"
+							},
+							"name": "Text#3"
+						},
+						{
+							"pos": [
+								0,
+								151
+							],
+							"type": "text",
+							"align": [
+								0.5,
+								0.5
+							],
+							"widget": {
+								"typeInProgress": 0,
+								"text": "It will be a while until I get back on Chain Blast 2 gameplay dev :'D"
+							},
+							"name": "TypeText"
+						}
+					],
+					"parentAlign": [
+						0.5,
+						0
+					],
+					"name": "Node"
+				}
+			],
+			"widget": {
+				"size": [
+					320,
+					180
+				]
+			},
+			"name": "Background",
+			"type": "box"
+		}
+	],
+	"canvasInputMode": true,
+	"name": "root"
+}

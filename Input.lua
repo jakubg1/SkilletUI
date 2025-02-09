@@ -26,7 +26,6 @@ function Input:new()
 	self.inputText = ""
 	self.inputColor = {x = 0, y = 0, z = 0.5}
 	self.colorDragging = nil
-	self.inputExtensions = nil
 	self.fileList = nil
 	self.fileListOffset = 0
 	self.FILE_LIST_ENTRY_HEIGHT = 20
@@ -159,7 +158,7 @@ end
 
 
 
-function Input:inputAsk(type, value, extensions, warnWhenFileExists)
+function Input:inputAsk(type, value, extensions, warnWhenFileExists, basePath, pathFilter)
 	self.inputType = type
 	if value then
 		if type == "string" then
@@ -170,9 +169,8 @@ function Input:inputAsk(type, value, extensions, warnWhenFileExists)
 			self:setInputColor(value.r, value.g, value.b)
 		elseif type == "file" then
 			self.inputText = value
-			self.inputExtensions = extensions
 			self.fileWarnWhenExists = warnWhenFileExists
-			self.fileList = self:getFileList()
+			self.fileList = self:getFileList(basePath or "", pathFilter or "file", extensions)
 			self.fileListOffset = 0
 		elseif type == "shortcut" then
 			self.shortcut = value
@@ -317,11 +315,18 @@ end
 
 
 
-function Input:getFileList()
+function Input:getFileList(basePath, filter, extensions)
 	local files = {}
-	for i, extension in ipairs(self.inputExtensions) do
-		local fileList = _Utils.getDirListing("", "file", extension, true)
-		for j, file in ipairs(fileList) do
+	if extensions then
+		for i, extension in ipairs(extensions) do
+			local fileList = _Utils.getDirListing(basePath, filter, extension, true)
+			for j, file in ipairs(fileList) do
+				table.insert(files, file)
+			end
+		end
+	else
+		local fileList = _Utils.getDirListing(basePath, filter, nil)
+		for i, file in ipairs(fileList) do
 			table.insert(files, file)
 		end
 	end

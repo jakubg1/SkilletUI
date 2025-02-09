@@ -106,7 +106,7 @@ end
 function NodeList:sortByTreeOrder()
     local result = {}
     -- TODO: At some point, sort this independently of the UI tree module.
-    local info = _EDITOR.uiTree:getUITreeInfo(_UI)
+    local info = _EDITOR.uiTree:getUITreeInfo(_PROJECT:getCurrentLayout())
     for i, entry in ipairs(info) do
         if _Utils.isValueInTable(self.nodes, entry.node) then
             table.insert(result, entry.node)

@@ -7,9 +7,8 @@ local NineImage = require("NineImage")
 local MainCanvas = require("MainCanvas")
 local GridBackground = require("GridBackground")
 local TransitionTest = require("TransitionTest")
+local Project = require("Project")
 local Editor = require("Editor")
-local Node = require("Node")
-local Timeline = require("Timeline")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 love.graphics.setLineStyle("rough")
@@ -81,9 +80,9 @@ _ALIGNMENTS = {
 _CANVAS = MainCanvas()
 _BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
-_UI = nil
+---@type Project?
+_PROJECT = nil
 _EDITOR = Editor()
-_TIMELINE = Timeline()
 
 _BackgroundEnabled = true
 _FullscreenPresentation = false
@@ -105,68 +104,68 @@ function _IsCtrlPressed()
 	return love.keyboard.isDown("lctrl", "rctrl")
 end
 
-
-
 function _IsShiftPressed()
 	return love.keyboard.isDown("lshift", "rshift")
 end
 
 
 
-function _LoadUI(path)
-	local data = _Utils.loadJson(path)
-	return Node(data)
+---Loads a project from the `projects/<name>` folder.
+---@param name string The project name.
+function _LoadProject(name)
+	_PROJECT = Project("projects/" .. name)
 end
 
 
 
 ---Executed whenever a signal is fired by a Node.
 ---TODO: Move that somewhere else. UI Script, perhaps. Remember about sandboxing...
+---TODO: Maybe signals should be more than simple strings. A command name, and then some parameters? Like "loadLayout", "welcome" would be hardwired.
 ---@param name string The signal name.
 function _OnSignal(name)
 	if name == "main" then
-		_EDITOR:loadScene("layouts/welcome.json")
+		_PROJECT:loadLayout("welcome.json")
 	elseif name == "page1" then
-		_EDITOR:loadScene("layouts/todo.json")
+		_PROJECT:loadLayout("todo.json")
 	elseif name == "page2" then
-		_EDITOR:loadScene("layouts/todo2.json")
+		_PROJECT:loadLayout("todo2.json")
 	elseif name == "page3" then
-		_EDITOR:loadScene("layouts/todo3.json")
+		_PROJECT:loadLayout("todo3.json")
 	elseif name == "page4" then
-		_EDITOR:loadScene("layouts/todo4.json")
+		_PROJECT:loadLayout("todo4.json")
 	elseif name == "dive1" then
-		_EDITOR:loadScene("layouts/dive1.json")
+		_PROJECT:loadLayout("dive1.json")
 	elseif name == "dive2" then
-		_EDITOR:loadScene("layouts/dive2.json")
+		_PROJECT:loadLayout("dive2.json")
 	elseif name == "dive3" then
-		_EDITOR:loadScene("layouts/dive3.json")
+		_PROJECT:loadLayout("dive3.json")
 	elseif name == "dive4" then
-		_EDITOR:loadScene("layouts/dive4.json")
+		_PROJECT:loadLayout("dive4.json")
 	elseif name == "dive5" then
-		_EDITOR:loadScene("layouts/dive5.json")
+		_PROJECT:loadLayout("dive5.json")
 	elseif name == "dive6" then
-		_EDITOR:loadScene("layouts/dive6.json")
+		_PROJECT:loadLayout("dive6.json")
 	elseif name == "dive7" then
-		_EDITOR:loadScene("layouts/dive7.json")
+		_PROJECT:loadLayout("dive7.json")
 	elseif name == "dive8" then
-		_EDITOR:loadScene("layouts/dive8.json")
+		_PROJECT:loadLayout("dive8.json")
 	elseif name == "dive9" then
-		_EDITOR:loadScene("layouts/dive9.json")
+		_PROJECT:loadLayout("dive9.json")
 	elseif name == "dive10" then
-		_EDITOR:loadScene("layouts/dive10.json")
+		_PROJECT:loadLayout("dive10.json")
 	end
 end
 
 
 
 function love.load()
-	love.window.setMode(_WINDOW_SIZE.x, _WINDOW_SIZE.y)
 	_PrepareResourceLookups()
 	_EDITOR:load()
-	_EDITOR:loadScene("layouts/welcome.json")
+	_LoadProject("Demo")
+	_PROJECT:loadLayout("welcome.json")
 	--[[
-	_UI = _LoadUI("ui.json")
-	_UI:findChildByName("btn1"):setOnClick(function ()
+	_PROJECT:loadLayout("ui.json")
+	_PROJECT.ui:findChildByName("btn1"):setOnClick(function ()
 		if _TRANSITION.state then
 			_TRANSITION:hide()
 		else
@@ -189,9 +188,8 @@ function love.update(dt)
 	-- Main update
 	_BACKGROUND:update(dt)
 	_TRANSITION:update(dt)
-	_UI:update(dt)
+	_PROJECT:update(dt)
 	_EDITOR:update(dt)
-	_TIMELINE:update(dt)
 end
 
 
@@ -203,11 +201,11 @@ function love.draw()
 	if not _EDITOR.enabled and _BackgroundEnabled then
 		_BACKGROUND:draw()
 	end
-	_UI:draw()
-	_EDITOR:drawUIPass()
+	_PROJECT:draw()
 	_TRANSITION:draw()
 	-- End of main drawing routine
 	_CANVAS:draw()
+	_EDITOR:drawUIPass()
 	_EDITOR:draw()
 	local t2 = love.timer.getTime() - t
 	_DrawTime = _DrawTime * 0.95 + t2 * 0.05
@@ -217,7 +215,7 @@ end
 
 function love.mousepressed(x, y, button, istouch, presses)
 	if not _EDITOR.enabled then
-		_UI:mousepressed(x, y, button, istouch, presses)
+		_PROJECT:mousepressed(x, y, button, istouch, presses)
 	end
 	_EDITOR:mousepressed(x, y, button, istouch, presses)
 end
@@ -226,7 +224,7 @@ end
 
 function love.mousereleased(x, y, button)
 	if not _EDITOR.enabled then
-		_UI:mousereleased(x, y, button)
+		_PROJECT:mousereleased(x, y, button)
 	end
 	_EDITOR:mousereleased(x, y, button)
 end
@@ -241,7 +239,7 @@ end
 
 function love.keypressed(key)
 	if not _EDITOR.enabled then
-		_UI:keypressed(key)
+		_PROJECT:keypressed(key)
 		if key == "`" then
 			_BackgroundEnabled = not _BackgroundEnabled
 		elseif key == "f" then
@@ -251,12 +249,24 @@ function love.keypressed(key)
 	_EDITOR:keypressed(key)
 	-- Full-screen presentation mode!
 	local fullscreen = not _EDITOR.enabled and _FullscreenPresentation
-	_CANVAS.pos = fullscreen and _CANVAS_OFFSET_PRESENTATION or _CANVAS_OFFSET_EDITOR
-	_CANVAS.size = fullscreen and _CANVAS_SIZE_PRESENTATION or _CANVAS_SIZE_EDITOR
+	_CANVAS:setPos(fullscreen and _CANVAS_OFFSET_PRESENTATION or _CANVAS_OFFSET_EDITOR)
+	_CANVAS:setSize(fullscreen and _CANVAS_SIZE_PRESENTATION or _CANVAS_SIZE_EDITOR)
 end
 
 
 
 function love.textinput(text)
 	_EDITOR:textinput(text)
+end
+
+
+
+function love.resize(w, h)
+	_WINDOW_SIZE = Vec2(w, h)
+	_CANVAS_SIZE_PRESENTATION = Vec2(w, h)
+	local fullscreen = not _EDITOR.enabled and _FullscreenPresentation
+	if fullscreen then
+		_CANVAS:setPos(_CANVAS_OFFSET_PRESENTATION)
+		_CANVAS:setSize(_CANVAS_SIZE_PRESENTATION)
+	end
 end

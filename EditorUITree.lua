@@ -54,7 +54,11 @@ end
 ---@param indent integer? The starting indentation.
 ---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
 function EditorUITree:getUITreeInfo(node, tab, indent)
-    node = node or _UI
+    node = node or _PROJECT:getCurrentLayout()
+    if not node then
+        -- Currently no layout is open.
+        return {}
+    end
     tab = tab or {}
     indent = indent or 0
     table.insert(tab, {node = node, indent = indent})
@@ -270,6 +274,9 @@ function EditorUITree:draw()
                 love.graphics.rectangle("line", self.POS.x, y, self.SIZE.x, self.ITEM_HEIGHT)
             end
         end
+    end
+    if #self.uiTreeInfo == 0 then
+        self.editor:drawShadowedText("When you load a layout,\nits tree will show up here.", self.POS.x + 5, self.POS.y + 2)
     end
     love.graphics.setScissor()
 

@@ -34,14 +34,18 @@ end
 
 
 
----Returns event display information, in the form of a table
+---Returns event display information, in the form of a table. If no timeline exists, returns `nil`
 ---This function should only be called internally. If you want to get the current event display info, fetch the `self.eventInfo` field instead.
----@return table
+---@return table?
 function EditorKeyframes:getEventInfo()
+    local timeline = _PROJECT:getCurrentTimeline()
+    if not timeline then
+        return nil
+    end
     local tab = {}
-    local info = _TIMELINE:getInfo()
+    local info = timeline:getInfo()
     -- Iterate over all nodes.
-    for i, name in ipairs(_TIMELINE.nodeNames) do
+    for i, name in ipairs(timeline.nodeNames) do
         local events = info[name]
         local y = self:getItemY(i)
         -- Iterate over all events belonging to that node.
@@ -94,6 +98,9 @@ end
 ---This function should only be called internally. If you want to get the currently hovered event, fetch the `self.hoveredEvent` field instead.
 ---@return TimelineEvent?
 function EditorKeyframes:getHoveredEvent()
+    if not self.eventInfo then
+        return nil
+    end
     for i, entry in ipairs(self.eventInfo) do
         local pos = entry.pos
         local size = entry.size
@@ -118,7 +125,12 @@ function EditorKeyframes:update(dt)
     self.hoveredEvent = self:getHoveredEvent()
 
     -- Calculate the maximum scroll offset.
-    self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #_TIMELINE.nodeNames - self.SIZE.y + self.HEADER_HEIGHT, 0)
+    local timeline = _PROJECT:getCurrentTimeline()
+    if timeline then
+        self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #timeline.nodeNames - self.SIZE.y + self.HEADER_HEIGHT, 0)
+    else
+        self.maxScrollOffset = 0
+    end
     -- Scroll back if we've scrolled too far.
     self.scrollOffset = math.min(self.scrollOffset, self.maxScrollOffset)
 end
@@ -174,25 +186,28 @@ function EditorKeyframes:draw()
         t = t + 1
     end
 
-    -- Real entries
-    love.graphics.setScissor(self.POS.x, self.POS.y + self.HEADER_HEIGHT, self.SIZE.x, self.SIZE.y - self.HEADER_HEIGHT)
-    local info = _TIMELINE:getInfo()
-    local displayGhostNode = true
-    for i, name in ipairs(_TIMELINE.nodeNames) do
-        local node = _UI:findChildByName(name)
-        local hovered = node and self.editor.hoveredNode == node
-        local selected = node and self.editor:isNodeSelected(node)
-        -- Do not display the ghost node if we've selected a node that's already on the list!
-        if selected then
-            displayGhostNode = false
+    local timeline = _PROJECT:getCurrentTimeline()
+    if timeline then
+        -- Real entries
+        love.graphics.setScissor(self.POS.x, self.POS.y + self.HEADER_HEIGHT, self.SIZE.x, self.SIZE.y - self.HEADER_HEIGHT)
+        local displayGhostNode = true
+        for i, name in ipairs(timeline.nodeNames) do
+            local layout = _PROJECT:getCurrentLayout()
+            local node = layout and layout:findChildByName(name)
+            local hovered = node and self.editor.hoveredNode == node
+            local selected = node and self.editor:isNodeSelected(node)
+            -- Do not display the ghost node if we've selected a node that's already on the list!
+            if selected then
+                displayGhostNode = false
+            end
+            -- Node name and timeline background
+            self:drawEntryBase(i, node or name)
         end
-        -- Node name and timeline background
-        self:drawEntryBase(i, node or name)
-    end
-
-    -- Ghost entry. They are entries which are visible when exactly one node is selected and allows adding events to the timeline.
-    if displayGhostNode and #self.editor.selectedNodes == 1 then
-        self:drawEntryBase(#_TIMELINE.nodeNames + 1, self.editor.selectedNodes[1], true)
+    
+        -- Ghost entry. They are entries which are visible when exactly one node is selected and allows adding events to the timeline.
+        if displayGhostNode and #self.editor.selectedNodes == 1 then
+            self:drawEntryBase(#timeline.nodeNames + 1, self.editor.selectedNodes[1], true)
+        end
     end
 
     -- Time grid
@@ -241,7 +256,7 @@ function EditorKeyframes:draw()
     love.graphics.setScissor()
 
     -- Playhead
-    local x = self:getTimeX(_TIMELINE.playbackTime or 0)
+    local x = self:getTimeX(timeline and timeline.playbackTime or 0)
     love.graphics.setColor(0, 0, 0)
     love.graphics.setLineWidth(3)
     love.graphics.line(x, self.POS.y + self.HEADER_HEIGHT - 5, x, self.POS.y + self.SIZE.y)

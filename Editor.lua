@@ -59,6 +59,7 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- To Do (arbitrary order):
 --- - Vector and image support for parameters
 --- - Node modifier system, where you could add a rule, like: "modify this node and all its children's widgets' alpha by multiplying it by 0.5"
+--- - Property modifier system: instead of always having just the base and current value, make it a base value and a list of any modifiers (current value could be cached and got but could not be set)
 --- - Timeline editing
 --- - Fix ctrl+drag in node tree
 --- - Multiline text and inline formatting
@@ -81,8 +82,6 @@ function Editor:new()
         Vec2(-1, 0)
     }
 
-    self.currentSceneFile = nil
-    self.isSceneModified = false
     self.clipboard = {}
 
     self.enabled = true
@@ -143,7 +142,10 @@ function Editor:getHoveredNode()
     --    return self.selectedNode
     --end
     -- Finally, look if any node is directly hovered.
-    return _UI:findChildByPixelDepthFirst(_MouseCPos, true, true)
+    local currentLayout = _PROJECT:getCurrentLayout()
+    if currentLayout then
+        return currentLayout:findChildByPixelDepthFirst(_MouseCPos, true, true)
+    end
 end
 
 
@@ -161,7 +163,11 @@ end
 ---@param node Node The node to be looked for.
 ---@return boolean
 function Editor:doesNodeExistSomewhere(node)
-    return _UI == node or _UI:findChild(node) ~= nil or self.UI == node or self.UI:findChild(node) ~= nil
+    local currentLayout = _PROJECT:getCurrentLayout()
+    if currentLayout and (currentLayout == node or currentLayout:findChild(node) ~= nil) then
+        return true
+    end
+    return self.UI == node or self.UI:findChild(node) ~= nil
 end
 
 
@@ -293,7 +299,7 @@ end
 ---@param node Node The node to be added.
 function Editor:addNode(node)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
-    local targetParent = target and target.parent or _UI
+    local targetParent = target and target.parent or _PROJECT:getCurrentLayout()
     self:executeCommand(CommandNodeAdd(NodeList(node), targetParent))
 end
 
@@ -302,7 +308,7 @@ end
 ---@param nodes NodeList The list of nodes to be added.
 function Editor:addNodes(nodes)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
-    local targetParent = target and target.parent or _UI
+    local targetParent = target and target.parent or _PROJECT:getCurrentLayout()
     self:executeCommand(CommandNodeAdd(nodes, targetParent))
 end
 
@@ -517,7 +523,7 @@ function Editor:executeCommand(command, groupID)
     local result = self.commandMgr:executeCommand(command, groupID)
     if result then
         -- Mark the scene as unsaved.
-        self.isSceneModified = true
+        _PROJECT:markLayoutAsModified()
         -- Make sure to refresh UIs.
         -- If the commands are grouped, UIs are not updated so that we don't pull our text input
         -- whenever we type a single character while maintaining real-time changes.
@@ -564,9 +570,7 @@ end
 ---Undoes the command that has been executed last and moves it to the undo command stack.
 function Editor:undoLastCommand()
     self.commandMgr:undoLastCommand()
-    -- Mark the scene as unsaved.
-    self.isSceneModified = true
-    -- Make sure to refresh UIs.
+    _PROJECT:markLayoutAsModified()
     self:updateUI()
 end
 
@@ -575,49 +579,52 @@ end
 ---Redoes the undone command and moves it back to the main command stack.
 function Editor:redoLastCommand()
     self.commandMgr:redoLastCommand()
-    -- Mark the scene as unsaved.
-    self.isSceneModified = true
-    -- Make sure to refresh UIs.
+    _PROJECT:markLayoutAsModified()
     self:updateUI()
+end
+
+
+
+---Loads another project from the specified folder.
+---@param name string The name of the project.
+function Editor:loadProject(name)
+    _LoadProject(name)
+    self:deselectAllNodes()
+    self.commandMgr:clearStacks()
 end
 
 
 
 ---Creates a new blank scene.
 function Editor:newScene()
-    _UI = Node({name = "root", canvasInputMode = true})
-    self.currentSceneFile = nil
-    self.isSceneModified = false
-    -- Deselect any selected nodes.
+    _PROJECT:newLayout()
     self:deselectAllNodes()
-    -- Remove everything from the undo stack.
-    self.commandHistory = {}
-    self.undoCommandHistory = {}
+    self.commandMgr:clearStacks()
 end
-
-
 
 ---Loads a new scene from the specified file.
----@param path string The path to the file.
-function Editor:loadScene(path)
-    _UI = _LoadUI(path)
-    self.currentSceneFile = path
-    self.isSceneModified = false
-    -- Deselect any selected nodes.
+---@param name string The name of the layout.
+function Editor:loadScene(name)
+    _PROJECT:loadLayout(name)
     self:deselectAllNodes()
-    -- Remove everything from the undo stack.
-    self.commandHistory = {}
-    self.undoCommandHistory = {}
+    self.commandMgr:clearStacks()
 end
 
+---Saves the current scene to a file as a different name.
+---@param name string The name of the layout.
+function Editor:saveScene(name)
+    _PROJECT:saveLayout(name)
+end
 
-
----Saves the current scene to a file.
----@param path string The path to the file.
-function Editor:saveScene(path)
-    _Utils.saveJson(path, _UI:serialize())
-    self.currentSceneFile = path
-    self.isSceneModified = false
+---Saves the current scene.
+---If the current scene is a new scene, displays a file picker instead.
+function Editor:trySaveCurrentScene()
+    local name = _PROJECT:getLayoutName()
+    if name then
+        self:saveScene(name)
+    else
+        self:askForInput("save", "file", {".json"}, true, _PROJECT:getLayoutDirectory())
+    end
 end
 
 
@@ -761,14 +768,16 @@ end
 ---@param inputType string The input type. Can be `"string"`, `"number"`, `"color"` or `"file"`.
 ---@param extensions table? If `type` == `"file"`, the list of file extensions to be listed in the input box.
 ---@param warnWhenFileExists boolean? If `type` == `"file"`, whether a file overwrite warning should be shown if the file exists.
-function Editor:askForInput(input, inputType, extensions, warnWhenFileExists)
+---@param basePath string? If `type` == `"file"`, the path from which the file search should start.
+---@param pathFilter string? If `type` == `"file"`: `"file"`, `"dir"` or `"all"` - show either files or directories or both respectively.
+function Editor:askForInput(input, inputType, extensions, warnWhenFileExists, basePath, pathFilter)
     self.activeInput = input
     if inputType == "color" or inputType == "shortcut" or inputType == "file" then
         local value = ""
         if type(input) ~= "string" then
             value = input.widget:getValue()
         end
-        self.INPUT_DIALOG:inputAsk(inputType, value, extensions, warnWhenFileExists)
+        self.INPUT_DIALOG:inputAsk(inputType, value, extensions, warnWhenFileExists, basePath, pathFilter)
     end
 end
 
@@ -782,6 +791,8 @@ function Editor:onInputReceived(result)
             self:saveScene(result)
         elseif self.activeInput == "load" then
             self:loadScene(result)
+        elseif self.activeInput == "loadProject" then
+            self:loadProject(result)
         end
     else
         self.activeInput.widget:setValue(result)
@@ -801,7 +812,7 @@ end
 
 ---Initializes the UI for this Editor.
 function Editor:load()
-    self.UI = _LoadUI("editor_ui.json")
+    self.UI = Node(_Utils.loadJson("editor_ui.json"))
     local NEW_X = 5
     local NEW_Y = 100
     local UTILITY_X = 0
@@ -854,11 +865,13 @@ function Editor:load()
         self:button(PALIGN_X + 30, PALIGN_Y + 60, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
         self:button(PALIGN_X + 60, PALIGN_Y + 60, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
 
-        self:button(FILE_X, FILE_Y, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"}),
-        self:button(FILE_X + 60, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false) end, {ctrl = true, key = "l"}),
-        self:button(FILE_X + 120, FILE_Y, 60, "Save", function() if self.currentSceneFile then self:saveScene(self.currentSceneFile) else self:askForInput("save", "file", {".json"}, true) end end, {ctrl = true, key = "s"}),
-        self:button(FILE_X + 180, FILE_Y, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true) end, {ctrl = true, shift = true, key = "s"}),
-        self:label(FILE_X + 250, FILE_Y, "File: (none)", "lb_file")
+        self:label(FILE_X, FILE_Y, "Project: (none)", "lb_project"),
+        self:button(FILE_X + 250, FILE_Y, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"}),
+        self:label(FILE_X + 360, FILE_Y, "Layout: (none)", "lb_layout"),
+        self:button(FILE_X + 560, FILE_Y, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"}),
+        self:button(FILE_X + 620, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false, _PROJECT:getLayoutDirectory()) end, {ctrl = true, key = "l"}),
+        self:button(FILE_X + 680, FILE_Y, 60, "Save", function() self:trySaveCurrentScene() end, {ctrl = true, key = "s"}),
+        self:button(FILE_X + 740, FILE_Y, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true, _PROJECT:getLayoutDirectory()) end, {ctrl = true, shift = true, key = "s"})
     }
     for i, node in ipairs(nodes) do
         self.UI:addChild(node)
@@ -947,7 +960,8 @@ function Editor:draw()
     self.UI:findChildByName("selText"):setText("")
     self.UI:findChildByName("hovEvText"):setText("")
     self.UI:findChildByName("selEvText"):setText("")
-    self.UI:findChildByName("lb_file"):setText(string.format("File: %s%s", self.currentSceneFile or "(none)", self.isSceneModified and "*" or ""))
+    self.UI:findChildByName("lb_project"):setText(string.format("Project: %s", _PROJECT.path or "(none)"))
+    self.UI:findChildByName("lb_layout"):setText(string.format("Layout: %s%s", _PROJECT:getLayoutName() or "(none)", _PROJECT:isLayoutModified() and "*" or ""))
 
     -- Hovered and selected node
     if self.hoveredNode then
@@ -996,28 +1010,133 @@ end
 
 
 
----Draws the Editor during the main UI pass. Used for correct scaling.
+---Draws the Editor during the main UI pass. Used to maintain the correct scaling.
 function Editor:drawUIPass()
     if not self.enabled then
         return
     end
-    -- Draw a frame around the hovered node.
-    if self.hoveredNode then
-        self.hoveredNode:drawHitbox()
-    end
-    -- Draw frames around the selected nodes.
-    for i, node in ipairs(self.selectedNodes:getNodes()) do
-        node:drawSelected()
-    end
+    -- Draw a frame around the hovered node and frames around the selected nodes.
+    self:drawUIForNodes()
     -- Draw the multi-selection frame.
     if self.nodeMultiSelectOrigin then
-        local pos = Vec2(math.min(self.nodeMultiSelectOrigin.x, self.nodeMultiSelectOrigin.x + self.nodeMultiSelectSize.x), math.min(self.nodeMultiSelectOrigin.y, self.nodeMultiSelectOrigin.y + self.nodeMultiSelectSize.y))
-        local size = self.nodeMultiSelectSize:abs()
+        local origin = self.nodeMultiSelectOrigin
+        local origSize = self.nodeMultiSelectSize
+        local pos = Vec2(math.min(origin.x, origin.x + origSize.x), math.min(origin.y, origin.y + origSize.y))
+        local size = origSize:abs()
+        pos, size = _CANVAS:pixelToPosBox(pos, size)
         love.graphics.setColor(0, 1, 1, 0.5)
         love.graphics.rectangle("fill", pos.x, pos.y, size.x, size.y)
         love.graphics.setColor(0, 1, 1)
         love.graphics.rectangle("line", pos.x, pos.y, size.x, size.y)
     end
+end
+
+
+
+---Draws the Editor UI for the hovered and selected Nodes: selection frames, resize handles etc.
+function Editor:drawUIForNodes()
+    -- Hovered nodes
+    if self.hoveredNode then
+        local pos = self.hoveredNode:getGlobalPos()
+        love.graphics.setLineWidth(3)
+        if self.hoveredNode.widget then
+            local size = self.hoveredNode:getSize()
+            local p, s = _CANVAS:pixelToPosBox(pos, size)
+            love.graphics.setColor(1, 1, 0)
+            love.graphics.rectangle("line", p.x + 1.5, p.y + 1.5, s.x - 3, s.y - 3)
+        else
+            love.graphics.setColor(0.5, 0.5, 0.5)
+            self:drawCrosshair(_CANVAS:pixelToPos(pos), 5)
+        end
+    end
+    -- Selected nodes
+    for i, node in ipairs(self.selectedNodes:getNodes()) do
+        local pos = node:getGlobalPos()
+        love.graphics.setLineWidth(3)
+        if node.widget then
+            local size = node:getSize()
+            local p, s = _CANVAS:pixelToPosBox(pos, size)
+            love.graphics.setColor(0, 1, 1)
+            self:drawDashedRectangle(p + 1, s - 2)
+        else
+            love.graphics.setColor(1, 1, 1)
+            self:drawCrosshair(_CANVAS:pixelToPos(pos), 5)
+        end
+        -- Draw a local crosshair.
+        local localPos = _CANVAS:pixelToPos(node:getGlobalPosWithoutLocalAlign())
+        love.graphics.setColor(0, 0, 1)
+        self:drawCrosshair(localPos, 5)
+        -- Draw parent align crosshair.
+        local localPos2 = _CANVAS:pixelToPos(node:getParentAlignPos())
+        love.graphics.setColor(1, 0, 1)
+        self:drawCrosshair(localPos2, 5)
+        -- Draw a line between them.
+        love.graphics.setColor(0.5, 0, 1)
+        love.graphics.line(localPos.x, localPos.y, localPos2.x, localPos2.y)
+        -- Draw resizing boxes if the widget can be resized.
+        if node:isResizable() then
+            local id = node:getHoveredResizeHandleID()
+            for j = 1, 8 do
+                if j == id or j == self.nodeResizeHandleID then
+                    -- This handle is hovered or being dragged.
+                    love.graphics.setColor(1, 1, 1)
+                else
+                    love.graphics.setColor(0, 1, 1)
+                end
+                local p = _CANVAS:pixelToPos(node:getResizeHandlePos(j, 3))
+                love.graphics.rectangle("fill", p.x - 4, p.y - 4, 8, 8)
+            end
+        end
+    end
+end
+
+
+
+---Draws a dashed line between two points. The dashes are animated.
+---@param p1 Vector2 The starting position of the line.
+---@param p2 Vector2 The ending position of the line.
+---@param filledPixels integer? The amount of filled pixels per cycle. Defaults to 10.
+---@param blankPixels integer? The amount of blank pixels per cycle. Defaults to 10.
+---@param speed number? The speed of the dash. Defaults to 12.
+function Editor:drawDashedLine(p1, p2, filledPixels, blankPixels, speed)
+    filledPixels = filledPixels or 10
+    blankPixels = blankPixels or 10
+    speed = speed or 12
+    local offset = (_Time * speed) % (filledPixels + blankPixels) - filledPixels
+    local length = (p2 - p1):len()
+    while offset < length do
+        local q1 = _Utils.interpolateClamped(p1, p2, offset / length)
+        local q2 = _Utils.interpolateClamped(p1, p2, (offset + filledPixels) / length)
+        love.graphics.line(q1.x + 0.5, q1.y + 0.5, q2.x + 0.5, q2.y + 0.5)
+        offset = offset + filledPixels + blankPixels
+    end
+end
+
+
+
+---Draws a dashed rectangle with the given position and size. The dashes are animated depending on the rules of `:drawDashedLine()`
+---@param pos Vector2 The rectangle position.
+---@param size Vector2 The rectangle size, in pixels.
+function Editor:drawDashedRectangle(pos, size)
+    local c1 = pos
+    local c2 = pos + Vec2(size.x - 1, 0)
+    local c3 = pos + size - 1
+    local c4 = pos + Vec2(0, size.y - 1)
+    self:drawDashedLine(c1, c2)
+    self:drawDashedLine(c2, c3)
+    self:drawDashedLine(c3, c4)
+    self:drawDashedLine(c4, c1)
+end
+
+
+
+---Draws a crosshair.
+---@param pos Vector2 The crosshair position.
+---@param size number The crosshair size, in pixels.
+function Editor:drawCrosshair(pos, size)
+    pos = pos:floor() + 0.5
+    love.graphics.line(pos.x - size, pos.y, pos.x + size + 1, pos.y)
+    love.graphics.line(pos.x, pos.y - size, pos.x, pos.y + size + 1)
 end
 
 
@@ -1175,10 +1294,9 @@ function Editor:keypressed(key)
     if key == "tab" then
         self.enabled = not self.enabled
         if self.enabled then
-            _TIMELINE:stop()
-            _UI:resetProperties()
+            _PROJECT:stopTimeline("test")
         else
-            _TIMELINE:play()
+            _PROJECT:playTimeline("test")
         end
     elseif key == "up" then
         self:moveSelectedNode(Vec2(0, _IsShiftPressed() and -10 or -1))
