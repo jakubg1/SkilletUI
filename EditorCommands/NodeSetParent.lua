@@ -1,37 +1,36 @@
 local class = require "com.class"
 
 ---@class EditorCommandNodeSetParent
----@overload fun(node, parent):EditorCommandNodeSetParent
+---@overload fun(nodeList, parent):EditorCommandNodeSetParent
 local EditorCommandNodeSetParent = class:derive("EditorCommandNodeSetParent")
 
 ---Constructs a new Node Set Parent command.
----@param node Node The node that will have its parent changed.
+---**WARNING!** This command works correctly ONLY if the node list is sorted by the tree order.
+---And it still breaks sometimes, but that will require insane work to make it work always properly...
+---@param nodeList NodeList The list of nodes that will have their parents changed.
 ---@param parent Node The new parent.
-function EditorCommandNodeSetParent:new(node, parent)
+function EditorCommandNodeSetParent:new(nodeList, parent)
     self.NAME = "NodeSetParent"
-    self.node = node
+    self.nodeList = nodeList:copy()
     self.parent = parent
-    self.oldParent = nil
-    self.oldIndex = nil
+    self.oldParents = nil
+    self.oldIndexes = nil
 end
 
 ---Executes this command. Returns `true` on success, `false` otherwise.
 ---@return boolean
 function EditorCommandNodeSetParent:execute()
-    if not self.node or not self.parent then
+    if self.nodeList:getSize() == 0 or not self.parent then
         return false
     end
-    self.oldParent = self.node.parent
-    self.oldIndex = self.node:getSelfIndex()
-    if self.parent == self.oldParent then
-        return false
-    end
-    return self.parent:addChild(self.node)
+    self.oldParents = self.nodeList:bulkGetParents()
+    self.oldIndexes = self.nodeList:bulkGetSelfIndexes()
+    return self.nodeList:bulkAdd(self.parent)
 end
 
 ---Undoes this command.
 function EditorCommandNodeSetParent:undo()
-    self.oldParent:addChild(self.node, self.oldIndex)
+    self.nodeList:bulkAddSpread(self.oldParents, self.oldIndexes)
 end
 
 return EditorCommandNodeSetParent

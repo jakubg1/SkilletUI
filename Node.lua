@@ -22,6 +22,18 @@ local TitleDigit = require("Widgets.TitleDigit")
 function Node:new(data, parent)
     self.parent = parent
 
+    self.WIDGET_TYPES = {
+        none =              {constructor = nil,         defaultName = "Node",       icon = _IMAGES.widget_none},
+        box =               {constructor = Box,         defaultName = "Box",        icon = _IMAGES.widget_box},
+        button =            {constructor = Button,      defaultName = "Button",     icon = _IMAGES.widget_button},
+        canvas =            {constructor = Canvas,      defaultName = "Canvas",     icon = _IMAGES.widget_canvas},
+        input_text =        {constructor = InputText,   defaultName = "InputText",  icon = _IMAGES.widget_none},
+        ["9sprite"] =       {constructor = NineSprite,  defaultName = "NineSprite", icon = _IMAGES.widget_ninesprite},
+        text =              {constructor = Text,        defaultName = "Text",       icon = _IMAGES.widget_text},
+        ["@titleDigit"] =   {constructor = TitleDigit,  defaultName = "TitleDigit", icon = _IMAGES.widget_titledigit}
+    }
+    self.type = "none"
+
     self.PROPERTY_LIST = {
         {name = "Name", key = "name", type = "string", defaultValue = "ERROR", disabledIfControlled = true},
         {name = "Position", key = "pos", type = "Vector2", defaultValue = Vec2()},
@@ -34,18 +46,8 @@ function Node:new(data, parent)
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 
-    self.WIDGET_TYPES = {
-        none = {constructor = nil, defaultName = "Node", icon = _IMAGES.widget_none},
-        box = {constructor = Box, defaultName = "Box", icon = _IMAGES.widget_box},
-        button = {constructor = Button, defaultName = "Button", icon = _IMAGES.widget_button},
-        canvas = {constructor = Canvas, defaultName = "Canvas", icon = _IMAGES.widget_canvas},
-        input_text = {constructor = InputText, defaultName = "InputText", icon = _IMAGES.widget_none},
-        ["9sprite"] = {constructor = NineSprite, defaultName = "NineSprite", icon = _IMAGES.widget_ninesprite},
-        text = {constructor = Text, defaultName = "Text", icon = _IMAGES.widget_text},
-        ["@titleDigit"] = {constructor = TitleDigit, defaultName = "TitleDigit", icon = _IMAGES.widget_titledigit}
-    }
-
-    self.type = "none"
+    self.dragPos = nil
+    self.scaleSize = nil
 
     self.clicked = false
     self.onClick = nil
@@ -123,6 +125,10 @@ function Node:setName(name)
     if self:isControlled() then
         return false
     end
+    -- Cannot rename a Node to the exact same name it had.
+    if self:getProp("name") == name then
+        return false
+    end
     self:setPropBase("name", name)
     return true
 end
@@ -175,9 +181,10 @@ end
 
 
 ---Returns the local position of this Node, which is relative to its parent's position.
+---This position includes potential dragging position, if the Node is currently dragged.
 ---@return Vector2
 function Node:getPos()
-    return self:getProp("pos")
+    return self.dragPos or self:getProp("pos")
 end
 
 
@@ -193,8 +200,7 @@ end
 ---Returns the global position of this Node, i.e. the actual position (top left corner) after factoring in all parents' modifiers.
 ---@return Vector2
 function Node:getGlobalPos()
-    local prop = self.properties:getValues()
-    return prop.pos - ((self:getSize() - 1) * prop.align):ceil() + self:getParentAlignPos()
+    return self:getPos() - ((self:getSize() - 1) * self:getProp("align")):ceil() + self:getParentAlignPos()
 end
 
 
@@ -202,7 +208,7 @@ end
 ---Returns the global position of this Node, which has not been adjusted for the local widget alignment.
 ---@return Vector2
 function Node:getGlobalPosWithoutLocalAlign()
-    return self:getProp("pos") + self:getParentAlignPos()
+    return self:getPos() + self:getParentAlignPos()
 end
 
 
@@ -218,11 +224,37 @@ end
 
 
 
+---Drags this Node to the given position. If not currently dragged, this Node will be automatically marked as being dragged.
+---@param pos Vector2 The position this Node should be dragged to.
+function Node:dragTo(pos)
+    self.dragPos = pos
+end
+
+---Finishes the dragging process for this Node, by setting its actual position to the drag position.
+---The drag position is cleared.
+function Node:finishDrag()
+    self:setPos(self:getPos())
+    self.dragPos = nil
+end
+
+---Cancels the dragging process for this Node, by clearing the drag position.
+function Node:cancelDrag()
+    self.dragPos = nil
+end
+
+---Returns `true` if this Node is being currently dragged, `false` otherwise.
+---@return boolean
+function Node:isBeingDragged()
+    return self.dragPos ~= nil
+end
+
+
+
 ---Returns the size of this Node's widget, or `(1, 1)` if it contains no widget.
 ---@return Vector2
 function Node:getSize()
     if self.widget then
-        return self.widget:getSize()
+        return self.scaleSize or self.widget:getSize()
     end
     return Vec2(1)
 end
@@ -235,6 +267,44 @@ function Node:setSize(size)
     if self.widget then
         self.widget:setSize(size)
     end
+end
+
+
+
+---Resizes this Node to the given size. If not currently resized, this Node will be automatically marked as being resized.
+---Returns `true` on success.
+---@param size Vector2 The position this Node should be resized to.
+---@return boolean
+function Node:resizeTo(size)
+    if not self:isResizable() then
+        return false
+    end
+    self.scaleSize = size
+    return true
+end
+
+---Finishes the resize process for this Node, by setting its actual size to the set size. This also commits the drag position.
+---The scale size is cleared.
+function Node:finishResize()
+    if not self.scaleSize then
+        return
+    end
+    self:setPos(self:getPos())
+    self:setSize(self:getSize())
+    self.dragPos = nil
+    self.scaleSize = nil
+end
+
+---Cancels the resize process for this Node, by clearing the drag position.
+function Node:cancelResize()
+    self.dragPos = nil
+    self.scaleSize = nil
+end
+
+---Returns `true` if this Node is being currently resized, `false` otherwise.
+---@return boolean
+function Node:isBeingResized()
+    return self.scaleSize ~= nil
 end
 
 
@@ -671,7 +741,7 @@ end
 
 
 ---Moves itself to the top of the hierarchy of the parent Node.
----If this Node has no parent, this function will fail and return `false`. If the operation succeeds, returns `true`.
+---If this Node has no parent or is already at the top, this function will fail and return `false`. If the operation succeeds, returns `true`.
 ---@return boolean
 function Node:moveSelfToTop()
     if not self.parent then
@@ -693,7 +763,7 @@ end
 
 
 ---Moves itself to the bottom of the hierarchy of the parent Node.
----If this Node has no parent, this function will fail and return `false`. If the operation succeeds, returns `true`.
+---If this Node has no parent or is already at the bottom, this function will fail and return `false`. If the operation succeeds, returns `true`.
 ---@return boolean
 function Node:moveSelfToBottom()
     if not self.parent then

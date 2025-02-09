@@ -7,11 +7,12 @@ local EditorUITree = class:derive("EditorUITree")
 -- Place your imports here
 local utf8 = require("utf8")
 local Vec2 = require("Vector2")
+local NodeList = require("NodeList")
 
+local CommandNodeRename = require("EditorCommands.NodeRename")
 local CommandNodeSetParent = require("EditorCommands.NodeSetParent")
 local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
-local CommandNodeSetProperty = require("EditorCommands.NodeSetProperty")
 
 
 
@@ -368,7 +369,7 @@ function EditorUITree:keypressed(key)
         return true
     elseif key == "return" then
         -- Submit the current edit value in the name edit field.
-        self.editor:executeCommand(CommandNodeSetProperty(self.nameEditNode, "name", self.nameEditValue))
+        self.editor:executeCommand(CommandNodeRename(NodeList(self.nameEditNode), self.nameEditValue))
         self.nameEditNode = nil
         self.nameEditValue = nil
         return true

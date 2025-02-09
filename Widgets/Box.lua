@@ -66,7 +66,7 @@ end
 ---Returns the size of this Box.
 ---@return Vector2
 function Box:getSize()
-    return self:getProp("size")
+    return self.node.scaleSize or self:getProp("size")
 end
 
 
@@ -74,7 +74,7 @@ end
 ---Sets the size of this Box.
 ---@param size Vector2 The new size of this Box.
 function Box:setSize(size)
-    self:setProp("size", size)
+    self:setPropBase("size", size)
 end
 
 
@@ -99,14 +99,15 @@ end
 function Box:draw()
     local pos = self.node:getGlobalPos()
     local prop = self.properties:getValues()
+    local size = self:getSize()
     if prop.color then
         love.graphics.setColor(prop.color.r, prop.color.g, prop.color.b, prop.alpha)
-        love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, prop.size.x, prop.size.y)
+        love.graphics.rectangle("fill", pos.x + 0.5, pos.y + 0.5, size.x, size.y)
     end
     if prop.borderColor then
         love.graphics.setColor(prop.borderColor.r, prop.borderColor.g, prop.borderColor.b, prop.borderAlpha)
         love.graphics.setLineWidth(1)
-        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, prop.size.x - 0.5, prop.size.y - 0.5)
+        love.graphics.rectangle("line", pos.x + 0.5, pos.y + 0.5, size.x - 0.5, size.y - 0.5)
     end
 end
 

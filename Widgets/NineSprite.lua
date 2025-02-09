@@ -70,7 +70,7 @@ end
 ---Returns the size of this NineSprite.
 ---@return Vector2
 function NineSprite:getSize()
-    return self:getProp("size")
+    return self.node.scaleSize or self:getProp("size")
 end
 
 
@@ -78,7 +78,7 @@ end
 ---Sets the size of this NineSprite.
 ---@param size Vector2 The new size of this NineSprite.
 function NineSprite:setSize(size)
-    self:setProp("size", size)
+    self:setPropBase("size", size)
 end
 
 
@@ -102,6 +102,7 @@ end
 ---Draws the NineSprite on the screen.
 function NineSprite:draw()
     local pos = self.node:getGlobalPos()
+    local size = self:getSize()
     local prop = self.properties:getValues()
     local image = prop.image
     if self.node:isDisabled() then
@@ -114,10 +115,10 @@ function NineSprite:draw()
     end
     if prop.shadowOffset then
         love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-        image:draw(pos + prop.shadowOffset, prop.size, prop.scale)
+        image:draw(pos + prop.shadowOffset, size, prop.scale)
     end
     love.graphics.setColor(1, 1, 1, prop.alpha)
-    image:draw(pos, prop.size, prop.scale)
+    image:draw(pos, size, prop.scale)
 end
 
 

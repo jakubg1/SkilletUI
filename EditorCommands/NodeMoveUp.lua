@@ -1,28 +1,32 @@
 local class = require "com.class"
 
 ---@class EditorCommandNodeMoveUp
----@overload fun(node):EditorCommandNodeMoveUp
+---@overload fun(nodeList):EditorCommandNodeMoveUp
 local EditorCommandNodeMoveUp = class:derive("EditorCommandNodeMoveUp")
 
 ---Constructs a new Node Move Up command.
----@param node Node The node that should be moved up in its hierarchy.
-function EditorCommandNodeMoveUp:new(node)
+---**WARNING!** This command works correctly ONLY if the node list is sorted by the tree order.
+---And it still breaks sometimes, but that will require insane work to make it work always properly...
+---@param nodeList NodeList The list of nodes that should be moved up in its hierarchy.
+function EditorCommandNodeMoveUp:new(nodeList)
     self.NAME = "NodeMoveUp"
-    self.node = node
+    self.nodeList = nodeList:copy()
+    self.previousIndexes = nil
 end
 
 ---Executes this command. Returns `true` on success, `false` otherwise.
 ---@return boolean
 function EditorCommandNodeMoveUp:execute()
-    if not self.node then
+    if self.nodeList:getSize() == 0 then
         return false
     end
-    return self.node:moveSelfUp()
+    self.previousIndexes = self.nodeList:bulkGetSelfIndexes()
+    return self.nodeList:bulkMoveUp()
 end
 
 ---Undoes this command.
 function EditorCommandNodeMoveUp:undo()
-    self.node:moveSelfDown()
+    self.nodeList:bulkMoveToIndexes(self.previousIndexes)
 end
 
 return EditorCommandNodeMoveUp

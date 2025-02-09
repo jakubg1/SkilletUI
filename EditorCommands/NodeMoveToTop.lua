@@ -1,30 +1,32 @@
 local class = require "com.class"
 
 ---@class EditorCommandNodeMoveToTop
----@overload fun(node):EditorCommandNodeMoveToTop
+---@overload fun(nodeList):EditorCommandNodeMoveToTop
 local EditorCommandNodeMoveToTop = class:derive("EditorCommandNodeMoveToTop")
 
 ---Constructs a new Node Move To Top command.
----@param node Node The node that should be moved to the top in its hierarchy.
-function EditorCommandNodeMoveToTop:new(node)
+---**WARNING!** This command works correctly ONLY if the node list is sorted by the tree order.
+---And it still breaks sometimes, but that will require insane work to make it work always properly...
+---@param nodeList NodeList The node that should be moved to the top in its hierarchy.
+function EditorCommandNodeMoveToTop:new(nodeList)
     self.NAME = "NodeMoveToTop"
-    self.node = node
-    self.previousIndex = nil
+    self.nodeList = nodeList:copy()
+    self.previousIndexes = nil
 end
 
 ---Executes this command. Returns `true` on success, `false` otherwise.
 ---@return boolean
 function EditorCommandNodeMoveToTop:execute()
-    if not self.node then
+    if self.nodeList:getSize() == 0 then
         return false
     end
-    self.previousIndex = self.node:getSelfIndex()
-    return self.node:moveSelfToTop()
+    self.previousIndexes = self.nodeList:bulkGetSelfIndexes()
+    return self.nodeList:bulkMoveToTop()
 end
 
 ---Undoes this command.
 function EditorCommandNodeMoveToTop:undo()
-    self.node:moveSelfToPosition(self.previousIndex)
+    self.nodeList:bulkMoveToIndexes(self.previousIndexes)
 end
 
 return EditorCommandNodeMoveToTop

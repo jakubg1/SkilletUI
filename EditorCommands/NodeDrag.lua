@@ -1,38 +1,42 @@
 local class = require "com.class"
 
 ---@class EditorCommandNodeDrag
----@overload fun(node, startPos):EditorCommandNodeDrag
+---@overload fun(nodeList):EditorCommandNodeDrag
 local EditorCommandNodeDrag = class:derive("EditorCommandNodeDrag")
 
----Constructs a new Node Drag command. This is a special command which is pushed onto the stack once the dragging has been FINISHED.
----@param node Node The node that has been dragged.
----@param startPos Vector2 The starting position of the Node.
-function EditorCommandNodeDrag:new(node, startPos)
+---Constructs a new Node Drag command. This is a special command which is pushed onto the stack once the dragging has been **finished**.
+---@param nodeList NodeList The list of nodes that have been dragged.
+function EditorCommandNodeDrag:new(nodeList)
     self.NAME = "NodeDrag"
-    self.node = node
-    self.startPos = startPos
+    self.nodeList = nodeList:copy()
+    self.startPos = nil
     self.targetPos = nil
 end
 
 ---Executes this command. Returns `true` on success, `false` otherwise.
 ---@return boolean
 function EditorCommandNodeDrag:execute()
-    if not self.node then
+    if self.nodeList:getSize() == 0 then
         return false
     end
-    if not self.targetPos then
-        self.targetPos = self.node:getPos()
+    if not self.startPos or not self.targetPos then
+        -- First time. Finish the dragging process.
+        self.startPos = self.nodeList:bulkGetPropBase("pos")
+        local result = self.nodeList:bulkFinishDrag()
+        if not result then
+            return false
+        end
+        self.targetPos = self.nodeList:bulkGetPropBase("pos")
+    else
+        -- Subsequent times (we are doing a redo).
+        self.nodeList:bulkSetPropBase("pos", self.targetPos)
     end
-    if self.startPos == self.targetPos then
-        return false
-    end
-    self.node:setPos(self.targetPos)
     return true
 end
 
 ---Undoes this command.
 function EditorCommandNodeDrag:undo()
-    self.node:setPos(self.startPos)
+    self.nodeList:bulkSetPropBase("pos", self.startPos)
 end
 
 return EditorCommandNodeDrag

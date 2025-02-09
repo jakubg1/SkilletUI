@@ -230,6 +230,25 @@ end
 
 
 
+---Returns `true` if both tables are identical in contents. Shallow check is used.
+---@param t1 table The first table.
+---@param t2 table The second table to be compared with the first table.
+function utils.areTablesIdentical(t1, t2)
+	for i, n in pairs(t1) do
+		if t2[i] ~= n then
+			return false
+		end
+	end
+	for i, n in pairs(t2) do
+		if t1[i] ~= n then
+			return false
+		end
+	end
+	return true
+end
+
+
+
 ---Returns an index of the value in the provided table, or `nil` if the value does not exist in the table.
 ---@param t table The table to be checked.
 ---@param v any The value to be checked. The function will return an index of the first matching value from the `t` table.
@@ -259,6 +278,18 @@ function utils.removeValueFromTable(t, v)
 			break
 		end
 	end
+end
+
+
+
+---Creates and returns a shallow copy of the given table.
+---@param t table The table to be copied.
+function utils.copyTable(t)
+	local new = {}
+	for k, v in pairs(t) do
+		new[k] = v
+	end
+	return new
 end
 
 

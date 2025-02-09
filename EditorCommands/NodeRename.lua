@@ -1,35 +1,34 @@
 local class = require "com.class"
 
 ---@class EditorCommandNodeRename
----@overload fun(node, name):EditorCommandNodeRename
+---@overload fun(nodeList, name):EditorCommandNodeRename
 local EditorCommandNodeRename = class:derive("EditorCommandNodeRename")
 
 ---Constructs a new Node Rename command.
----@param node Node The node that should be renamed.
----@param name string The new name.
-function EditorCommandNodeRename:new(node, name)
+---@param nodeList NodeList The list of nodes that should be renamed.
+---@param name string The new name. There is no duplicate checking; all of the nodes will get the same name.
+function EditorCommandNodeRename:new(nodeList, name)
     self.NAME = "NodeRename"
-    self.node = node
+    self.nodeList = nodeList:copy()
     self.name = name
-    self.oldName = nil
+    self.oldNames = nil
 end
 
 ---Executes this command. Returns `true` on success, `false` otherwise.
 ---@return boolean
 function EditorCommandNodeRename:execute()
-    if not self.node or not self.name then
+    if self.nodeList:getSize() == 0 or not self.name then
         return false
     end
-    self.oldName = self.node:getName()
-    if self.name == self.oldName then
-        return false
-    end
-    return self.node:setName(self.name)
+    self.oldNames = self.nodeList:bulkGetPropBase("name")
+    return self.nodeList:bulkSetName(self.name)
 end
 
 ---Undoes this command.
 function EditorCommandNodeRename:undo()
-    self.node:setName(self.oldName)
+    for i, node in ipairs(self.nodeList:getNodes()) do
+        node:setName(self.oldNames[i])
+    end
 end
 
 return EditorCommandNodeRename
