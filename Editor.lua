@@ -941,6 +941,7 @@ function Editor:update(dt)
         else
             for i, node in ipairs(self.selectedNodes:getNodes()) do
                 -- TODO: Fix dragging for nodes aligned to bottom right, middle, etc.
+                -- TODO: Fix dragging of multiple nodes - they shouldn't be able to snap to the grid independently.
                 local snappedPos = self:snapBoxToGrid(node:getPropBase("pos") + movement, node:getSize())
                 node:dragTo(snappedPos)
             end

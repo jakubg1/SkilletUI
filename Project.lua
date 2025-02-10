@@ -28,10 +28,8 @@ function Project:new(path)
     self.nativeResolution = Vec2(320, 180)
     self.gridSize = nil
 
-    self:deserialize({
-        nativeResolution = {x = 320, y = 180},
-        gridSize = {x = 20, y = 20}
-    })
+    local data = _Utils.loadJson(path .. "/settings.json")
+    self:deserialize(data)
 end
 
 --##########################################--
@@ -104,7 +102,9 @@ end
 ---@param name string The name of the Timeline to be stopped.
 function Project:stopTimeline(name)
     self.timelines[name]:stop()
-    self.ui:resetProperties()
+    if self.ui then
+        self.ui:resetProperties()
+    end
 end
 
 ---Returns the specified Timeline.
@@ -133,6 +133,10 @@ end
 ---Returns the current grid size, or `nil` if the grid is disabled.
 ---@return Vector2?
 function Project:getGridSize()
+    if not self.gridSize or self.gridSize.x == 0 or self.gridSize.y == 0 then
+        -- Prevent an infinite loop :>
+        return nil
+    end
     return self.gridSize
 end
 
@@ -196,7 +200,7 @@ end
 ---@param data table The project properties.
 function Project:deserialize(data)
     self.nativeResolution = Vec2(data.nativeResolution)
-    self.gridSize = Vec2(data.gridSize)
+    self.gridSize = data.gridSize and Vec2(data.gridSize)
 
     _CANVAS:setResolution(self.nativeResolution)
 end
