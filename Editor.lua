@@ -92,6 +92,7 @@ function Editor:new()
     self.nodeDragOrigin = nil
     self.nodeDragSnap = false
     self.nodeResizeOrigin = nil
+    self.nodeResizeOffset = nil -- Offset between the clicked position and the actual corner of the node
     self.nodeResizeDirection = nil
     self.nodeResizeHandleID = nil
     self.nodeMultiSelectOrigin = nil
@@ -120,6 +121,44 @@ end
 
 
 
+---Returns the layout position (like `_MouseCPos`) snapped to the nearest grid intersection.
+---If the grid is disabled, returns the input position.
+---@param pos Vector2 The input position.
+---@return Vector2
+function Editor:snapPositionToGrid(pos)
+    local gridSize = _PROJECT:getGridSize()
+    if not gridSize then
+        return pos
+    end
+    return ((pos / gridSize) + 0.5):floor() * gridSize
+end
+
+
+
+---Returns the position of the provided box snapped to the nearest grid lines.
+---If the grid is disabled, returns the input position.
+---@param pos Vector2 The box position.
+---@param size Vector2 The box size.
+---@return Vector2
+function Editor:snapBoxToGrid(pos, size)
+    local gridSize = _PROJECT:getGridSize()
+    if not gridSize then
+        return pos
+    end
+    -- Snap the top left and bottom right corners independently to check how many pixels are needed to snap either side.
+    local p2 = pos + size - 1
+    local sp1 = self:snapPositionToGrid(pos)
+    local sp2 = self:snapPositionToGrid(p2)
+    local o1 = (pos - sp1):abs()
+    local o2 = (p2 - sp2):abs()
+    -- Get whichever one is closer.
+    local x = o1.x <= o2.x and sp1.x or (sp2.x - size.x)
+    local y = o1.y <= o2.y and sp1.y or (sp2.y - size.y)
+    return Vec2(x, y)
+end
+
+
+
 ---Returns the currently hovered Node.
 ---This function also sets the values of the `self.isNodeHoverIndirect`, `self.nodeTreeHoverTop` and `self.nodeTreeHoverBottom` fields.
 ---
@@ -129,6 +168,10 @@ function Editor:getHoveredNode()
     self.isNodeHoverIndirect = false
     -- Editor UI has hover precedence over actual UI.
     if self:isUIHovered() then
+        return nil
+    end
+    -- Do not hover any other node while dragging or resizing the selected node.
+    if self.nodeDragOrigin or self.nodeResizeOrigin then
         return nil
     end
     -- Look whether we've hovered over any UI info entry.
@@ -406,6 +449,7 @@ function Editor:startResizingSelectedNode(handleID)
         return
     end
     self.nodeResizeOrigin = _MouseCPos
+    self.nodeResizeOffset = (self.selectedNodes:getNode(1):getGlobalPos() + (self.NODE_RESIZE_DIRECTIONS[handleID] + 1) / 2 * self.selectedNodes:getNode(1):getSize()) - _MouseCPos
     self.nodeResizeDirection = self.NODE_RESIZE_DIRECTIONS[handleID]
     self.nodeResizeHandleID = handleID
 end
@@ -417,6 +461,7 @@ function Editor:finishResizingSelectedNode()
     end
     self:executeCommand(CommandNodeResize(self.selectedNodes))
     self.nodeResizeOrigin = nil
+    self.nodeResizeOffset = nil
     self.nodeResizeDirection = nil
     self.nodeResizeHandleID = nil
 end
@@ -425,6 +470,7 @@ end
 function Editor:cancelResizingSelectedNode()
     self.selectedNodes:bulkCancelResize()
     self.nodeResizeOrigin = nil
+    self.nodeResizeOffset = nil
     self.nodeResizeDirection = nil
     self.nodeResizeHandleID = nil
 end
@@ -894,7 +940,9 @@ function Editor:update(dt)
             end
         else
             for i, node in ipairs(self.selectedNodes:getNodes()) do
-                node:dragTo(node:getPropBase("pos") + movement)
+                -- TODO: Fix dragging for nodes aligned to bottom right, middle, etc.
+                local snappedPos = self:snapBoxToGrid(node:getPropBase("pos") + movement, node:getSize())
+                node:dragTo(snappedPos)
             end
             self:updateUI()
         end
@@ -904,13 +952,14 @@ function Editor:update(dt)
     if self.nodeResizeOrigin then
         assert(self.selectedNodes:getSize() < 2, "Resizing of multiple Nodes is not supported. How did you even trigger that?")
         for i, node in ipairs(self.selectedNodes:getNodes()) do
-            local movement = (_MouseCPos - self.nodeResizeOrigin):floor()
-            local posVector = ((self.nodeResizeDirection - 1) / 2 + node:getAlign()) * self.nodeResizeDirection
-            -- TODO: Unmangle this logic somehow so that holding Shift can force a square size!
-            node:dragTo(((node:getPropBase("pos") + movement * posVector) + 0.5):floor())
-            node:resizeTo(node.widget:getPropBase("size") + movement * self.nodeResizeDirection)
-            -- Do not hover any other node while resizing the selected node.
-            self.hoveredNode = nil
+            local movement = _MouseCPos - self.nodeResizeOrigin
+            local size = node.widget:getPropBase("size") + movement * self.nodeResizeDirection
+            if _IsShiftPressed() then
+                -- Force a square size if Shift is held.
+                size = Vec2(math.max(size.x, size.y), math.max(size.x, size.y))
+            end
+            -- TODO: Snap to grid for resizing.
+            node:resizeTo(size, (self.nodeResizeDirection - 1) / 2)
             self:updateUI()
         end
     end
@@ -1015,8 +1064,19 @@ function Editor:drawUIPass()
     if not self.enabled then
         return
     end
+    -- Draw the grid.
+    self:drawGrid()
     -- Draw a frame around the hovered node and frames around the selected nodes.
     self:drawUIForNodes()
+    -- Debug resize crosshair
+    if self.nodeResizeOrigin then
+        love.graphics.setColor(0, 1, 0)
+        self:drawCrosshair(_CANVAS:pixelToPos(self.nodeResizeOrigin), 6)
+        love.graphics.setColor(1, 1, 0)
+        self:drawCrosshair(_CANVAS:pixelToPos(self.nodeResizeOrigin + self.nodeResizeOffset), 6)
+        love.graphics.setColor(1, 0, 0.5)
+        self:drawCrosshair(_CANVAS:pixelToPos(self:snapPositionToGrid(_MouseCPos + self.nodeResizeOffset)), 6)
+    end
     -- Draw the multi-selection frame.
     if self.nodeMultiSelectOrigin then
         local origin = self.nodeMultiSelectOrigin
@@ -1028,6 +1088,32 @@ function Editor:drawUIPass()
         love.graphics.rectangle("fill", pos.x, pos.y, size.x, size.y)
         love.graphics.setColor(0, 1, 1)
         love.graphics.rectangle("line", pos.x, pos.y, size.x, size.y)
+    end
+end
+
+
+
+---Draws the grid, if it is enabled in the project.
+function Editor:drawGrid()
+    local nativeResolution = _PROJECT:getNativeResolution()
+    local gridSize = _PROJECT:getGridSize()
+    if not gridSize then
+        return
+    end
+    local lineCount = (nativeResolution / gridSize):ceil() - 1
+    love.graphics.setLineWidth(1)
+    love.graphics.setColor(0.2, 0.2, 0.8)
+    -- Vertical lines
+    for i = 1, lineCount.x do
+        local p1 = _CANVAS:pixelToPos(Vec2(gridSize.x * i, 0))
+        local p2 = _CANVAS:pixelToPos(Vec2(gridSize.x * i, nativeResolution.y))
+        self:drawDashedLine(p1, p2, 4, 4, 0)
+    end
+    -- Horizontal lines
+    for i = 1, lineCount.y do
+        local p1 = _CANVAS:pixelToPos(Vec2(0, gridSize.y * i))
+        local p2 = _CANVAS:pixelToPos(Vec2(nativeResolution.x, gridSize.y * i))
+        self:drawDashedLine(p1, p2, 4, 4, 0)
     end
 end
 

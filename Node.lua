@@ -271,14 +271,16 @@ end
 
 
 
----Resizes this Node to the given size. If not currently resized, this Node will be automatically marked as being resized.
+---Resizes this Node to the given size and repositions (drags) it accordingly to the resize anchor.
+---If not currently resized, this Node will be automatically marked as being resized.
 ---Returns `true` on success.
 ---@param size Vector2 The position this Node should be resized to.
 ---@return boolean
-function Node:resizeTo(size)
+function Node:resizeTo(size, anchor)
     if not self:isResizable() then
         return false
     end
+    self.dragPos = self:getProp("pos") + (size - self.widget:getProp("size")) * (anchor + self:getAlign())
     self.scaleSize = size
     return true
 end

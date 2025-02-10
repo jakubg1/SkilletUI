@@ -25,11 +25,13 @@ function Project:new(path)
     }
     self.currentTimeline = "test"
 
-    local data = {
-        nativeResolution = {x = 320, y = 180}
-    }
-    self.nativeResolution = Vec2(data.nativeResolution)
-    _CANVAS:setResolution(self.nativeResolution)
+    self.nativeResolution = Vec2(320, 180)
+    self.gridSize = nil
+
+    self:deserialize({
+        nativeResolution = {x = 320, y = 180},
+        gridSize = {x = 20, y = 20}
+    })
 end
 
 --##########################################--
@@ -118,6 +120,22 @@ function Project:getCurrentTimeline()
     return self.timelines[self.currentTimeline]
 end
 
+--############################################--
+---------------- S E T T I N G S ---------------
+--############################################--
+
+---Returns the native resolution of this Project.
+---@return Vector2
+function Project:getNativeResolution()
+    return self.nativeResolution
+end
+
+---Returns the current grid size, or `nil` if the grid is disabled.
+---@return Vector2?
+function Project:getGridSize()
+    return self.gridSize
+end
+
 --######################################--
 ---------------- O T H E R ---------------
 --######################################--
@@ -168,6 +186,19 @@ function Project:keypressed(key)
     if self.ui then
         self.ui:keypressed(key)
     end
+end
+
+--######################################################--
+---------------- S E R I A L I Z A T I O N ---------------
+--######################################################--
+
+---Loads the project's properties from the given data.
+---@param data table The project properties.
+function Project:deserialize(data)
+    self.nativeResolution = Vec2(data.nativeResolution)
+    self.gridSize = Vec2(data.gridSize)
+
+    _CANVAS:setResolution(self.nativeResolution)
 end
 
 return Project
