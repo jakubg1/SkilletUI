@@ -1,15 +1,14 @@
 {
-	"name": "root",
 	"canvasInputMode": true,
+	"name": "root",
 	"children": [
 		{
-			"name": "NineSprite",
 			"type": "9sprite",
 			"children": [
 				{
 					"widget": {
-						"font": "editor",
 						"text": "Zapisz",
+						"font": "editor",
 						"shadowAlpha": 0
 					},
 					"parentAlign": [
@@ -24,12 +23,15 @@
 					]
 				}
 			],
+			"name": "NineSprite",
 			"widget": {
+				"image": "base_button",
+				"hoverImage": "base_button_hover",
+				"clickImage": "base_button_click",
 				"size": [
 					96,
 					24
-				],
-				"image": "base_button"
+				]
 			}
 		}
 	]

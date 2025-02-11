@@ -4,6 +4,7 @@ local class = require "com.class"
 local Input = class:derive("Input")
 
 local utf8 = require("utf8")
+local Vec2 = require("Vector2")
 local Color = require("Color")
 
 
@@ -84,6 +85,8 @@ function Input:mousepressed(x, y, button, istouch, presses)
 					self.inputText = self.itemList[entry]
 				elseif self.inputType == "Font" then
 					self.selectedResource = self.itemList[entry].font
+				elseif self.inputType == "NineImage" then
+					self.selectedResource = self.itemList[entry].resource
 				end
 				if presses >= 2 then
 					self:inputAccept()
@@ -174,24 +177,26 @@ end
 
 function Input:inputAsk(type, value, extensions, warnWhenFileExists, basePath, pathFilter)
 	self.inputType = type
-	if value then
-		if type == "string" then
-			self.inputText = value
-		elseif type == "number" then
-			self.inputText = tostring(value)
-		elseif type == "color" then
-			self:setInputColor(value.r, value.g, value.b)
-		elseif type == "file" then
-			self.inputText = value
-			self.fileWarnWhenExists = warnWhenFileExists
-			self.itemList = self:getItemList(basePath or "", pathFilter or "file", extensions)
-			self.itemListOffset = 0
-		elseif type == "shortcut" then
-			self.shortcut = value
-		elseif type == "Font" then
-			self.itemList = _RESOURCE_MANAGER:getFontList()
-			self.selectedResource = value
-		end
+	if type == "string" then
+		self.inputText = value or ""
+	elseif type == "number" then
+		self.inputText = value and tostring(value) or ""
+	elseif type == "color" then
+		value = value or _COLORS.white
+		self:setInputColor(value.r, value.g, value.b)
+	elseif type == "file" then
+		self.inputText = value or ""
+		self.fileWarnWhenExists = warnWhenFileExists
+		self.itemList = self:getItemList(basePath or "", pathFilter or "file", extensions)
+		self.itemListOffset = 0
+	elseif type == "shortcut" then
+		self.shortcut = value
+	elseif type == "Font" then
+		self.selectedResource = value
+		self.itemList = _RESOURCE_MANAGER:getFontList()
+	elseif type == "NineImage" then
+		self.selectedResource = value
+		self.itemList = _RESOURCE_MANAGER:getNineImageList()
 	end
 end
 
@@ -232,7 +237,7 @@ function Input:inputAccept()
 		result = Color(self:getInputColor())
 	elseif self.inputType == "shortcut" then
 		result = self.shortcut
-	elseif self.inputType == "Font" then
+	elseif self.inputType == "Font" or self.inputType == "NineImage" then
 		result = self.selectedResource
 	end
 
@@ -370,7 +375,7 @@ function Input:getSize()
 		return 400, 150
 	elseif self.inputType == "color" then
 		return 450, 300
-	elseif self.inputType == "file" or self.inputType == "Font" then
+	elseif self.inputType == "file" or self.inputType == "Font" or self.inputType == "NineImage" then
 		return 400, 500
 	end
 end
@@ -425,7 +430,7 @@ end
 
 
 function Input:isFileInputBoxHovered()
-	if (self.inputType ~= "file" and self.inputType ~= "Font") or self.fileWarningActive then
+	if (self.inputType ~= "file" and self.inputType ~= "Font" and self.inputType ~= "NineImage") or self.fileWarningActive then
 		return false
 	end
 
@@ -436,7 +441,7 @@ end
 
 
 function Input:getHoveredFileEntryIndex()
-	if (self.inputType ~= "file" and self.inputType ~= "Font") or self.fileWarningActive then
+	if (self.inputType ~= "file" and self.inputType ~= "Font" and self.inputType ~= "NineImage") or self.fileWarningActive then
 		return nil
 	end
 
@@ -562,7 +567,7 @@ function Input:draw()
 		--love.graphics.print(string.format("Y: %s", y), posX + 350, posY + 200)
 		--love.graphics.print(string.format("Z: %s", z), posX + 350, posY + 220)
 		love.graphics.print(string.format("Hex: %02x%02x%02x", r * 255, g * 255, b * 255), posX + 300, posY + 180)
-	elseif self.inputType == "file" or self.inputType == "Font" then
+	elseif self.inputType == "file" or self.inputType == "Font" or self.inputType == "NineImage" then
 		local hoveredEntry = self:getHoveredFileEntryIndex()
 		-- File list
 		love.graphics.rectangle("line", posX + 20, posY + 70, sizeX - 40, 330)
@@ -570,7 +575,7 @@ function Input:draw()
 			local item = self.itemList[i + self.itemListOffset]
 			local y = posY + 75 + (i - 1) * self.ITEM_LIST_ENTRY_HEIGHT
 			love.graphics.setColor(0, 0, 0, 0)
-			if (self.inputType == "file" and item == self.inputText) or (self.inputType == "Font" and item.font == self.selectedResource) then
+			if (self.inputType == "file" and item == self.inputText) or (self.inputType == "Font" and item.font == self.selectedResource) or (self.inputType == "NineImage" and item.resource == self.selectedResource) then
 				love.graphics.setColor(0, 1, 1, 0.5)
 			elseif hoveredEntry == i + self.itemListOffset then
 				love.graphics.setColor(0, 1, 1, 0.3)
@@ -582,6 +587,9 @@ function Input:draw()
 			elseif self.inputType == "Font" then
 				love.graphics.setFont(item.font.font)
 				love.graphics.print(item.name, posX + 30, y)
+			elseif self.inputType == "NineImage" then
+				item.resource:draw(Vec2(posX + 31, y + 1), Vec2(58, self.ITEM_LIST_ENTRY_HEIGHT - 2))
+				love.graphics.print(item.name, posX + 100, y)
 			end
 		end
 		love.graphics.setFont(self.bigFont)

@@ -74,12 +74,14 @@ function ResourceManager:getFontName(font)
 end
 
 ---Returns the list of all available fonts, in the format of `{{name = name, font = Font}, ...}`.
+---The list is sorted by names alphabetically.
 ---@return table
 function ResourceManager:getFontList()
     local result = {}
     for name, font in pairs(self.fonts) do
         table.insert(result, {name = name, font = font})
     end
+    table.sort(result, function(a, b) return a.name < b.name end)
     return result
 end
 
@@ -107,6 +109,18 @@ end
 ---@param nineImage NineImage The inage to be looked up.
 function ResourceManager:getNineImageName(nineImage)
     return self.nineImageLookup[nineImage]
+end
+
+---Returns the list of all available NineImages, in the format of `{{name = name, resource = NineImage}, ...}`.
+---The list is sorted by names alphabetically.
+---@return table
+function ResourceManager:getNineImageList()
+    local result = {}
+    for name, nineImage in pairs(self.nineImages) do
+        table.insert(result, {name = name, resource = nineImage})
+    end
+    table.sort(result, function(a, b) return a.name < b.name end)
+    return result
 end
 
 return ResourceManager

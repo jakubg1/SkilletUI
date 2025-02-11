@@ -81,14 +81,6 @@ end
 
 
 
----Returns the property list of this Button.
----@return table
-function Button:getPropertyList()
-    return self.PROPERTY_LIST
-end
-
-
-
 ---Updates the Button.
 ---@param dt number Time delta, in seconds.
 function Button:update(dt)
