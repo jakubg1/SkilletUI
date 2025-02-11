@@ -177,7 +177,7 @@ function EditorKeyframes:draw()
 
     -- Timeline header
     love.graphics.setColor(1, 1, 1)
-    _RESOURCE_MANAGER:getImage("ed_button"):draw(self.POS + Vec2(self.NODE_LIST_WIDTH, 0), Vec2(self.KEYFRAME_AREA_WIDTH, self.HEADER_HEIGHT), 2)
+    _RESOURCE_MANAGER:getNineImage("ed_button"):draw(self.POS + Vec2(self.NODE_LIST_WIDTH, 0), Vec2(self.KEYFRAME_AREA_WIDTH, self.HEADER_HEIGHT), 2)
     local tmin = self:getTimeFromX(self.POS.x + self.NODE_LIST_WIDTH)
     local tmax = self:getTimeFromX(self.POS.x + self.SIZE.x)
     local t = math.ceil(tmin)

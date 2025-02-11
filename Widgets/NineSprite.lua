@@ -16,10 +16,10 @@ function NineSprite:new(node, data)
     self.node = node
 
     self.PROPERTY_LIST = {
-        {name = "Image", key = "image", type = "Image", defaultValueNoData = _RESOURCE_MANAGER:getImage("ed_button")},
-        {name = "Hover Image", key = "hoverImage", type = "Image", nullable = true},
-        {name = "Click Image", key = "clickImage", type = "Image", nullable = true},
-        {name = "Disabled Image", key = "disabledImage", type = "Image", nullable = true},
+        {name = "Image", key = "image", type = "NineImage", defaultValueNoData = _RESOURCE_MANAGER:getNineImage("ed_button")},
+        {name = "Hover Image", key = "hoverImage", type = "NineImage", nullable = true},
+        {name = "Click Image", key = "clickImage", type = "NineImage", nullable = true},
+        {name = "Disabled Image", key = "disabledImage", type = "NineImage", nullable = true},
         {name = "Size", key = "size", type = "Vector2", defaultValue = Vec2(10)},
         {name = "Scale", key = "scale", type = "number", defaultValue = 1},
         {name = "Alpha", key = "alpha", type = "number", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1},

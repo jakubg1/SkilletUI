@@ -9,6 +9,16 @@ local Color = require("Color")
 
 
 function Input:new()
+	self.font = love.graphics.newFont()
+	self.bigFont = love.graphics.newFont(18)
+
+	self.inputType = nil
+	self.inputText = ""
+	self.error = nil
+
+	-- Color picker only
+	self.inputColor = {x = 0, y = 0, z = 0.5}
+	self.colorDragging = nil
 	local vertices = {}
 	for i = 0, 200 do
 		local t = i / 200
@@ -19,23 +29,23 @@ function Input:new()
 	self.COLOR_MESH = love.graphics.newMesh(vertices, "strip", "static")
 	self.SIDE_COLOR_MESHES = {love.graphics.newMesh(42, "strip", "dynamic"), love.graphics.newMesh(42, "strip", "dynamic")}
 
-	self.font = love.graphics.newFont()
-	self.bigFont = love.graphics.newFont(18)
+	self:updateSideColorPickerMeshes()
 
-	self.inputType = nil
-	self.inputText = ""
-	self.inputColor = {x = 0, y = 0, z = 0.5}
-	self.colorDragging = nil
-	self.fileList = nil
-	self.fileListOffset = 0
-	self.FILE_LIST_ENTRY_HEIGHT = 20
-	self.FILE_LIST_MAX_ENTRIES = 16
+	-- File/Font picker only
+	self.itemList = nil
+	self.itemListOffset = 0
+	self.ITEM_LIST_ENTRY_HEIGHT = 20
+	self.ITEM_LIST_MAX_ENTRIES = 16
+
+	-- File picker only
 	self.fileWarnWhenExists = false
 	self.fileWarningActive = false
-	self.shortcut = nil
-	self.error = nil
 
-	self:updateSideColorPickerMeshes()
+	-- Shortcut picker only
+	self.shortcut = nil
+
+	-- Font/Image/NineImage picker only
+	self.selectedResource = nil
 end
 
 
@@ -70,7 +80,11 @@ function Input:mousepressed(x, y, button, istouch, presses)
 		elseif self:isFileInputBoxHovered() then
 			local entry = self:getHoveredFileEntryIndex()
 			if entry then
-				self.inputText = self.fileList[entry]
+				if self.inputType == "file" then
+					self.inputText = self.itemList[entry]
+				elseif self.inputType == "Font" then
+					self.selectedResource = self.itemList[entry].font
+				end
 				if presses >= 2 then
 					self:inputAccept()
 				end
@@ -108,8 +122,8 @@ end
 
 function Input:wheelmoved(x, y)
 	if self.inputType == "file" then
-		local maxY = math.max(#self.fileList - self.FILE_LIST_MAX_ENTRIES, 0)
-		self.fileListOffset = math.min(math.max(self.fileListOffset - y * 3, 0), maxY)
+		local maxY = math.max(#self.itemList - self.ITEM_LIST_MAX_ENTRIES, 0)
+		self.itemListOffset = math.min(math.max(self.itemListOffset - y * 3, 0), maxY)
 	end
 end
 
@@ -170,10 +184,13 @@ function Input:inputAsk(type, value, extensions, warnWhenFileExists, basePath, p
 		elseif type == "file" then
 			self.inputText = value
 			self.fileWarnWhenExists = warnWhenFileExists
-			self.fileList = self:getFileList(basePath or "", pathFilter or "file", extensions)
-			self.fileListOffset = 0
+			self.itemList = self:getItemList(basePath or "", pathFilter or "file", extensions)
+			self.itemListOffset = 0
 		elseif type == "shortcut" then
 			self.shortcut = value
+		elseif type == "Font" then
+			self.itemList = _RESOURCE_MANAGER:getFontList()
+			self.selectedResource = value
 		end
 	end
 end
@@ -215,9 +232,11 @@ function Input:inputAccept()
 		result = Color(self:getInputColor())
 	elseif self.inputType == "shortcut" then
 		result = self.shortcut
+	elseif self.inputType == "Font" then
+		result = self.selectedResource
 	end
 
-	if self.fileWarnWhenExists and not self.fileWarningActive and _Utils.isValueInTable(self.fileList, result) then
+	if self.fileWarnWhenExists and not self.fileWarningActive and _Utils.isValueInTable(self.itemList, result) then
 		self.fileWarningActive = true
 	else
 		_EDITOR:onInputReceived(result)
@@ -315,18 +334,18 @@ end
 
 
 
-function Input:getFileList(basePath, filter, extensions)
+function Input:getItemList(basePath, filter, extensions)
 	local files = {}
 	if extensions then
 		for i, extension in ipairs(extensions) do
-			local fileList = _Utils.getDirListing(basePath, filter, extension, true)
-			for j, file in ipairs(fileList) do
+			local itemList = _Utils.getDirListing(basePath, filter, extension, true)
+			for j, file in ipairs(itemList) do
 				table.insert(files, file)
 			end
 		end
 	else
-		local fileList = _Utils.getDirListing(basePath, filter, nil)
-		for i, file in ipairs(fileList) do
+		local itemList = _Utils.getDirListing(basePath, filter, nil)
+		for i, file in ipairs(itemList) do
 			table.insert(files, file)
 		end
 	end
@@ -351,7 +370,7 @@ function Input:getSize()
 		return 400, 150
 	elseif self.inputType == "color" then
 		return 450, 300
-	elseif self.inputType == "file" then
+	elseif self.inputType == "file" or self.inputType == "Font" then
 		return 400, 500
 	end
 end
@@ -406,7 +425,7 @@ end
 
 
 function Input:isFileInputBoxHovered()
-	if self.inputType ~= "file" or self.fileWarningActive then
+	if (self.inputType ~= "file" and self.inputType ~= "Font") or self.fileWarningActive then
 		return false
 	end
 
@@ -417,7 +436,7 @@ end
 
 
 function Input:getHoveredFileEntryIndex()
-	if self.inputType ~= "file" or self.fileWarningActive then
+	if (self.inputType ~= "file" and self.inputType ~= "Font") or self.fileWarningActive then
 		return nil
 	end
 
@@ -426,12 +445,12 @@ function Input:getHoveredFileEntryIndex()
 	if not self:isFileInputBoxHovered() then
 		return nil
 	end
-	local idx = math.floor((_MousePos.y - posY - 75) / self.FILE_LIST_ENTRY_HEIGHT) + 1
+	local idx = math.floor((_MousePos.y - posY - 75) / self.ITEM_LIST_ENTRY_HEIGHT) + 1
 	-- No entry here.
-	if idx > #self.fileList then
+	if idx > #self.itemList then
 		return nil
 	end
-	return idx + self.fileListOffset
+	return idx + self.itemListOffset
 end
 
 
@@ -543,24 +562,35 @@ function Input:draw()
 		--love.graphics.print(string.format("Y: %s", y), posX + 350, posY + 200)
 		--love.graphics.print(string.format("Z: %s", z), posX + 350, posY + 220)
 		love.graphics.print(string.format("Hex: %02x%02x%02x", r * 255, g * 255, b * 255), posX + 300, posY + 180)
-	elseif self.inputType == "file" then
+	elseif self.inputType == "file" or self.inputType == "Font" then
 		local hoveredEntry = self:getHoveredFileEntryIndex()
 		-- File list
 		love.graphics.rectangle("line", posX + 20, posY + 70, sizeX - 40, 330)
-		for i = 1, math.min(#self.fileList, self.FILE_LIST_MAX_ENTRIES) do
-			local file = self.fileList[i + self.fileListOffset]
-			if hoveredEntry == i + self.fileListOffset then
-				love.graphics.setColor(0, 1, 1)
-			else
-				love.graphics.setColor(1, 1, 1)
+		for i = 1, math.min(#self.itemList, self.ITEM_LIST_MAX_ENTRIES) do
+			local item = self.itemList[i + self.itemListOffset]
+			local y = posY + 75 + (i - 1) * self.ITEM_LIST_ENTRY_HEIGHT
+			love.graphics.setColor(0, 0, 0, 0)
+			if (self.inputType == "file" and item == self.inputText) or (self.inputType == "Font" and item.font == self.selectedResource) then
+				love.graphics.setColor(0, 1, 1, 0.5)
+			elseif hoveredEntry == i + self.itemListOffset then
+				love.graphics.setColor(0, 1, 1, 0.3)
 			end
-			love.graphics.print(file, posX + 30, posY + 75 + (i - 1) * self.FILE_LIST_ENTRY_HEIGHT)
+			love.graphics.rectangle("fill", posX + 20, y, sizeX - 40, self.ITEM_LIST_ENTRY_HEIGHT)
+			love.graphics.setColor(1, 1, 1)
+			if self.inputType == "file" then
+				love.graphics.print(item, posX + 30, y)
+			elseif self.inputType == "Font" then
+				love.graphics.setFont(item.font)
+				love.graphics.print(item.name, posX + 30, y)
+			end
 		end
 		-- Input box
-		love.graphics.setColor(1, 1, 1)
-		love.graphics.rectangle("line", posX + 20, posY + 420, sizeX - 40, 25)
-		love.graphics.setFont(self.bigFont)
-		love.graphics.print(string.format("%s_", self.inputText), posX + 30, posY + 420)
+		if self.inputType == "file" then
+			love.graphics.setColor(1, 1, 1)
+			love.graphics.rectangle("line", posX + 20, posY + 420, sizeX - 40, 25)
+			love.graphics.setFont(self.bigFont)
+			love.graphics.print(string.format("%s_", self.inputText), posX + 30, posY + 420)
+		end
 		if self.fileWarningActive then
 			-- File overwrite warning
 			local posBX, posBY = self:getOverwritePos()

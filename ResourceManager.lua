@@ -20,6 +20,17 @@ function ResourceManager:new()
     self.fontLookup = {}
 
     self.images = {
+        widget_box = Image("resources/widget_box.png"),
+        widget_button = Image("resources/widget_button.png"),
+        widget_canvas = Image("resources/widget_canvas.png"),
+        widget_ninesprite = Image("resources/widget_ninesprite.png"),
+        widget_none = Image("resources/widget_none.png"),
+        widget_text = Image("resources/widget_text.png"),
+        widget_titledigit = Image("resources/widget_titledigit.png")
+    }
+    self.imageLookup = {}
+
+    self.nineImages = {
         base_button = NineImage("resources/base_button.png", 3, 3, 9, 9),
         base_button_hover = NineImage("resources/base_button_hover.png", 3, 3, 9, 9),
         base_button_click = NineImage("resources/base_button_click.png", 3, 3, 9, 9),
@@ -30,16 +41,9 @@ function ResourceManager:new()
         ed_button_click = NineImage("resources/ed_button_click.png", 2, 3, 2, 3),
         ed_input = NineImage("resources/ed_input.png", 2, 3, 2, 3),
         ed_input_hover = NineImage("resources/ed_input_hover.png", 2, 3, 2, 3),
-        ed_input_disabled = NineImage("resources/ed_input_disabled.png", 2, 3, 2, 3),
-        widget_box = Image("resources/widget_box.png"),
-        widget_button = Image("resources/widget_button.png"),
-        widget_canvas = Image("resources/widget_canvas.png"),
-        widget_ninesprite = Image("resources/widget_ninesprite.png"),
-        widget_none = Image("resources/widget_none.png"),
-        widget_text = Image("resources/widget_text.png"),
-        widget_titledigit = Image("resources/widget_titledigit.png")
+        ed_input_disabled = NineImage("resources/ed_input_disabled.png", 2, 3, 2, 3)
     }
-    self.imageLookup = {}
+    self.nineImageLookup = {}
 end
 
 ---Inits the Resource Manager by preparing the resource lookups.
@@ -49,6 +53,9 @@ function ResourceManager:init()
 	end
 	for imageName, image in pairs(self.images) do
 		self.imageLookup[image] = imageName
+	end
+	for nineImageName, nineImage in pairs(self.nineImages) do
+		self.imageLookup[nineImage] = nineImageName
 	end
 end
 
@@ -66,17 +73,40 @@ function ResourceManager:getFontName(font)
     return self.fontLookup[font]
 end
 
----Returns an image or NineImage with the provided name.
+---Returns the list of all available fonts, in the format of `{{name = name, font = love.Font}, ...}`.
+---@return table
+function ResourceManager:getFontList()
+    local result = {}
+    for name, font in pairs(self.fonts) do
+        table.insert(result, {name = name, font = font})
+    end
+    return result
+end
+
+---Returns an image with the provided name.
 ---@param name string The image name.
----@return Image|NineImage
+---@return Image
 function ResourceManager:getImage(name)
     return self.images[name]
 end
 
 ---Returns the name of the provided image.
----@param image Image|NineImage The inage to be looked up.
+---@param image Image The inage to be looked up.
 function ResourceManager:getImageName(image)
     return self.imageLookup[image]
+end
+
+---Returns a NineImage with the provided name.
+---@param name string The image name.
+---@return NineImage
+function ResourceManager:getNineImage(name)
+    return self.nineImages[name]
+end
+
+---Returns the name of the provided NineImage.
+---@param nineImage NineImage The inage to be looked up.
+function ResourceManager:getNineImageName(nineImage)
+    return self.nineImageLookup[nineImage]
 end
 
 return ResourceManager

@@ -18,7 +18,7 @@ local Color = require("Color")
 ---Each property definition entry can have the following fields:
 --- - `key` (required) - The name under which this property will be saved.
 --- - `name` (required) - The visible property name, for use in the editor.
---- - `type` (required) - The property type. One of `"string"`, `"number"`, `"boolean"`, `"color"`, `"shortcut"`, `"Vector2"`, `"Image"`, `"Font"`.
+--- - `type` (required) - The property type. One of `"string"`, `"number"`, `"boolean"`, `"color"`, `"shortcut"`, `"Vector2"`, `"Image"`, `"NineImage"`, `"Font"`.
 --- - `nullable` - Whether the value can not exist.
 --- - `defaultValue` - The default value for this property.
 --- - `defaultValueNoData` - The default value for this property used only if the property is deserialized with NO DATA WHATSOEVER.
@@ -163,6 +163,8 @@ function PropertyList:serialize()
                 value = {rawValue.x, rawValue.y}
             elseif property.type == "Image" then
                 value = _RESOURCE_MANAGER:getImageName(rawValue)
+            elseif property.type == "NineImage" then
+                value = _RESOURCE_MANAGER:getNineImageName(rawValue)
             elseif property.type == "Font" then
                 value = _RESOURCE_MANAGER:getFontName(rawValue)
             elseif property.type == "align" then
@@ -208,6 +210,8 @@ function PropertyList:deserialize(data)
                     value = Vec2(data[property.key])
                 elseif property.type == "Image" then
                     value = _RESOURCE_MANAGER:getImage(data[property.key])
+                elseif property.type == "NineImage" then
+                    value = _RESOURCE_MANAGER:getNineImage(data[property.key])
                 elseif property.type == "Font" then
                     value = _RESOURCE_MANAGER:getFont(data[property.key])
                 elseif property.type == "align" then

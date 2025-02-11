@@ -1,0 +1,36 @@
+{
+	"canvasInputMode": true,
+	"children": [
+		{
+			"widget": {
+				"size": [
+					96,
+					24
+				]
+			},
+			"children": [
+				{
+					"parentAlign": [
+						0.5,
+						0.5
+					],
+					"type": "text",
+					"name": "Text",
+					"align": [
+						0.5,
+						0.5
+					],
+					"widget": {
+						"color": "#000000",
+						"font": "editor",
+						"text": "Zapisz",
+						"shadowAlpha": 0
+					}
+				}
+			],
+			"name": "NineSprite",
+			"type": "9sprite"
+		}
+	],
+	"name": "root"
+}

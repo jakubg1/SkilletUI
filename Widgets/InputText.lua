@@ -101,7 +101,7 @@ end
 
 ---Sets the current type of this InputText.
 ---The type determines the form of display and what happens when this Widget is clicked.
----Allowed values are: `"string"`, `"number"`, `"boolean"`, `"color"`, `"Vector2"`, `"Image"`, `"shortcut"`.
+---Allowed values are: `"string"`, `"number"`, `"boolean"`, `"color"`, `"Vector2"`, `"Image"`, `"NineImage"`, `"shortcut"`.
 ---@param type string The new type for this InputText.
 function InputText:setType(type)
     self.type = type

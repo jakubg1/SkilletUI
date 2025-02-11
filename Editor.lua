@@ -198,7 +198,7 @@ end
 ---@param property table The property in its entirety, as an item of the `Widget:getPropertyList()` result table.
 ---@return boolean
 function Editor:isNodePropertySupported(property)
-    return property.type == "string" or property.type == "number" or property.type == "color" or property.type == "boolean" or property.type == "shortcut"
+    return property.type == "string" or property.type == "number" or property.type == "color" or property.type == "boolean" or property.type == "shortcut" or property.type == "Font"
 end
 
 
@@ -814,14 +814,14 @@ end
 
 ---Executed when an editor input field has been clicked.
 ---@param input Node|string The input node that has been clicked, or an identifier. Currently supported identifiers are `"save"` and `"load"`.
----@param inputType string The input type. Can be `"string"`, `"number"`, `"color"` or `"file"`.
+---@param inputType string The input type. Can be `"string"`, `"number"`, `"color"`, `"file"` or `"Font"`.
 ---@param extensions table? If `type` == `"file"`, the list of file extensions to be listed in the input box.
 ---@param warnWhenFileExists boolean? If `type` == `"file"`, whether a file overwrite warning should be shown if the file exists.
 ---@param basePath string? If `type` == `"file"`, the path from which the file search should start.
 ---@param pathFilter string? If `type` == `"file"`: `"file"`, `"dir"` or `"all"` - show either files or directories or both respectively.
 function Editor:askForInput(input, inputType, extensions, warnWhenFileExists, basePath, pathFilter)
     self.activeInput = input
-    if inputType == "color" or inputType == "shortcut" or inputType == "file" then
+    if inputType == "color" or inputType == "shortcut" or inputType == "file" or inputType == "Font" then
         local value = ""
         if type(input) ~= "string" then
             value = input.widget:getValue()
