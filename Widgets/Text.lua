@@ -154,7 +154,7 @@ function Text:draw()
     local text = self:getText()
     local prop = self.properties:getValues()
 
-    love.graphics.setFont(prop.font)
+    love.graphics.setFont(prop.font.font)
     local color = prop.color
     if prop.hoverColor and self.node:isHovered() then
         color = prop.hoverColor

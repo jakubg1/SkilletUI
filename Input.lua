@@ -580,15 +580,15 @@ function Input:draw()
 			if self.inputType == "file" then
 				love.graphics.print(item, posX + 30, y)
 			elseif self.inputType == "Font" then
-				love.graphics.setFont(item.font)
+				love.graphics.setFont(item.font.font)
 				love.graphics.print(item.name, posX + 30, y)
 			end
 		end
+		love.graphics.setFont(self.bigFont)
 		-- Input box
 		if self.inputType == "file" then
 			love.graphics.setColor(1, 1, 1)
 			love.graphics.rectangle("line", posX + 20, posY + 420, sizeX - 40, 25)
-			love.graphics.setFont(self.bigFont)
 			love.graphics.print(string.format("%s_", self.inputText), posX + 30, posY + 420)
 		end
 		if self.fileWarningActive then

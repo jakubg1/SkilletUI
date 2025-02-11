@@ -5,17 +5,17 @@ local class = require "com.class"
 local ResourceManager = class:derive("ResourceManager")
 
 -- Place your imports here
+local Font = require("Font")
 local Image = require("Image")
 local NineImage = require("NineImage")
 
 ---Constructs the Resource Manager. It holds data.
 ---This is a faux Resource Manager which has a similar API to what is there in OpenSMCE.
 function ResourceManager:new()
-    local fontCharacters = " abcdefghijklmnopqrstuvwxyząćęłńóśźżABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ0123456789<>-+()[]_.,:;'!?@#$€%^&*\"/|\\"
     self.fonts = {
-        default = love.graphics.newFont(),
-        editor = love.graphics.newFont(14),
-        standard = love.graphics.newImageFont("resources/standard.png", fontCharacters, 1)
+        default = Font("resources/font_default.json"),
+        editor = Font("resources/font_editor.json"),
+        standard = Font("resources/font_standard.json")
     }
     self.fontLookup = {}
 
@@ -61,19 +61,19 @@ end
 
 ---Returns a font with the provided name.
 ---@param name string The font name.
----@return love.Font
+---@return Font
 function ResourceManager:getFont(name)
     return self.fonts[name]
 end
 
 ---Returns the name of the provided font.
----@param font love.Font The font to be looked up.
+---@param font Font The font to be looked up.
 ---@return string
 function ResourceManager:getFontName(font)
     return self.fontLookup[font]
 end
 
----Returns the list of all available fonts, in the format of `{{name = name, font = love.Font}, ...}`.
+---Returns the list of all available fonts, in the format of `{{name = name, font = Font}, ...}`.
 ---@return table
 function ResourceManager:getFontList()
     local result = {}

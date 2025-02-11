@@ -1001,7 +1001,7 @@ end
 ---Draws the Editor.
 function Editor:draw()
     if not self.enabled then
-        love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor"))
+        love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor").font)
         self.keyframeEditor:draw()
         return
     end
@@ -1042,7 +1042,7 @@ function Editor:draw()
     self.UI:draw()
 
     -- Other UI that will be hardcoded for now.
-    love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor"))
+    love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor").font)
 
     -- UI tree
     self.uiTree:draw()
