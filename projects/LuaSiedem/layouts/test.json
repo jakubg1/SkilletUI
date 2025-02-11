@@ -1,36 +1,36 @@
 {
+	"name": "root",
 	"canvasInputMode": true,
 	"children": [
 		{
-			"widget": {
-				"size": [
-					96,
-					24
-				]
-			},
+			"name": "NineSprite",
+			"type": "9sprite",
 			"children": [
 				{
+					"widget": {
+						"font": "editor",
+						"text": "Zapisz",
+						"shadowAlpha": 0
+					},
 					"parentAlign": [
 						0.5,
 						0.5
 					],
-					"type": "text",
 					"name": "Text",
+					"type": "text",
 					"align": [
 						0.5,
 						0.5
-					],
-					"widget": {
-						"color": "#000000",
-						"font": "editor",
-						"text": "Zapisz",
-						"shadowAlpha": 0
-					}
+					]
 				}
 			],
-			"name": "NineSprite",
-			"type": "9sprite"
+			"widget": {
+				"size": [
+					96,
+					24
+				],
+				"image": "base_button"
+			}
 		}
-	],
-	"name": "root"
+	]
 }

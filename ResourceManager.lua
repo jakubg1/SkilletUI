@@ -31,9 +31,9 @@ function ResourceManager:new()
     self.imageLookup = {}
 
     self.nineImages = {
-        base_button = NineImage("resources/base_button.png", 3, 3, 9, 9),
-        base_button_hover = NineImage("resources/base_button_hover.png", 3, 3, 9, 9),
-        base_button_click = NineImage("resources/base_button_click.png", 3, 3, 9, 9),
+        base_button = NineImage("resources/base_button.png", 3, 9, 3, 9),
+        base_button_hover = NineImage("resources/base_button_hover.png", 3, 9, 3, 9),
+        base_button_click = NineImage("resources/base_button_click.png", 3, 9, 3, 9),
         button = NineImage("resources/button.png", 2, 3, 3, 4),
         button_hover = NineImage("resources/button_hover.png", 2, 3, 3, 4),
         button_click = NineImage("resources/button_click.png", 2, 3, 3, 4),
@@ -55,7 +55,7 @@ function ResourceManager:init()
 		self.imageLookup[image] = imageName
 	end
 	for nineImageName, nineImage in pairs(self.nineImages) do
-		self.imageLookup[nineImage] = nineImageName
+		self.nineImageLookup[nineImage] = nineImageName
 	end
 end
 
