@@ -242,8 +242,6 @@ function Editor:generateNodePropertyUI(node)
     if node then
         local widget = node.widget
         local propertiesUI = Node({name = "properties", pos = {1200, 30}})
-        local y = 30
-        local nodeProperties = node:getPropertyList()
         local propertyWidgetInfoUI = self:label(20, 0, "")
         if widget then
             if not widget.getPropertyList then
@@ -252,45 +250,49 @@ function Editor:generateNodePropertyUI(node)
         else
             propertyWidgetInfoUI.widget:setProp("text", "This Node does not have a widget.")
         end
-        local propertyHeaderUI = self:label(0, y, "Node Properties " .. tostring(math.floor(math.random() * 1000000)))
-        propertyHeaderUI.widget:setProp("underline", true)
-        propertyHeaderUI.widget:setProp("characterSeparation", 2)
-        y = y + 20
-        propertiesUI:addChild(propertyHeaderUI)
-        for i, property in ipairs(nodeProperties) do
-            local inputValue = node.properties:getBaseValue(property.key)
-            local propertyUI = Node({name = "input", pos = {20, y}})
-            y = y + 20
-            local propertyText = self:label(0, 0, property.name)
-            local propertyInput = self:input(200, 0, 150, property, inputValue, "node", nil)
-            self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (node:isControlled() and property.disabledIfControlled))
-            propertyUI:addChild(propertyText)
-            propertyUI:addChild(propertyInput)
-            propertiesUI:addChild(propertyUI)
-        end
-        if widget then
-            if widget.getPropertyList then
-                local properties = widget:getPropertyList()
-                local propertyHeaderUI = self:label(0, y, "Widget Properties")
-                propertyHeaderUI.widget:setProp("underline", true)
-                propertyHeaderUI.widget:setProp("characterSeparation", 2)
-                y = y + 20
-                propertiesUI:addChild(propertyHeaderUI)
-                for i, property in ipairs(properties) do
-                    local inputValue = widget.properties:getBaseValue(property.key)
-                    local propertyUI = Node({name = "input", pos = {20, y}})
-                    y = y + 20
-                    local propertyText = self:label(0, 0, property.name)
-                    local propertyInput = self:input(200, 0, 150, property, inputValue, "widget", nil)
-                    self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property))
-                    propertyUI:addChild(propertyText)
-                    propertyUI:addChild(propertyInput)
-                    propertiesUI:addChild(propertyUI)
-                end
-            end
+        local widgetListWrapperUI = Node({pos = {0, 30}})
+        local widgetListUI = self:generatePropertyListUI(node, node:getPropertyList(), "Node Properties " .. tostring(math.floor(math.random() * 1000000)), "node", node:isControlled())
+        widgetListWrapperUI:addChild(widgetListUI)
+        propertiesUI:addChild(widgetListWrapperUI)
+        if widget and widget.getPropertyList then
+            local nodeListWrapperUI = Node({pos = {0, 230}})
+            local nodeListUI = self:generatePropertyListUI(widget, widget:getPropertyList(), "Widget Properties", "widget", false)
+            nodeListWrapperUI:addChild(nodeListUI)
+            propertiesUI:addChild(nodeListWrapperUI)
         end
         self.UI:addChild(propertiesUI)
     end
+end
+
+
+
+---Generates a property list UI and returns a Node with a header, the properties and their labels.
+---@param widgetOrNode Node|Widget* The Node or Widget to get the values from.
+---@param properties table The property list to be generated from.
+---@param header string The header text for this list.
+---@param affectedType "node"|"widget" What to change when the input box value is submitted.
+---@param controlled boolean If set, the properties marked as `disabledIfControlled` will be disabled.
+---@return Node
+function Editor:generatePropertyListUI(widgetOrNode, properties, header, affectedType, controlled)
+    local listUI = Node({name = "proplist"})
+    local y = 0
+    local propertyHeaderUI = self:label(0, y, header)
+    propertyHeaderUI.widget:setProp("underline", true)
+    propertyHeaderUI.widget:setProp("characterSeparation", 2)
+    y = y + 20
+    listUI:addChild(propertyHeaderUI)
+    for i, property in ipairs(properties) do
+        local inputValue = widgetOrNode.properties:getBaseValue(property.key)
+        local propertyUI = Node({name = "input", pos = {20, y}})
+        y = y + 20
+        local propertyText = self:label(0, 0, property.name)
+        local propertyInput = self:input(200, 0, 150, property, inputValue, affectedType, nil)
+        self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (controlled and property.disabledIfControlled))
+        propertyUI:addChild(propertyText)
+        propertyUI:addChild(propertyInput)
+        listUI:addChild(propertyUI)
+    end
+    return listUI
 end
 
 
