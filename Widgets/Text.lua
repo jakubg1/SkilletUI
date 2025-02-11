@@ -17,7 +17,7 @@ function Text:new(node, data)
     self.node = node
 
     self.PROPERTY_LIST = {
-        {name = "Font", key = "font", type = "Font", defaultValue = _FONTS.standard},
+        {name = "Font", key = "font", type = "Font", defaultValue = _RESOURCE_MANAGER:getFont("standard")},
         {name = "Text", key = "text", type = "string", defaultValue = "Text"},
         {name = "Scale", key = "scale", type = "number", defaultValue = 1, minValue = 1, scrollStep = 1},
         {name = "Color", key = "color", type = "color", defaultValue = _COLORS.white},

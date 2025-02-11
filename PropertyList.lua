@@ -162,9 +162,9 @@ function PropertyList:serialize()
             elseif property.type == "Vector2" then
                 value = {rawValue.x, rawValue.y}
             elseif property.type == "Image" then
-                value = _IMAGE_LOOKUP[rawValue]
+                value = _RESOURCE_MANAGER:getImageName(rawValue)
             elseif property.type == "Font" then
-                value = _FONT_LOOKUP[rawValue]
+                value = _RESOURCE_MANAGER:getFontName(rawValue)
             elseif property.type == "align" then
                 -- Alignments do not serialize back into names.
                 value = {rawValue.x, rawValue.y}
@@ -207,9 +207,9 @@ function PropertyList:deserialize(data)
                 elseif property.type == "Vector2" then
                     value = Vec2(data[property.key])
                 elseif property.type == "Image" then
-                    value = _IMAGES[data[property.key]]
+                    value = _RESOURCE_MANAGER:getImage(data[property.key])
                 elseif property.type == "Font" then
-                    value = _FONTS[data[property.key]]
+                    value = _RESOURCE_MANAGER:getFont(data[property.key])
                 elseif property.type == "align" then
                     value = _ALIGNMENTS[data[property.key]] or Vec2(data[property.key])
                 elseif property.type == "shortcut" then

@@ -1,0 +1,283 @@
+{
+	"name": "root",
+	"children": [
+		{
+			"name": "Background",
+			"children": [
+				{
+					"name": "TextLevel",
+					"align": [
+						0.5,
+						0
+					],
+					"pos": [
+						0,
+						5
+					],
+					"parentAlign": [
+						0.5,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"text": "Level 1",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TextStatus",
+					"align": [
+						0.5,
+						0
+					],
+					"pos": [
+						0,
+						15
+					],
+					"parentAlign": [
+						0.5,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"color": "#00ff02",
+						"text": "Complete!",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TextTimeLabel",
+					"type": "text",
+					"pos": [
+						50,
+						35
+					],
+					"widget": {
+						"text": "Time Elapsed:",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxComboLabel",
+					"type": "text",
+					"pos": [
+						50,
+						45
+					],
+					"widget": {
+						"text": "Max Combo:",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxComboLabel#2",
+					"type": "text",
+					"pos": [
+						50,
+						55
+					],
+					"widget": {
+						"text": "Largest Link:",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxComboLabel#3",
+					"type": "text",
+					"pos": [
+						50,
+						65
+					],
+					"widget": {
+						"text": "Time Bonus:",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxComboLabel#4",
+					"type": "text",
+					"pos": [
+						50,
+						75
+					],
+					"widget": {
+						"text": "Level Score:",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxComboLabel#5",
+					"type": "text",
+					"pos": [
+						50,
+						95
+					],
+					"widget": {
+						"text": "Total Score:",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TextTime",
+					"align": [
+						1,
+						0
+					],
+					"pos": [
+						-50,
+						35
+					],
+					"parentAlign": [
+						1,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"color": "#fffc00",
+						"text": "2:15",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxCombo",
+					"align": [
+						1,
+						0
+					],
+					"pos": [
+						-50,
+						45
+					],
+					"parentAlign": [
+						1,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"color": "#fffc00",
+						"text": "6",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxCombo#2",
+					"align": [
+						1,
+						0
+					],
+					"pos": [
+						-50,
+						55
+					],
+					"parentAlign": [
+						1,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"color": "#fffc00",
+						"text": "7",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxCombo#3",
+					"align": [
+						1,
+						0
+					],
+					"pos": [
+						-50,
+						65
+					],
+					"parentAlign": [
+						1,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"color": "#fffc00",
+						"text": "12.5s = 25000",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxCombo#4",
+					"align": [
+						1,
+						0
+					],
+					"pos": [
+						-50,
+						75
+					],
+					"parentAlign": [
+						1,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"color": "#fffc00",
+						"text": "67200",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TMaxCombo#5",
+					"align": [
+						1,
+						0
+					],
+					"pos": [
+						-50,
+						95
+					],
+					"parentAlign": [
+						1,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"color": "#fffc00",
+						"text": "67200",
+						"font": "standard"
+					}
+				},
+				{
+					"name": "TextLevel#2",
+					"align": [
+						0.5,
+						0
+					],
+					"pos": [
+						0,
+						135
+					],
+					"parentAlign": [
+						0.5,
+						0
+					],
+					"type": "text",
+					"widget": {
+						"color": "#c0c0c0",
+						"gradientWaveSpeed": 100,
+						"gradientWaveColor": "#606060",
+						"text": "Click anywhere to go to the next level!",
+						"gradientWaveFrequency": 200,
+						"font": "standard"
+					}
+				}
+			],
+			"type": "box",
+			"widget": {
+				"size": [
+					320,
+					180
+				],
+				"borderAlpha": 1,
+				"alpha": 1
+			}
+		}
+	],
+	"canvasInputMode": true
+}

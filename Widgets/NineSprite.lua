@@ -16,7 +16,7 @@ function NineSprite:new(node, data)
     self.node = node
 
     self.PROPERTY_LIST = {
-        {name = "Image", key = "image", type = "Image", defaultValueNoData = _IMAGES.ed_button},
+        {name = "Image", key = "image", type = "Image", defaultValueNoData = _RESOURCE_MANAGER:getImage("ed_button")},
         {name = "Hover Image", key = "hoverImage", type = "Image", nullable = true},
         {name = "Click Image", key = "clickImage", type = "Image", nullable = true},
         {name = "Disabled Image", key = "disabledImage", type = "Image", nullable = true},

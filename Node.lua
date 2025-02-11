@@ -23,14 +23,14 @@ function Node:new(data, parent)
     self.parent = parent
 
     self.WIDGET_TYPES = {
-        none =              {constructor = nil,         defaultName = "Node",       icon = _IMAGES.widget_none},
-        box =               {constructor = Box,         defaultName = "Box",        icon = _IMAGES.widget_box},
-        button =            {constructor = Button,      defaultName = "Button",     icon = _IMAGES.widget_button},
-        canvas =            {constructor = Canvas,      defaultName = "Canvas",     icon = _IMAGES.widget_canvas},
-        input_text =        {constructor = InputText,   defaultName = "InputText",  icon = _IMAGES.widget_none},
-        ["9sprite"] =       {constructor = NineSprite,  defaultName = "NineSprite", icon = _IMAGES.widget_ninesprite},
-        text =              {constructor = Text,        defaultName = "Text",       icon = _IMAGES.widget_text},
-        ["@titleDigit"] =   {constructor = TitleDigit,  defaultName = "TitleDigit", icon = _IMAGES.widget_titledigit}
+        none =              {constructor = nil,         defaultName = "Node",       icon = "widget_none"},
+        box =               {constructor = Box,         defaultName = "Box",        icon = "widget_box"},
+        button =            {constructor = Button,      defaultName = "Button",     icon = "widget_button"},
+        canvas =            {constructor = Canvas,      defaultName = "Canvas",     icon = "widget_canvas"},
+        input_text =        {constructor = InputText,   defaultName = "InputText",  icon = "widget_none"},
+        ["9sprite"] =       {constructor = NineSprite,  defaultName = "NineSprite", icon = "widget_ninesprite"},
+        text =              {constructor = Text,        defaultName = "Text",       icon = "widget_text"},
+        ["@titleDigit"] =   {constructor = TitleDigit,  defaultName = "TitleDigit", icon = "widget_titledigit"}
     }
     self.type = "none"
 
@@ -354,7 +354,7 @@ end
 ---Returns this Node's icon based on its Widget's type, for use in editors.
 ---@return Image
 function Node:getIcon()
-    return self.WIDGET_TYPES[self.type].icon
+    return _RESOURCE_MANAGER:getImage(self.WIDGET_TYPES[self.type].icon)
 end
 
 

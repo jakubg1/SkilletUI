@@ -2,11 +2,10 @@ _Utils = require("com.utils")
 
 local Vec2 = require("Vector2")
 local Color = require("Color")
-local Image = require("Image")
-local NineImage = require("NineImage")
 local MainCanvas = require("MainCanvas")
 local GridBackground = require("GridBackground")
 local TransitionTest = require("TransitionTest")
+local ResourceManager = require("ResourceManager")
 local Project = require("Project")
 local Editor = require("Editor")
 
@@ -26,31 +25,6 @@ _MousePos = Vec2()
 _MouseCPos = Vec2()
 
 _DrawTime = 0
-_FONT_CHARACTERS = " abcdefghijklmnopqrstuvwxyząćęłńóśźżABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ0123456789<>-+()[]_.,:;'!?@#$€%^&*\"/|\\"
-_FONTS = {
-	default = love.graphics.newFont(),
-	editor = love.graphics.newFont(14),
-	standard = love.graphics.newImageFont("resources/standard.png", _FONT_CHARACTERS, 1)
-}
-_FONT_LOOKUP = {}
-_IMAGES = {
-	button = NineImage("resources/button.png", 2, 3, 3, 4),
-	button_hover = NineImage("resources/button_hover.png", 2, 3, 3, 4),
-	button_click = NineImage("resources/button_click.png", 2, 3, 3, 4),
-	ed_button = NineImage("resources/ed_button.png", 2, 3, 2, 3),
-	ed_button_click = NineImage("resources/ed_button_click.png", 2, 3, 2, 3),
-	ed_input = NineImage("resources/ed_input.png", 2, 3, 2, 3),
-	ed_input_hover = NineImage("resources/ed_input_hover.png", 2, 3, 2, 3),
-	ed_input_disabled = NineImage("resources/ed_input_disabled.png", 2, 3, 2, 3),
-	widget_box = Image("resources/widget_box.png"),
-	widget_button = Image("resources/widget_button.png"),
-	widget_canvas = Image("resources/widget_canvas.png"),
-	widget_ninesprite = Image("resources/widget_ninesprite.png"),
-	widget_none = Image("resources/widget_none.png"),
-	widget_text = Image("resources/widget_text.png"),
-	widget_titledigit = Image("resources/widget_titledigit.png")
-}
-_IMAGE_LOOKUP = {}
 _COLORS = {
 	white = Color("fff"),
 	gray = Color("888"),
@@ -80,23 +54,13 @@ _ALIGNMENTS = {
 _CANVAS = MainCanvas()
 _BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
+_RESOURCE_MANAGER = ResourceManager()
 ---@type Project?
 _PROJECT = nil
 _EDITOR = Editor()
 
 _BackgroundEnabled = true
 _FullscreenPresentation = false
-
-
-
-function _PrepareResourceLookups()
-	for fontName, font in pairs(_FONTS) do
-		_FONT_LOOKUP[font] = fontName
-	end
-	for imageName, image in pairs(_IMAGES) do
-		_IMAGE_LOOKUP[image] = imageName
-	end
-end
 
 
 
@@ -153,26 +117,22 @@ function _OnSignal(name)
 		_PROJECT:loadLayout("dive9.json")
 	elseif name == "dive10" then
 		_PROJECT:loadLayout("dive10.json")
+	elseif name == "transition" then
+		if _TRANSITION.state then
+			_TRANSITION:hide()
+		else
+			_TRANSITION:show()
+		end
 	end
 end
 
 
 
 function love.load()
-	_PrepareResourceLookups()
+	_RESOURCE_MANAGER:init()
 	_EDITOR:load()
 	_LoadProject("Demo")
 	_PROJECT:loadLayout("welcome.json")
-	--[[
-	_PROJECT:loadLayout("ui.json")
-	_PROJECT.ui:findChildByName("btn1"):setOnClick(function ()
-		if _TRANSITION.state then
-			_TRANSITION:hide()
-		else
-			_TRANSITION:show()
-		end
-	end)
-	]]
 end
 
 

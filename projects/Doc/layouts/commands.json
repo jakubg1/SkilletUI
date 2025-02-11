@@ -1,0 +1,138 @@
+{
+	"children": [
+		{
+			"type": "text",
+			"pos": [
+				6,
+				5
+			],
+			"name": "",
+			"widget": {
+				"text": "So, what is all this fuss about Commands about?"
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				25
+			],
+			"name": "",
+			"widget": {
+				"text": "First of all, we need to understand two things:"
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				16,
+				35
+			],
+			"name": "",
+			"widget": {
+				"text": "1. What are Command Groups?"
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				16,
+				45
+			],
+			"name": "",
+			"widget": {
+				"text": "2. What are Command Transactions?"
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				65
+			],
+			"name": "",
+			"widget": {
+				"text": "Once we understand the difference between both of them it will be"
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				75
+			],
+			"name": "",
+			"widget": {
+				"text": "easier to design a proper system for Commands so that everything"
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				85
+			],
+			"name": "",
+			"widget": {
+				"text": "can be done smoothly and without any hiccups."
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				105
+			],
+			"name": "",
+			"widget": {
+				"text": "But before that... WHY EVEN COMMANDS?!?!"
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				115
+			],
+			"name": "",
+			"widget": {
+				"text": "Let's imagine you want to make an editor and you need it to have"
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				125
+			],
+			"name": "",
+			"widget": {
+				"text": "undo functionality."
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				135
+			],
+			"name": "",
+			"widget": {
+				"text": "An operation like that would of course need to be saved somewhere."
+			}
+		},
+		{
+			"type": "text",
+			"pos": [
+				6,
+				145
+			],
+			"name": "",
+			"widget": {
+				"text": "Let's call this \"somewhere\" the undo stack."
+			}
+		}
+	],
+	"canvasInputMode": true,
+	"name": "root"
+}

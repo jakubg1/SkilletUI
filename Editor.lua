@@ -26,6 +26,7 @@ local CommandNodeMoveDown = require("EditorCommands.NodeMoveDown")
 local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
 local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 
+---@alias Widget* Box|Button|Canvas|InputText|NineSprite|Text|TitleDigit
 ---@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeResize|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetProperty|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom|EditorCommandNodeMoveToIndex
 
 
@@ -1000,7 +1001,7 @@ end
 ---Draws the Editor.
 function Editor:draw()
     if not self.enabled then
-        love.graphics.setFont(_FONTS.editor)
+        love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor"))
         self.keyframeEditor:draw()
         return
     end
@@ -1041,7 +1042,7 @@ function Editor:draw()
     self.UI:draw()
 
     -- Other UI that will be hardcoded for now.
-    love.graphics.setFont(_FONTS.editor)
+    love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor"))
 
     -- UI tree
     self.uiTree:draw()

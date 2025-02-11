@@ -1,0 +1,85 @@
+{
+    "children": [
+        {
+            "children": [],
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "align": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "alpha": 1,
+            "parentAlign": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "name": "text",
+            "widget": {
+                "color": {
+                    "b": 1,
+                    "r": 1,
+                    "g": 1
+                },
+                "shadowAlpha": 0.5,
+                "scale": 1,
+                "font": "standard",
+                "shadowOffset": {
+                    "x": 1,
+                    "y": 1
+                },
+                "text": "Button"
+            },
+            "type": "text"
+        },
+        {
+            "children": [],
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "align": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "alpha": 1,
+            "parentAlign": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "name": "sprite",
+            "widget": {
+                "shadowOffset": {
+                    "x": 1,
+                    "y": 1
+                },
+                "hoverImage": "button_hover",
+                "scale": 1,
+                "shadowAlpha": 0.5,
+                "size": {
+                    "x": 64,
+                    "y": 16
+                },
+                "image": "button",
+                "clickImage": "button_click"
+            },
+            "type": "9sprite"
+        }
+    ],
+    "align": {
+        "x": 0.5,
+        "y": 0.5
+    },
+    "alpha": 1,
+    "parentAlign": {
+        "x": 0,
+        "y": 0
+    },
+    "pos": {
+        "x": 0,
+        "y": 0
+    },
+    "name": "NewButton",
+    "type": "button"
+}

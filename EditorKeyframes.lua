@@ -177,7 +177,7 @@ function EditorKeyframes:draw()
 
     -- Timeline header
     love.graphics.setColor(1, 1, 1)
-    _IMAGES.ed_button:draw(self.POS + Vec2(self.NODE_LIST_WIDTH, 0), Vec2(self.KEYFRAME_AREA_WIDTH, self.HEADER_HEIGHT), 2)
+    _RESOURCE_MANAGER:getImage("ed_button"):draw(self.POS + Vec2(self.NODE_LIST_WIDTH, 0), Vec2(self.KEYFRAME_AREA_WIDTH, self.HEADER_HEIGHT), 2)
     local tmin = self:getTimeFromX(self.POS.x + self.NODE_LIST_WIDTH)
     local tmax = self:getTimeFromX(self.POS.x + self.SIZE.x)
     local t = math.ceil(tmin)
@@ -203,7 +203,7 @@ function EditorKeyframes:draw()
             -- Node name and timeline background
             self:drawEntryBase(i, node or name)
         end
-    
+
         -- Ghost entry. They are entries which are visible when exactly one node is selected and allows adding events to the timeline.
         if displayGhostNode and #self.editor.selectedNodes == 1 then
             self:drawEntryBase(#timeline.nodeNames + 1, self.editor.selectedNodes[1], true)

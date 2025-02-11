@@ -1,223 +1,220 @@
 {
 	"canvasInputMode": true,
+	"name": "root",
 	"children": [
 		{
 			"pos": [
 				80,
 				80
 			],
-			"name": "btn0",
-			"type": "button",
 			"children": [
 				{
 					"parentAlign": [
 						0.5,
 						0.5
 					],
-					"name": "text",
 					"type": "text",
+					"name": "text",
+					"align": [
+						0.5,
+						0.5
+					],
 					"widget": {
-						"text": "Play!",
 						"shadowOffset": [
 							1,
 							1
 						],
-						"font": "standard"
-					},
-					"align": [
-						0.5,
-						0.5
-					]
+						"text": "Play!"
+					}
 				},
 				{
 					"parentAlign": [
 						0.5,
 						0.5
 					],
-					"name": "sprite",
 					"type": "9sprite",
+					"name": "sprite",
+					"align": [
+						0.5,
+						0.5
+					],
 					"widget": {
-						"image": "button",
-						"size": [
-							100,
-							14
-						],
-						"hoverImage": "button_hover",
 						"clickImage": "button_click",
 						"shadowOffset": [
 							1,
 							1
+						],
+						"image": "button",
+						"hoverImage": "button_hover",
+						"size": [
+							100,
+							14
 						]
-					},
-					"align": [
-						0.5,
-						0.5
-					]
+					}
 				}
 			],
+			"type": "button",
+			"name": "btn0",
 			"align": [
 				0.5,
 				0.5
 			]
 		},
 		{
-			"pos": [
-				160,
-				80
-			],
-			"name": "btn1",
-			"type": "9sprite",
 			"children": [
 				{
 					"parentAlign": [
 						0.5,
 						0.5
 					],
-					"name": "#",
 					"type": "text",
+					"name": "#",
+					"align": [
+						0.5,
+						0.5
+					],
 					"widget": {
-						"text": "Play!",
 						"shadowOffset": [
 							1,
 							1
 						],
-						"font": "standard"
-					},
-					"align": [
-						0.5,
-						0.5
-					]
+						"text": "Play!"
+					}
 				}
 			],
+			"pos": [
+				160,
+				80
+			],
+			"align": [
+				0.5,
+				0.5
+			],
+			"type": "9sprite",
+			"name": "btn1",
+			"signalOnClick": "transition",
 			"widget": {
-				"image": "button",
-				"size": [
-					100,
-					14
-				],
-				"hoverImage": "button_hover",
 				"clickImage": "button_click",
 				"shadowOffset": [
 					1,
 					1
+				],
+				"image": "button",
+				"hoverImage": "button_hover",
+				"size": [
+					100,
+					14
 				]
-			},
-			"align": [
-				0.5,
-				0.5
-			]
+			}
 		},
 		{
 			"pos": [
 				160,
 				100
 			],
-			"name": "btn2",
-			"type": "9sprite",
 			"children": [
 				{
 					"parentAlign": [
 						0.5,
 						0.5
 					],
-					"name": "#",
 					"type": "text",
+					"name": "#",
+					"align": [
+						0.5,
+						0.5
+					],
 					"widget": {
-						"text": "New Game",
 						"shadowOffset": [
 							1,
 							1
 						],
-						"font": "standard"
-					},
-					"align": [
-						0.5,
-						0.5
-					]
+						"text": "New Game"
+					}
 				}
 			],
+			"type": "9sprite",
+			"name": "btn2",
+			"align": [
+				0.5,
+				0.5
+			],
 			"widget": {
-				"image": "button",
-				"size": [
-					100,
-					14
-				],
-				"hoverImage": "button_hover",
 				"clickImage": "button_click",
 				"shadowOffset": [
 					1,
 					1
+				],
+				"image": "button",
+				"hoverImage": "button_hover",
+				"size": [
+					100,
+					14
 				]
-			},
-			"align": [
-				0.5,
-				0.5
-			]
+			}
 		},
 		{
 			"pos": [
 				160,
 				120
 			],
-			"name": "btn3",
-			"type": "9sprite",
 			"children": [
 				{
 					"parentAlign": [
 						0.5,
 						0.5
 					],
-					"name": "#",
 					"type": "text",
+					"name": "#",
+					"align": [
+						0.5,
+						0.5
+					],
 					"widget": {
-						"text": "Hi-Scores",
 						"shadowOffset": [
 							1,
 							1
 						],
-						"font": "standard"
-					},
-					"align": [
-						0.5,
-						0.5
-					]
+						"text": "Hi-Scores"
+					}
 				}
 			],
+			"type": "9sprite",
+			"name": "btn3",
+			"align": [
+				0.5,
+				0.5
+			],
 			"widget": {
-				"image": "button",
-				"size": [
-					100,
-					14
-				],
-				"hoverImage": "button_hover",
 				"clickImage": "button_click",
 				"shadowOffset": [
 					1,
 					1
+				],
+				"image": "button",
+				"hoverImage": "button_hover",
+				"size": [
+					100,
+					14
 				]
-			},
-			"align": [
-				0.5,
-				0.5
-			]
+			}
 		},
 		{
 			"type": "text",
+			"name": "text",
 			"pos": [
 				220,
 				160
 			],
-			"name": "text",
 			"widget": {
+				"text": "Let's write some code!",
 				"waveSpeed": 60,
 				"shadowOffset": [
 					1,
 					1
 				],
-				"font": "standard",
-				"waveAmplitude": 5,
-				"text": "Let's write some code!",
-				"waveFrequency": 80
+				"waveFrequency": 80,
+				"waveAmplitude": 5
 			}
 		},
 		{
@@ -225,97 +222,91 @@
 				160,
 				35
 			],
-			"name": "title",
 			"type": "text",
+			"name": "title",
+			"align": [
+				0.5,
+				0.5
+			],
 			"widget": {
+				"gradientWaveSpeed": 100,
+				"text": "Chain Blast",
+				"color": "#4cff4c",
 				"shadowOffset": [
 					2,
 					2
 				],
-				"scale": 4,
-				"text": "Chain Blast",
 				"gradientWaveColor": "#199919",
-				"color": "#4cff4c",
-				"gradientWaveFrequency": 200,
-				"font": "standard",
-				"gradientWaveSpeed": 100
-			},
-			"align": [
-				0.5,
-				0.5
-			]
+				"scale": 4,
+				"gradientWaveFrequency": 200
+			}
 		},
 		{
 			"pos": [
 				162,
 				35
 			],
-			"name": "titleDigit",
 			"type": "@titleDigit",
-			"widget": [],
+			"name": "titleDigit",
 			"align": [
 				0.5,
 				0.5
-			]
+			],
+			"widget": []
 		},
 		{
 			"type": "box",
+			"name": "Box",
 			"widget": {
-				"borderColor": "#e6a018",
 				"size": [
 					320,
 					180
 				],
-				"alpha": 0.3,
+				"borderColor": "#e6a018",
 				"color": "#e7ac14",
-				"borderAlpha": 1
-			},
-			"name": "Box"
+				"alpha": 0.3
+			}
 		},
 		{
 			"pos": [
 				160,
 				180
 			],
-			"name": "box",
-			"type": "box",
 			"children": [
 				{
 					"parentAlign": [
 						0.5,
 						0
 					],
-					"name": "box",
 					"type": "box",
-					"widget": {
-						"borderAlpha": 1,
-						"alpha": 1,
-						"size": [
-							320,
-							1
-						],
-						"color": "#199919"
-					},
+					"name": "box",
 					"align": [
 						0.5,
 						0
-					]
+					],
+					"widget": {
+						"color": "#199919",
+						"size": [
+							320,
+							1
+						]
+					}
 				}
 			],
+			"type": "box",
+			"name": "box",
+			"align": [
+				0.5,
+				1
+			],
 			"widget": {
-				"borderAlpha": 1,
-				"alpha": 0.4,
 				"size": [
 					320,
 					30
 				],
-				"color": "#199919"
-			},
-			"align": [
-				0.5,
-				1
-			]
+				"color": "#199919",
+				"alpha": 0.4
+			}
 		}
-	],
-	"name": "root"
+	]
 }

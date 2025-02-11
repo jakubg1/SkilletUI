@@ -1,0 +1,24 @@
+{
+    "name": "selText",
+    "type": "text",
+    "widget": {
+        "font": "editor",
+        "color": {
+            "r": 0,
+            "g": 1,
+            "b": 1
+        },
+        "shadowOffset": 2,
+        "shadowAlpha": 0.8
+    },
+    "pos": {
+        "x": 0,
+        "y": 100
+    },
+    "snippet": {
+        "x": "pos.x",
+        "y": "pos.y",
+        "text": "widget.text",
+        "color": "widget.color"
+    }
+}

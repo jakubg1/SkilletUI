@@ -1,7 +1,11 @@
 {
-    "nativeResolution": {
+    "_nativeResolution": {
         "x": 1920,
         "y": 984
+    },
+    "nativeResolution": {
+        "x": 384,
+        "y": 216
     },
     "gridSize": {
         "x": 24,
