@@ -29,6 +29,8 @@ function EditorCanvas:new(editor, canvas)
     self.dragOrigin = nil
 
     self:updateCanvas()
+
+    self.debug = false
 end
 
 --##############################################################--
@@ -148,7 +150,7 @@ function EditorCanvas:drawOnCanvas()
     -- Draw a frame around the hovered node and frames around the selected nodes.
     self:drawUIForNodes()
     -- Debug resize crosshair
-    if self.editor.nodeResizeOrigin then
+    if self.debug and self.editor.nodeResizeOrigin then
         love.graphics.setColor(0, 1, 0)
         self:drawCrosshair(self.editor.nodeResizeOrigin, 6)
         love.graphics.setColor(1, 1, 0)

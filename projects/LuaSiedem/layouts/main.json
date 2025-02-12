@@ -1,89 +1,89 @@
 {
 	"canvasInputMode": true,
-	"name": "root",
 	"children": [
 		{
-			"type": "box",
-			"name": "top",
-			"widget": {
-				"size": [
-					1920,
-					24
-				],
-				"color": "#353535"
-			},
 			"children": [
 				{
-					"type": "9sprite",
-					"name": "b_Save",
-					"widget": {
-						"hoverImage": "base_button_hover",
-						"clickImage": "base_button_click",
-						"size": [
-							96,
-							24
-						],
-						"image": "base_button"
-					},
 					"children": [
 						{
+							"align": [
+								0.5,
+								0.5
+							],
+							"locked": true,
+							"name": "Text",
+							"parentAlign": [
+								0.5,
+								0.5
+							],
+							"type": "text",
 							"widget": {
 								"font": "editor",
 								"shadowAlpha": 0,
 								"text": "Zapisz"
-							},
+							}
+						}
+					],
+					"name": "b_save",
+					"type": "9sprite",
+					"widget": {
+						"clickImage": "base_button_click",
+						"hoverImage": "base_button_hover",
+						"image": "base_button",
+						"size": [
+							96,
+							24
+						]
+					}
+				},
+				{
+					"children": [
+						{
 							"align": [
 								0.5,
 								0.5
 							],
-							"type": "text",
+							"locked": true,
+							"name": "Text",
 							"parentAlign": [
 								0.5,
 								0.5
 							],
-							"name": "Text",
-							"locked": true
-						}
-					]
-				},
-				{
-					"pos": [
-						96,
-						0
-					],
-					"children": [
-						{
+							"type": "text",
 							"widget": {
 								"font": "editor",
 								"shadowAlpha": 0,
 								"text": "Wczytaj"
-							},
-							"align": [
-								0.5,
-								0.5
-							],
-							"type": "text",
-							"parentAlign": [
-								0.5,
-								0.5
-							],
-							"name": "Text",
-							"locked": true
+							}
 						}
+					],
+					"name": "b_load",
+					"pos": [
+						96,
+						0
 					],
 					"type": "9sprite",
 					"widget": {
-						"hoverImage": "base_button_hover",
 						"clickImage": "base_button_click",
+						"hoverImage": "base_button_hover",
+						"image": "base_button",
 						"size": [
 							96,
 							24
-						],
-						"image": "base_button"
-					},
-					"name": "b_Load"
+						]
+					}
 				}
-			]
+			],
+			"name": "top",
+			"type": "box",
+			"widget": {
+				"color": "#303030",
+				"size": [
+					1920,
+					24
+				]
+			}
 		}
-	]
+	],
+	"name": "root"
 }
