@@ -379,13 +379,13 @@ function Editor:pasteNode()
         -- We need to prevent deselecting everything when nothing is going to be pasted.
         return
     end
-    self:deselectAllNodes()
     local newNodes = NodeList()
     for i, entry in ipairs(self.clipboard) do
         local node = Node(entry)
         newNodes:addNode(node)
     end
     self:addNodes(newNodes)
+    self:deselectAllNodes()
     self:selectNodes(newNodes)
 end
 
@@ -395,7 +395,6 @@ function Editor:duplicateSelectedNode()
         -- We need to prevent deselecting everything when nothing is going to be pasted.
         return
     end
-    self:deselectAllNodes()
     local newNodes = NodeList()
     for i, node in ipairs(self.selectedNodes:getNodes()) do
         local data = node:serialize()
@@ -403,6 +402,7 @@ function Editor:duplicateSelectedNode()
         newNodes:addNode(newNode)
     end
     self:addNodes(newNodes)
+    self:deselectAllNodes()
     self:selectNodes(newNodes)
 end
 
@@ -577,7 +577,7 @@ function Editor:executeCommand(command, groupID)
     local result = self.commandMgr:executeCommand(command, groupID)
     if result then
         -- Mark the scene as unsaved.
-        _PROJECT:markLayoutAsModified()
+        _PROJECT:setLayoutModified(true)
         -- Make sure to refresh UIs.
         -- If the commands are grouped, UIs are not updated so that we don't pull our text input
         -- whenever we type a single character while maintaining real-time changes.
@@ -624,7 +624,7 @@ end
 ---Undoes the command that has been executed last and moves it to the undo command stack.
 function Editor:undoLastCommand()
     self.commandMgr:undoLastCommand()
-    _PROJECT:markLayoutAsModified()
+    _PROJECT:setLayoutModified(not self.commandMgr:isAtSaveMarker())
     self:updateUI()
 end
 
@@ -633,7 +633,7 @@ end
 ---Redoes the undone command and moves it back to the main command stack.
 function Editor:redoLastCommand()
     self.commandMgr:redoLastCommand()
-    _PROJECT:markLayoutAsModified()
+    _PROJECT:setLayoutModified(not self.commandMgr:isAtSaveMarker())
     self:updateUI()
 end
 
@@ -668,6 +668,7 @@ end
 ---@param name string The name of the layout.
 function Editor:saveScene(name)
     _PROJECT:saveLayout(name)
+    self.commandMgr:setSaveMarker()
 end
 
 ---Saves the current scene.
@@ -879,7 +880,7 @@ function Editor:load()
     local FILE_Y = 5
     local nodes = {
         self:button(UTILITY_X, UTILITY_Y, 100, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
-        self:button(UTILITY_X + 100, UTILITY_Y, 100, "Duplicate [Ctrl+D]", function() self:deleteSelectedNode() end, {ctrl = true, key = "d"}),
+        self:button(UTILITY_X + 100, UTILITY_Y, 100, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"}),
         self:button(UTILITY_X, UTILITY_Y + 20, 200, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"}),
         self:button(UTILITY_X, UTILITY_Y + 40, 200, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"}),
         self:button(UTILITY_X, UTILITY_Y + 60, 200, "To Top [Shift+PgUp]", function() self:moveSelectedNodeToTop() end, {shift = true, key = "pageup"}),

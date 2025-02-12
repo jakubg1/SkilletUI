@@ -77,9 +77,10 @@ function Project:getLayoutName()
     return self.currentLayout
 end
 
----Marks the current layout as modified.
-function Project:markLayoutAsModified()
-    self.layoutModified = true
+---Marks the current layout as modified or not modified.
+---@param layoutModified boolean Whether the layout should be marked as modified (`true`) or not (`false`).
+function Project:setLayoutModified(layoutModified)
+    self.layoutModified = layoutModified
 end
 
 ---Returns whether this layout is modified (unsaved).

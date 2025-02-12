@@ -16,12 +16,20 @@ function EditorCommands:new(editor)
 
     self.POS = Vec2(0, 0)
     self.SIZE = Vec2(800, 600)
-    self.ITEM_HEIGHT = 15
+    self.ITEM_HEIGHT = 20
     self.MAX_ITEMS = 13
 
+    -- Each entry in the `commandHistory` and `undoCommandHistory` can be one of the following tables:
+    -- - `{command = Command}`
+    --   A single command.
+    -- - `{isGroup = true, commands = {{command = Command}, ...}, group = string?}`
+    --   A command transaction (group). Can contain any number of commands, including zero if not closed.
+    --   An optional group ID can be provided and compared against incoming IDs in order to break the group if they differ.
+    --   Command transactions are undone/redone all at once and are used in scenarios like live editing a parameter.
     self.commandHistory = {}
     self.undoCommandHistory = {}
     self.transactionMode = false
+    self.saveMarkerPos = 0
 
     self.visible = false
 end
@@ -40,6 +48,10 @@ function EditorCommands:executeCommand(command, groupID)
         -- Purge the undo command stack if anything was there.
         if #self.undoCommandHistory > 0 then
             self.undoCommandHistory = {}
+            -- Remove the save marker if we've purged a part of the save file.
+            if #self.commandHistory < self.saveMarkerPos then
+                self.saveMarkerPos = nil
+            end
         end
         -- If the command groups differ between the new command and the current command group, commit the group.
         if self.transactionMode and groupID ~= self.commandHistory[#self.commandHistory].group then
@@ -154,10 +166,26 @@ end
 
 
 
----Clears the undo and redo stacks.
+---Clears the undo and redo stacks and resets the save marker position.
 function EditorCommands:clearStacks()
     self.commandHistory = {}
     self.undoCommandHistory = {}
+    self.saveMarkerPos = 0
+end
+
+
+
+---Places a save marker position at the current moment.
+---If at any time the command history goes back to that point, the project will be marked as saved,
+---because we've undone to the exact point the save was made.
+function EditorCommands:setSaveMarker()
+    self.saveMarkerPos = #self.commandHistory
+end
+
+---Returns `true` if the current undo stack matches the saved data.
+---@return boolean
+function EditorCommands:isAtSaveMarker()
+    return self.saveMarkerPos == #self.commandHistory
 end
 
 
@@ -173,7 +201,7 @@ function EditorCommands:draw()
     love.graphics.rectangle("fill", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
 
     -- Draw the main text.
-    self.editor:drawShadowedText("Command Buffer", self.POS.x, self.POS.y)
+    self.editor:drawShadowedText(string.format("Command Buffer (len=%s, save=%s)", #self.commandHistory, self.saveMarkerPos), self.POS.x, self.POS.y)
     local items = {}
     local lastName = nil
     for i, entry in ipairs(self.commandHistory) do
@@ -237,25 +265,46 @@ function EditorCommands:draw()
         else
             -- Add a new item or modify the existing one if it's the same.
             local name = entry.command.NAME
-            if name == lastName then
+            if name == lastName and i - 1 ~= self.saveMarkerPos then
                 items[#items].count = items[#items].count + 1
             else
                 table.insert(items, {value = name, indent = 0, count = 1})
                 lastName = name
             end
+            if i == self.saveMarkerPos then
+                items[#items].saveMarker = true
+            end
         end
     end
     -- Draw the items.
+    if self.saveMarkerPos == 0 then
+        if self:isAtSaveMarker() then
+            love.graphics.setColor(0, 1, 0)
+        else
+            love.graphics.setColor(1, 0, 0.5)
+        end
+        love.graphics.setLineWidth(2)
+        love.graphics.line(self.POS.x, self.POS.y + 28, self.POS.x + 200, self.POS.y + 28)
+    end
     for i, item in ipairs(items) do
         local name = item.value
         if item.count > 1 then
             name = name .. string.format(" (x%s)", item.count)
         end
         self.editor:drawShadowedText(name, self.POS.x + 5 + item.indent * 30, self.POS.y + 10 + (i * self.ITEM_HEIGHT))
+        if item.saveMarker then
+            if self:isAtSaveMarker() then
+                love.graphics.setColor(0, 1, 0)
+            else
+                love.graphics.setColor(1, 0, 0.5)
+            end
+            love.graphics.setLineWidth(2)
+            love.graphics.line(self.POS.x, self.POS.y + 10 + (i * self.ITEM_HEIGHT) + 18, self.POS.x + 200, self.POS.y + 10 + (i * self.ITEM_HEIGHT) + 18)
+        end
     end
     -- Or a none text if there's nothing.
     if #items == 0 then
-        self.editor:drawShadowedText("(empty)", self.POS.x + 5, self.POS.y + 25, _COLORS.gray)
+        self.editor:drawShadowedText("(empty)", self.POS.x + 5, self.POS.y + 10 + self.ITEM_HEIGHT, _COLORS.gray)
     end
 end
 
