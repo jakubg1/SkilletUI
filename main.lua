@@ -16,10 +16,6 @@ love.graphics.setBackgroundColor(0.2, 0.5, 0.9)
 -- Globals
 _VEC2S_PER_FRAME = 0
 _WINDOW_SIZE = Vec2(1600, 900)
-_CANVAS_SIZE_EDITOR = Vec2(960, 540)
-_CANVAS_OFFSET_EDITOR = Vec2(230, 40)
-_CANVAS_SIZE_PRESENTATION = _WINDOW_SIZE
-_CANVAS_OFFSET_PRESENTATION = Vec2()
 _Time = 0
 _MousePos = Vec2()
 _MouseCPos = Vec2()
@@ -58,9 +54,6 @@ _RESOURCE_MANAGER = ResourceManager()
 ---@type Project?
 _PROJECT = nil
 _EDITOR = Editor()
-
-_BackgroundEnabled = true
-_FullscreenPresentation = false
 
 
 
@@ -158,7 +151,7 @@ function love.draw()
 	local t = love.timer.getTime()
 	_CANVAS:activate()
 	-- Start of main drawing routine
-	if not _EDITOR.enabled and _BackgroundEnabled then
+	if not _EDITOR.enabled and _EDITOR.canvasMgr.background then
 		_BACKGROUND:draw()
 	end
 	_PROJECT:draw()
@@ -200,17 +193,8 @@ end
 function love.keypressed(key)
 	if not _EDITOR.enabled then
 		_PROJECT:keypressed(key)
-		if key == "`" then
-			_BackgroundEnabled = not _BackgroundEnabled
-		elseif key == "f" then
-			_FullscreenPresentation = not _FullscreenPresentation
-		end
 	end
 	_EDITOR:keypressed(key)
-	-- Full-screen presentation mode!
-	local fullscreen = not _EDITOR.enabled and _FullscreenPresentation
-	_CANVAS:setPos(fullscreen and _CANVAS_OFFSET_PRESENTATION or _CANVAS_OFFSET_EDITOR)
-	_CANVAS:setSize(fullscreen and _CANVAS_SIZE_PRESENTATION or _CANVAS_SIZE_EDITOR)
 end
 
 
@@ -223,10 +207,5 @@ end
 
 function love.resize(w, h)
 	_WINDOW_SIZE = Vec2(w, h)
-	_CANVAS_SIZE_PRESENTATION = Vec2(w, h)
-	local fullscreen = not _EDITOR.enabled and _FullscreenPresentation
-	if fullscreen then
-		_CANVAS:setPos(_CANVAS_OFFSET_PRESENTATION)
-		_CANVAS:setSize(_CANVAS_SIZE_PRESENTATION)
-	end
+	_EDITOR:resize(w, h)
 end

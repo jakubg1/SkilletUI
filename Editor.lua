@@ -11,6 +11,7 @@ local Input = require("Input")
 local EditorUITree = require("EditorUITree")
 local EditorKeyframes = require("EditorKeyframes")
 local EditorCommands = require("EditorCommands")
+local EditorCanvas = require("EditorCanvas")
 
 local CommandNodeAdd = require("EditorCommands.NodeAdd")
 local CommandNodeRename = require("EditorCommands.NodeRename")
@@ -56,9 +57,12 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Animations and timelines
 --- - Live editing of parameters
 --- - Multi-selection
+--- - Font and image support for parameters
+--- - Grid and snapping to it
+--- - Canvas zooming and panning
 ---
 --- To Do (arbitrary order):
---- - Vector and image support for parameters
+--- - Vector support for parameters
 --- - Node modifier system, where you could add a rule, like: "modify this node and all its children's widgets' alpha by multiplying it by 0.5"
 --- - Property modifier system: instead of always having just the base and current value, make it a base value and a list of any modifiers (current value could be cached and got but could not be set)
 --- - Timeline editing
@@ -102,6 +106,7 @@ function Editor:new()
     self.uiTree = EditorUITree(self)
     self.keyframeEditor = EditorKeyframes(self)
     self.commandMgr = EditorCommands(self)
+    self.canvasMgr = EditorCanvas(self, _CANVAS)
 end
 
 
@@ -979,6 +984,7 @@ function Editor:update(dt)
 
     self.uiTree:update(dt)
     self.keyframeEditor:update(dt)
+    self.canvasMgr:update(dt)
 
     self.UI:update(dt)
     self.INPUT_DIALOG:update(dt)
@@ -1335,6 +1341,8 @@ function Editor:mousepressed(x, y, button, istouch, presses)
         self:cancelDraggingSelectedNode()
         self:cancelResizingSelectedNode()
         self.uiTree:cancelDraggingSelectedNodeInNodeTree()
+    elseif button == 3 then
+        self.canvasMgr:startDrag()
     end
 end
 
@@ -1357,6 +1365,8 @@ function Editor:mousereleased(x, y, button)
             self.nodeMultiSelectOrigin = nil
             self.nodeMultiSelectSize = nil
         end
+    elseif button == 3 then
+        self.canvasMgr:stopDrag()
     end
 end
 
@@ -1370,6 +1380,7 @@ function Editor:wheelmoved(x, y)
     self.INPUT_DIALOG:wheelmoved(x, y)
     self.uiTree:wheelmoved(x, y)
     self.keyframeEditor:wheelmoved(x, y)
+    self.canvasMgr:wheelmoved(x, y)
 end
 
 
@@ -1387,6 +1398,7 @@ function Editor:keypressed(key)
     end
     if key == "tab" then
         self.enabled = not self.enabled
+        self.canvasMgr:updateCanvas()
         if self.enabled then
             _PROJECT:stopTimeline("test")
         else
@@ -1402,10 +1414,18 @@ function Editor:keypressed(key)
         self:moveSelectedNode(Vec2(_IsShiftPressed() and 10 or 1, 0))
     elseif key == "p" and _IsCtrlPressed() then
         self:printInternalUITreeInfo()
-    elseif key == "`" then
-        if self.enabled then
-            self.commandMgr.visible = not self.commandMgr.visible
-        end
+    elseif self.enabled and key == "`" then
+        self.commandMgr.visible = not self.commandMgr.visible
+    elseif self.enabled and key == "kp+" then
+        self.canvasMgr:zoomInOut(2, _MouseCPos)
+    elseif self.enabled and key == "kp-" then
+        self.canvasMgr:zoomInOut(0.5, _MouseCPos)
+    elseif self.enabled and key == "kp0" then
+        self.canvasMgr:resetZoom()
+    elseif not self.enabled and key == "`" then
+        self.canvasMgr:toggleBackground()
+    elseif not self.enabled and key == "f" then
+        self.canvasMgr:toggleFullscreen()
     elseif key == "m" then
         self:parentSelectedNodeToHoveredNode()
     end
@@ -1419,6 +1439,15 @@ function Editor:textinput(text)
     self.UI:textinput(text)
     self.INPUT_DIALOG:textinput(text)
     self.uiTree:textinput(text)
+end
+
+
+
+---LOVE callback for when the window is resized.
+---@param w integer The new width of the window.
+---@param h integer The new height of the window.
+function Editor:resize(w, h)
+    self.canvasMgr:resize(w, h)
 end
 
 
