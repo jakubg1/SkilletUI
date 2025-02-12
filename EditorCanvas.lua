@@ -255,9 +255,11 @@ function EditorCanvas:drawDashedLine(p1, p2, filledPixels, blankPixels, speed)
     local offset = (_Time * speed) % (filledPixels + blankPixels) - filledPixels
     local length = (p2 - p1):len()
     while offset < length do
-        local q1 = _Utils.interpolateClamped(p1, p2, offset / length)
-        local q2 = _Utils.interpolateClamped(p1, p2, (offset + filledPixels) / length)
-        love.graphics.line(q1.x, q1.y, q2.x, q2.y)
+        local q1x = _Utils.interpolateClamped(p1.x, p2.x, offset / length)
+        local q1y = _Utils.interpolateClamped(p1.y, p2.y, offset / length)
+        local q2x = _Utils.interpolateClamped(p1.x, p2.x, (offset + filledPixels) / length)
+        local q2y = _Utils.interpolateClamped(p1.y, p2.y, (offset + filledPixels) / length)
+        love.graphics.line(q1x, q1y, q2x, q2y)
         offset = offset + filledPixels + blankPixels
     end
 end
