@@ -40,6 +40,7 @@ function Node:new(data, parent)
         {name = "Align", key = "align", type = "align", defaultValue = _ALIGNMENTS.topLeft},
         {name = "Parent Align", key = "parentAlign", type = "align", defaultValue = _ALIGNMENTS.topLeft},
         {name = "Visible", key = "visible", type = "boolean", defaultValue = true},
+        {name = "Locked", key = "locked", type = "boolean", defaultValue = false},
         {name = "Canvas Input Mode", key = "canvasInputMode", type = "boolean", defaultValue = false},
         {name = "Shortcut", key = "shortcut", type = "shortcut", nullable = true},
         {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true}
@@ -497,15 +498,11 @@ function Node:isDisabled()
     return self.disabled
 end
 
-
-
 ---Sets whether this Node should be disabled.
 ---@param disabled boolean Whether this Node should be disabled.
 function Node:setDisabled(disabled)
     self.disabled = disabled
 end
-
-
 
 ---Returns whether this Node is visible, i.e. all of the Nodes in this Node's hierarchy have the visible flag set.
 ---@return boolean
@@ -516,12 +513,22 @@ function Node:isVisible()
     return self:getProp("visible")
 end
 
-
-
 ---Sets whether this Node (and all its children!) should be visible.
 ---@param visible boolean Whether this Node should be visible. If a Node is not visible, it cannot be seen, including all its children.
 function Node:setVisible(visible)
     self:setPropBase("visible", visible)
+end
+
+---Returns whether this Node is locked. Locked nodes cannot be hovered.
+---@return boolean
+function Node:isLocked()
+    return self:getProp("locked")
+end
+
+---Sets whether this Node is locked. Locked nodes cannot be hovered, but their children can.
+---@param locked boolean Whether this Node should be locked.
+function Node:setLocked(locked)
+    self:setPropBase("locked", locked)
 end
 
 
@@ -907,14 +914,15 @@ end
 ---@param pos Vector2 The position to be checked.
 ---@param ignoreControlledNodes boolean? If set, controlled nodes will not be returned by this function.
 ---@param ignoreInvisibleNodes boolean? If set, invisible nodes will not be returned by this function.
+---@param ignoreLockedNodes boolean? If set, locked nodes will not be returned by this function.
 ---@return Node?
-function Node:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvisibleNodes)
+function Node:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvisibleNodes, ignoreLockedNodes)
     for i, child in ipairs(self.children) do
-        local potentialResult = child:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvisibleNodes)
+        local potentialResult = child:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvisibleNodes, ignoreLockedNodes)
         if potentialResult then
             return potentialResult
         end
-        if child:hasPixel(pos) and (not ignoreControlledNodes or not child:isControlled()) and (not ignoreInvisibleNodes or child:isVisible()) then
+        if child:hasPixel(pos) and (not ignoreControlledNodes or not child:isControlled()) and (not ignoreInvisibleNodes or child:isVisible()) and (not ignoreLockedNodes or not child:isLocked()) then
             return child
         end
     end

@@ -54,9 +54,10 @@ function MainCanvas:getPan()
 end
 
 ---Returns the total scaling of this Canvas, including the size/resolution and zoom.
----@return Vector2
+---@return number
 function MainCanvas:getScale()
-    return self.size / self.resolution * self.zoomScale
+    local scale = self.size / self.resolution * self.zoomScale
+    return math.min(scale.x, scale.y)
 end
 
 ---Converts the global screen position to the position on this canvas.
@@ -97,7 +98,7 @@ function MainCanvas:draw()
     love.graphics.setCanvas()
     love.graphics.setScissor(self.pos.x, self.pos.y, self.size.x, self.size.y)
     local s = self:getScale()
-    love.graphics.draw(self.canvas, self.pos.x - self.zoomPan.x * s.x, self.pos.y - self.zoomPan.y * s.y, 0, s.x, s.y)
+    love.graphics.draw(self.canvas, self.pos.x - self.zoomPan.x * s, self.pos.y - self.zoomPan.y * s, 0, s, s)
     love.graphics.setScissor()
 end
 

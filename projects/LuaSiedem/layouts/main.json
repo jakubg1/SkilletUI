@@ -1,0 +1,89 @@
+{
+	"canvasInputMode": true,
+	"name": "root",
+	"children": [
+		{
+			"type": "box",
+			"name": "top",
+			"widget": {
+				"size": [
+					1920,
+					24
+				],
+				"color": "#353535"
+			},
+			"children": [
+				{
+					"type": "9sprite",
+					"name": "b_Save",
+					"widget": {
+						"hoverImage": "base_button_hover",
+						"clickImage": "base_button_click",
+						"size": [
+							96,
+							24
+						],
+						"image": "base_button"
+					},
+					"children": [
+						{
+							"widget": {
+								"font": "editor",
+								"shadowAlpha": 0,
+								"text": "Zapisz"
+							},
+							"align": [
+								0.5,
+								0.5
+							],
+							"type": "text",
+							"parentAlign": [
+								0.5,
+								0.5
+							],
+							"name": "Text",
+							"locked": true
+						}
+					]
+				},
+				{
+					"pos": [
+						96,
+						0
+					],
+					"children": [
+						{
+							"widget": {
+								"font": "editor",
+								"shadowAlpha": 0,
+								"text": "Wczytaj"
+							},
+							"align": [
+								0.5,
+								0.5
+							],
+							"type": "text",
+							"parentAlign": [
+								0.5,
+								0.5
+							],
+							"name": "Text",
+							"locked": true
+						}
+					],
+					"type": "9sprite",
+					"widget": {
+						"hoverImage": "base_button_hover",
+						"clickImage": "base_button_click",
+						"size": [
+							96,
+							24
+						],
+						"image": "base_button"
+					},
+					"name": "b_Load"
+				}
+			]
+		}
+	]
+}

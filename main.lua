@@ -124,8 +124,8 @@ end
 function love.load()
 	_RESOURCE_MANAGER:init()
 	_EDITOR:load()
-	_LoadProject("Demo")
-	_PROJECT:loadLayout("welcome.json")
+	_LoadProject("LuaSiedem")
+	_PROJECT:loadLayout("main.json")
 end
 
 

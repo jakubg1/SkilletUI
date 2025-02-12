@@ -23,6 +23,7 @@ function ResourceManager:new()
         widget_box = Image("resources/widget_box.png"),
         widget_button = Image("resources/widget_button.png"),
         widget_canvas = Image("resources/widget_canvas.png"),
+        widget_locked = Image("resources/widget_locked.png"),
         widget_ninesprite = Image("resources/widget_ninesprite.png"),
         widget_none = Image("resources/widget_none.png"),
         widget_text = Image("resources/widget_text.png"),

@@ -16,7 +16,7 @@ function EditorCanvas:new(editor, canvas)
     self.canvas = canvas
 
     self.SIZE_EDITOR = Vec2(960, 540)
-    self.OFFSET_EDITOR = Vec2(230, 40)
+    self.OFFSET_EDITOR = Vec2(230, 30)
     self.SIZE_PRESENTATION = _WINDOW_SIZE
     self.OFFSET_PRESENTATION = Vec2()
 
@@ -44,6 +44,12 @@ function EditorCanvas:update(dt)
     end
 end
 
+---Returns `true` if the mouse cursor is inside of the canvas area, otherwise `false`.
+---@return boolean
+function EditorCanvas:isHovered()
+    return _Utils.isPointInsideBox(_MousePos, self.canvas.pos, self.canvas.size)
+end
+
 ---Updates the canvas' settings to match the current manager state.
 function EditorCanvas:updateCanvas()
     local actualFullscreen = self.fullscreen and not _EDITOR.enabled
@@ -67,6 +73,13 @@ function EditorCanvas:zoomInOut(factor, around)
     local targetScreenSize = startScreenSize / actualFactor
     self.pan = self.pan + (startScreenSize - targetScreenSize) * startScreenSpace
     self:updateCanvas()
+end
+
+---Zooms the canvas to the provided pixel scale.
+---@param scale integer The target pixel scale.
+---@param around Vector2? The position to zoom the canvas around. That position will remain at the exact same pixel.
+function EditorCanvas:naturalZoom(scale, around)
+    self:zoomInOut(scale / self.canvas:getScale(), around)
 end
 
 ---Pans the canvas to the specific position.
@@ -117,10 +130,13 @@ end
 ---------------- D R A W I N G ---------------
 --##########################################--
 
----Draws everything that lies under the canvas, i.e. background.
+---Draws everything that lies under the canvas, i.e. background and the status bar.
 function EditorCanvas:drawUnderCanvas()
     love.graphics.setColor(0.2, 0.2, 0.2)
     love.graphics.rectangle("fill", self.canvas.pos.x, self.canvas.pos.y, self.canvas.size.x, self.canvas.size.y)
+    love.graphics.setColor(0, 0, 1, 0.5)
+    love.graphics.rectangle("fill", self.canvas.pos.x, self.canvas.pos.y + self.canvas.size.y, self.canvas.size.x, 20)
+    self.editor:drawShadowedText(string.format("Zoom: %.1f%% | Scale: %sx", self.zoom * 100, self.canvas:getScale()), self.canvas.pos.x + 5, self.canvas.pos.y + self.canvas.size.y + 1)
 end
 
 ---Draws everything that lies on the canvas, such as the grid, selected and hovered node outlines, etc.
@@ -323,7 +339,7 @@ end
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
 function EditorCanvas:wheelmoved(x, y)
-    if _IsCtrlPressed() then
+    if self:isHovered() then
         self:zoomInOut(2 ^ y, _MouseCPos)
     end
 end

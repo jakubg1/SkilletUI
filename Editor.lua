@@ -193,7 +193,7 @@ function Editor:getHoveredNode()
     -- Finally, look if any node is directly hovered.
     local currentLayout = _PROJECT:getCurrentLayout()
     if currentLayout then
-        return currentLayout:findChildByPixelDepthFirst(_MouseCPos, true, true)
+        return currentLayout:findChildByPixelDepthFirst(_MouseCPos, true, true, true)
     end
 end
 
@@ -261,7 +261,7 @@ function Editor:generateNodePropertyUI(node)
         widgetListWrapperUI:addChild(widgetListUI)
         propertiesUI:addChild(widgetListWrapperUI)
         if widget and widget.getPropertyList then
-            local nodeListWrapperUI = Node({pos = {0, 230}})
+            local nodeListWrapperUI = Node({pos = {0, 250}})
             local nodeListUI = self:generatePropertyListUI(widget, widget:getPropertyList(), "Widget Properties", "widget", false)
             nodeListWrapperUI:addChild(nodeListUI)
             propertiesUI:addChild(nodeListWrapperUI)
@@ -872,11 +872,11 @@ function Editor:load()
     local UTILITY_X = 0
     local UTILITY_Y = 700
     local ALIGN_X = 240
-    local ALIGN_Y = 590
+    local ALIGN_Y = 595
     local PALIGN_X = 360
-    local PALIGN_Y = 590
+    local PALIGN_Y = 595
     local FILE_X = 250
-    local FILE_Y = 10
+    local FILE_Y = 5
     local nodes = {
         self:button(UTILITY_X, UTILITY_Y, 100, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
         self:button(UTILITY_X + 100, UTILITY_Y, 100, "Duplicate [Ctrl+D]", function() self:deleteSelectedNode() end, {ctrl = true, key = "d"}),
@@ -1070,9 +1070,12 @@ function Editor:draw()
     -- Command buffer
     self.commandMgr:draw()
 
-    -- Extra debug info
-    self:drawShadowedText(string.format("Drag Origin: %s\nDrag Snap: %s", self.nodeDragOrigin, self.nodeDragSnap), 1220, 50)
-    self:drawShadowedText(string.format("Resize Origin: %s\nResize Direction: %s\nResize H ID: %s", self.nodeResizeOrigin, self.nodeResizeDirection, self.nodeResizeHandleID), 1220, 100)
+    -- Status bar
+    love.graphics.setColor(0, 0, 1, 0.5)
+    love.graphics.rectangle("fill", 0, _WINDOW_SIZE.y - 20, _WINDOW_SIZE.x, 20)
+    local text = string.format("Drag Origin: %s | Drag Snap: %s | Resize Origin: %s | Resize Direction: %s | Resize H ID: %s", self.nodeDragOrigin, self.nodeDragSnap, self.nodeResizeOrigin, self.nodeResizeDirection, self.nodeResizeHandleID)
+    --text = text .. "          [Tab] Presentation Mode   [Arrow Keys] Move Selected Nodes   [Ctrl + P] Show Internal UI Tree   [M] Parent Selected to Hovered"
+    self:drawShadowedText(text, 5, _WINDOW_SIZE.y - 19)
 
     -- Input box
     self.INPUT_DIALOG:draw()
@@ -1271,6 +1274,8 @@ function Editor:keypressed(key)
         self.canvasMgr:zoomInOut(0.5, _MouseCPos)
     elseif self.enabled and key == "kp0" then
         self.canvasMgr:resetZoom()
+    elseif self.enabled and key == "kp1" then
+        self.canvasMgr:naturalZoom(1, _MouseCPos)
     elseif not self.enabled and key == "`" then
         self.canvasMgr:toggleBackground()
     elseif not self.enabled and key == "f" then
