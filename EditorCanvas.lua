@@ -154,7 +154,7 @@ function EditorCanvas:drawOnCanvas()
         love.graphics.setColor(1, 1, 0)
         self:drawCrosshair(self.editor.nodeResizeOrigin + self.editor.nodeResizeOffset, 6)
         love.graphics.setColor(1, 0, 0.5)
-        self:drawCrosshair(self.editor:snapPositionToGrid(_MouseCPos + self.editor.nodeResizeOffset), 6)
+        self:drawCrosshair(self.editor:snapPositionToGrid(_MouseCPos) - self.editor.nodeResizeOffset, 6)
     end
     -- Draw the multi-selection frame.
     if self.editor.nodeMultiSelectOrigin then

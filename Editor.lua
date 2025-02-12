@@ -965,7 +965,7 @@ function Editor:update(dt)
     if self.nodeResizeOrigin then
         assert(self.selectedNodes:getSize() < 2, "Resizing of multiple Nodes is not supported. How did you even trigger that?")
         for i, node in ipairs(self.selectedNodes:getNodes()) do
-            local movement = _MouseCPos - self.nodeResizeOrigin
+            local movement = self:snapPositionToGrid(_MouseCPos) - self.nodeResizeOffset - self.nodeResizeOrigin
             local size = node.widget:getPropBase("size") + movement * self.nodeResizeDirection
             if _IsShiftPressed() then
                 -- Force a square size if Shift is held.
