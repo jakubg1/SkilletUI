@@ -31,6 +31,10 @@ function EditorCanvas:new(editor, canvas)
     self:updateCanvas()
 end
 
+--##############################################################--
+---------------- B A S I C   I N T E R A C T I O N ---------------
+--##############################################################--
+
 ---Updates the Canvas Manager.
 ---@param dt number Time delta in seconds.
 function EditorCanvas:update(dt)
@@ -45,8 +49,8 @@ function EditorCanvas:updateCanvas()
     local actualFullscreen = self.fullscreen and not _EDITOR.enabled
 	self.canvas:setPos(actualFullscreen and self.OFFSET_PRESENTATION or self.OFFSET_EDITOR)
 	self.canvas:setSize(actualFullscreen and self.SIZE_PRESENTATION or self.SIZE_EDITOR)
-    self.canvas:setZoom(self.zoom)
-    self.canvas:setPan(self.pan)
+    self.canvas:setZoom(actualFullscreen and 1 or self.zoom)
+    self.canvas:setPan(actualFullscreen and Vec2() or self.pan)
 end
 
 ---Increases or decreases the canvas zoom by the given factor.
@@ -108,6 +112,210 @@ end
 function EditorCanvas:toggleBackground()
     self.background = not self.background
 end
+
+--##########################################--
+---------------- D R A W I N G ---------------
+--##########################################--
+
+---Draws everything that lies under the canvas, i.e. background.
+function EditorCanvas:drawUnderCanvas()
+    love.graphics.setColor(0.2, 0.2, 0.2)
+    love.graphics.rectangle("fill", self.canvas.pos.x, self.canvas.pos.y, self.canvas.size.x, self.canvas.size.y)
+end
+
+---Draws everything that lies on the canvas, such as the grid, selected and hovered node outlines, etc.
+function EditorCanvas:drawOnCanvas()
+    -- Place a scissor.
+    love.graphics.setScissor(self.canvas.pos.x, self.canvas.pos.y, self.canvas.size.x, self.canvas.size.y)
+    -- Draw the grid.
+    self:drawGrid()
+    -- Draw a frame around the hovered node and frames around the selected nodes.
+    self:drawUIForNodes()
+    -- Debug resize crosshair
+    if self.editor.nodeResizeOrigin then
+        love.graphics.setColor(0, 1, 0)
+        self:drawCrosshair(self.editor.nodeResizeOrigin, 6)
+        love.graphics.setColor(1, 1, 0)
+        self:drawCrosshair(self.editor.nodeResizeOrigin + self.editor.nodeResizeOffset, 6)
+        love.graphics.setColor(1, 0, 0.5)
+        self:drawCrosshair(self.editor:snapPositionToGrid(_MouseCPos + self.editor.nodeResizeOffset), 6)
+    end
+    -- Draw the multi-selection frame.
+    if self.editor.nodeMultiSelectOrigin then
+        local origin = self.editor.nodeMultiSelectOrigin
+        local origSize = self.editor.nodeMultiSelectSize
+        local pos = Vec2(math.min(origin.x, origin.x + origSize.x), math.min(origin.y, origin.y + origSize.y))
+        local size = origSize:abs()
+        love.graphics.setColor(0, 1, 1, 0.5)
+        self:drawFilledRectangle(pos, size)
+        love.graphics.setColor(0, 1, 1)
+        self:drawRectangle(pos, size, 1)
+    end
+    -- Remove the scissor.
+    love.graphics.setScissor()
+end
+
+---Draws the grid, if it is enabled in the project.
+function EditorCanvas:drawGrid()
+    local nativeResolution = _PROJECT:getNativeResolution()
+    local gridSize = _PROJECT:getGridSize()
+    if not gridSize then
+        return
+    end
+    local lineCount = (nativeResolution / gridSize):ceil() - 1
+    love.graphics.setLineWidth(1)
+    love.graphics.setColor(0.2, 0.2, 0.8)
+    -- Vertical lines
+    for i = 1, lineCount.x do
+        local p1 = Vec2(gridSize.x * i, 0)
+        local p2 = Vec2(gridSize.x * i, nativeResolution.y)
+        self:drawDashedLine(p1, p2, 4, 4, 0)
+    end
+    -- Horizontal lines
+    for i = 1, lineCount.y do
+        local p1 = Vec2(0, gridSize.y * i)
+        local p2 = Vec2(nativeResolution.x, gridSize.y * i)
+        self:drawDashedLine(p1, p2, 4, 4, 0)
+    end
+end
+
+---Draws the Editor UI for the hovered and selected Nodes: selection frames, resize handles etc.
+function EditorCanvas:drawUIForNodes()
+    -- Hovered nodes
+    if self.editor.hoveredNode then
+        local pos = self.editor.hoveredNode:getGlobalPos()
+        if self.editor.hoveredNode.widget then
+            local size = self.editor.hoveredNode:getSize()
+            love.graphics.setColor(1, 1, 0)
+            self:drawRectangle(pos, size, 2)
+        else
+            love.graphics.setColor(0.5, 0.5, 0.5)
+            self:drawCrosshair(pos, 5)
+        end
+    end
+    -- Selected nodes
+    for i, node in ipairs(self.editor.selectedNodes:getNodes()) do
+        local pos = node:getGlobalPos()
+        if node.widget then
+            local size = node:getSize()
+            love.graphics.setColor(0, 1, 1)
+            self:drawDashedRectangle(pos, size, 2)
+        else
+            love.graphics.setColor(1, 1, 1)
+            self:drawCrosshair(pos, 5)
+        end
+        -- Draw a local crosshair.
+        local localPos = node:getGlobalPosWithoutLocalAlign()
+        love.graphics.setColor(0, 0, 1)
+        self:drawCrosshair(localPos, 5)
+        -- Draw parent align crosshair.
+        local localPos2 = node:getParentAlignPos()
+        love.graphics.setColor(1, 0, 1)
+        self:drawCrosshair(localPos2, 5)
+        -- Draw a line between them.
+        love.graphics.setColor(0.5, 0, 1)
+        self:drawLine(localPos, localPos2)
+        -- Draw resizing boxes if the widget can be resized.
+        if node:isResizable() then
+            local id = node:getHoveredResizeHandleID()
+            for j = 1, 8 do
+                if j == id or j == self.editor.nodeResizeHandleID then
+                    -- This handle is hovered or being dragged.
+                    love.graphics.setColor(1, 1, 1)
+                else
+                    love.graphics.setColor(0, 1, 1)
+                end
+                self:drawFilledRectangle(node:getResizeHandlePos(j, 3) - 1, Vec2(3))
+            end
+        end
+    end
+end
+
+---Draws a regular line between two points.
+---@param p1 Vector2 The starting position of the line.
+---@param p2 Vector2 The ending position of the line.
+function EditorCanvas:drawLine(p1, p2)
+    p1 = self.canvas:pixelToPos(p1)
+    p2 = self.canvas:pixelToPos(p2)
+    love.graphics.line(p1.x, p1.y, p2.x, p2.y)
+end
+
+---Draws a dashed line between two points. The dashes are animated.
+---@param p1 Vector2 The starting position of the line.
+---@param p2 Vector2 The ending position of the line.
+---@param filledPixels integer? The amount of filled pixels per cycle. Defaults to 10.
+---@param blankPixels integer? The amount of blank pixels per cycle. Defaults to 10.
+---@param speed number? The speed of the dash. Defaults to 12.
+function EditorCanvas:drawDashedLine(p1, p2, filledPixels, blankPixels, speed)
+    p1 = self.canvas:pixelToPos(p1)
+    p2 = self.canvas:pixelToPos(p2)
+    filledPixels = filledPixels or 10
+    blankPixels = blankPixels or 10
+    speed = speed or 12
+    local offset = (_Time * speed) % (filledPixels + blankPixels) - filledPixels
+    local length = (p2 - p1):len()
+    while offset < length do
+        local q1 = _Utils.interpolateClamped(p1, p2, offset / length)
+        local q2 = _Utils.interpolateClamped(p1, p2, (offset + filledPixels) / length)
+        love.graphics.line(q1.x, q1.y, q2.x, q2.y)
+        offset = offset + filledPixels + blankPixels
+    end
+end
+
+---Draws a solid line rectangle transformed so that the coordinates lay on top of the canvas.
+---The rectangle thickness is always gravitating to the center.
+---@param pos Vector2 The rectangle position.
+---@param size Vector2 The rectangle size, in pixels.
+---@param width integer The width of the rectangle's line.
+function EditorCanvas:drawRectangle(pos, size, width)
+    pos, size = self.canvas:pixelToPosBox(pos, size)
+    love.graphics.setLineWidth(width)
+    love.graphics.rectangle("line", pos.x + width / 2, pos.y + width / 2, size.x - width, size.y - width)
+end
+
+---Draws a filled rectangle transformed so that the coordinates lay on top of the canvas.
+---@param pos Vector2 The rectangle position.
+---@param size Vector2 The rectangle size, in pixels.
+function EditorCanvas:drawFilledRectangle(pos, size)
+    pos, size = self.canvas:pixelToPosBox(pos, size)
+    love.graphics.rectangle("fill", pos.x, pos.y, size.x, size.y)
+end
+
+---Draws a dashed rectangle with the given position and size. The dashes are animated depending on the rules of `:drawDashedLine()`
+---The rectangle thickness is always gravitating to the center.
+---Maximum supported line thickness is 4.
+---@param pos Vector2 The rectangle position.
+---@param size Vector2 The rectangle size, in pixels.
+---@param width integer The width of the rectangle's line.
+function EditorCanvas:drawDashedRectangle(pos, size, width)
+    local c1 = pos
+    local c2 = pos + Vec2(size.x - 1, 0)
+    local c3 = pos + size - 1
+    local c4 = pos + Vec2(0, size.y - 1)
+    love.graphics.setLineWidth(width)
+    -- TODO: Get rid of these stupid corrections and find out a correct way to draw stuff like that...
+    local a = {0, 0, 0.5, 0.5, 0.75}
+    local b = {0, 1, 0.75, 0.75, 0.5}
+    local c = {0, 0.75, 0.75, 0.5, 0.5}
+    local d = {0, 0.5, 0.5, 0.75, 0.75}
+    self:drawDashedLine(c1 + Vec2(0, a[width + 1]), c2 + Vec2(0, a[width + 1]))
+    self:drawDashedLine(c2 + Vec2(b[width + 1], 0), c3 + Vec2(b[width + 1], 0))
+    self:drawDashedLine(c3 + Vec2(0, c[width + 1]), c4 + Vec2(0, c[width + 1]))
+    self:drawDashedLine(c4 + Vec2(d[width + 1], 0), c1 + Vec2(d[width + 1], 0))
+end
+
+---Draws a crosshair.
+---@param pos Vector2 The crosshair position.
+---@param size number The crosshair size, in pixels.
+function EditorCanvas:drawCrosshair(pos, size)
+    pos = self.canvas:pixelToPos(pos:floor() + 0.5)
+    love.graphics.line(pos.x - size, pos.y, pos.x + size + 1, pos.y)
+    love.graphics.line(pos.x, pos.y - size, pos.x, pos.y + size + 1)
+end
+
+--##############################################--
+---------------- C A L L B A C K S ---------------
+--##############################################--
 
 ---Executed whenever a mouse wheel has been scrolled.
 ---@param x integer The X coordinate.

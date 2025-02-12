@@ -149,6 +149,7 @@ end
 
 function love.draw()
 	local t = love.timer.getTime()
+	_EDITOR:drawUnderCanvas()
 	_CANVAS:activate()
 	-- Start of main drawing routine
 	if not _EDITOR.enabled and _EDITOR.canvasMgr.background then

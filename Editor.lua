@@ -1008,6 +1008,13 @@ end
 
 
 
+---Draws the Editor's UI part that should land behind the canvas.
+function Editor:drawUnderCanvas()
+    self.canvasMgr:drawUnderCanvas()
+end
+
+
+
 ---Draws the Editor.
 function Editor:draw()
     if not self.enabled then
@@ -1078,165 +1085,7 @@ function Editor:drawUIPass()
     if not self.enabled then
         return
     end
-    -- Draw the grid.
-    self:drawGrid()
-    -- Draw a frame around the hovered node and frames around the selected nodes.
-    self:drawUIForNodes()
-    -- Debug resize crosshair
-    if self.nodeResizeOrigin then
-        love.graphics.setColor(0, 1, 0)
-        self:drawCrosshair(_CANVAS:pixelToPos(self.nodeResizeOrigin), 6)
-        love.graphics.setColor(1, 1, 0)
-        self:drawCrosshair(_CANVAS:pixelToPos(self.nodeResizeOrigin + self.nodeResizeOffset), 6)
-        love.graphics.setColor(1, 0, 0.5)
-        self:drawCrosshair(_CANVAS:pixelToPos(self:snapPositionToGrid(_MouseCPos + self.nodeResizeOffset)), 6)
-    end
-    -- Draw the multi-selection frame.
-    if self.nodeMultiSelectOrigin then
-        local origin = self.nodeMultiSelectOrigin
-        local origSize = self.nodeMultiSelectSize
-        local pos = Vec2(math.min(origin.x, origin.x + origSize.x), math.min(origin.y, origin.y + origSize.y))
-        local size = origSize:abs()
-        pos, size = _CANVAS:pixelToPosBox(pos, size)
-        love.graphics.setColor(0, 1, 1, 0.5)
-        love.graphics.rectangle("fill", pos.x, pos.y, size.x, size.y)
-        love.graphics.setColor(0, 1, 1)
-        love.graphics.rectangle("line", pos.x, pos.y, size.x, size.y)
-    end
-end
-
-
-
----Draws the grid, if it is enabled in the project.
-function Editor:drawGrid()
-    local nativeResolution = _PROJECT:getNativeResolution()
-    local gridSize = _PROJECT:getGridSize()
-    if not gridSize then
-        return
-    end
-    local lineCount = (nativeResolution / gridSize):ceil() - 1
-    love.graphics.setLineWidth(1)
-    love.graphics.setColor(0.2, 0.2, 0.8)
-    -- Vertical lines
-    for i = 1, lineCount.x do
-        local p1 = _CANVAS:pixelToPos(Vec2(gridSize.x * i, 0))
-        local p2 = _CANVAS:pixelToPos(Vec2(gridSize.x * i, nativeResolution.y))
-        self:drawDashedLine(p1, p2, 4, 4, 0)
-    end
-    -- Horizontal lines
-    for i = 1, lineCount.y do
-        local p1 = _CANVAS:pixelToPos(Vec2(0, gridSize.y * i))
-        local p2 = _CANVAS:pixelToPos(Vec2(nativeResolution.x, gridSize.y * i))
-        self:drawDashedLine(p1, p2, 4, 4, 0)
-    end
-end
-
-
-
----Draws the Editor UI for the hovered and selected Nodes: selection frames, resize handles etc.
-function Editor:drawUIForNodes()
-    -- Hovered nodes
-    if self.hoveredNode then
-        local pos = self.hoveredNode:getGlobalPos()
-        love.graphics.setLineWidth(3)
-        if self.hoveredNode.widget then
-            local size = self.hoveredNode:getSize()
-            local p, s = _CANVAS:pixelToPosBox(pos, size)
-            love.graphics.setColor(1, 1, 0)
-            love.graphics.rectangle("line", p.x + 1.5, p.y + 1.5, s.x - 3, s.y - 3)
-        else
-            love.graphics.setColor(0.5, 0.5, 0.5)
-            self:drawCrosshair(_CANVAS:pixelToPos(pos), 5)
-        end
-    end
-    -- Selected nodes
-    for i, node in ipairs(self.selectedNodes:getNodes()) do
-        local pos = node:getGlobalPos()
-        love.graphics.setLineWidth(3)
-        if node.widget then
-            local size = node:getSize()
-            local p, s = _CANVAS:pixelToPosBox(pos, size)
-            love.graphics.setColor(0, 1, 1)
-            self:drawDashedRectangle(p + 1, s - 2)
-        else
-            love.graphics.setColor(1, 1, 1)
-            self:drawCrosshair(_CANVAS:pixelToPos(pos), 5)
-        end
-        -- Draw a local crosshair.
-        local localPos = _CANVAS:pixelToPos(node:getGlobalPosWithoutLocalAlign())
-        love.graphics.setColor(0, 0, 1)
-        self:drawCrosshair(localPos, 5)
-        -- Draw parent align crosshair.
-        local localPos2 = _CANVAS:pixelToPos(node:getParentAlignPos())
-        love.graphics.setColor(1, 0, 1)
-        self:drawCrosshair(localPos2, 5)
-        -- Draw a line between them.
-        love.graphics.setColor(0.5, 0, 1)
-        love.graphics.line(localPos.x, localPos.y, localPos2.x, localPos2.y)
-        -- Draw resizing boxes if the widget can be resized.
-        if node:isResizable() then
-            local id = node:getHoveredResizeHandleID()
-            for j = 1, 8 do
-                if j == id or j == self.nodeResizeHandleID then
-                    -- This handle is hovered or being dragged.
-                    love.graphics.setColor(1, 1, 1)
-                else
-                    love.graphics.setColor(0, 1, 1)
-                end
-                local p = _CANVAS:pixelToPos(node:getResizeHandlePos(j, 3))
-                love.graphics.rectangle("fill", p.x - 4, p.y - 4, 8, 8)
-            end
-        end
-    end
-end
-
-
-
----Draws a dashed line between two points. The dashes are animated.
----@param p1 Vector2 The starting position of the line.
----@param p2 Vector2 The ending position of the line.
----@param filledPixels integer? The amount of filled pixels per cycle. Defaults to 10.
----@param blankPixels integer? The amount of blank pixels per cycle. Defaults to 10.
----@param speed number? The speed of the dash. Defaults to 12.
-function Editor:drawDashedLine(p1, p2, filledPixels, blankPixels, speed)
-    filledPixels = filledPixels or 10
-    blankPixels = blankPixels or 10
-    speed = speed or 12
-    local offset = (_Time * speed) % (filledPixels + blankPixels) - filledPixels
-    local length = (p2 - p1):len()
-    while offset < length do
-        local q1 = _Utils.interpolateClamped(p1, p2, offset / length)
-        local q2 = _Utils.interpolateClamped(p1, p2, (offset + filledPixels) / length)
-        love.graphics.line(q1.x + 0.5, q1.y + 0.5, q2.x + 0.5, q2.y + 0.5)
-        offset = offset + filledPixels + blankPixels
-    end
-end
-
-
-
----Draws a dashed rectangle with the given position and size. The dashes are animated depending on the rules of `:drawDashedLine()`
----@param pos Vector2 The rectangle position.
----@param size Vector2 The rectangle size, in pixels.
-function Editor:drawDashedRectangle(pos, size)
-    local c1 = pos
-    local c2 = pos + Vec2(size.x - 1, 0)
-    local c3 = pos + size - 1
-    local c4 = pos + Vec2(0, size.y - 1)
-    self:drawDashedLine(c1, c2)
-    self:drawDashedLine(c2, c3)
-    self:drawDashedLine(c3, c4)
-    self:drawDashedLine(c4, c1)
-end
-
-
-
----Draws a crosshair.
----@param pos Vector2 The crosshair position.
----@param size number The crosshair size, in pixels.
-function Editor:drawCrosshair(pos, size)
-    pos = pos:floor() + 0.5
-    love.graphics.line(pos.x - size, pos.y, pos.x + size + 1, pos.y)
-    love.graphics.line(pos.x, pos.y - size, pos.x, pos.y + size + 1)
+    self.canvasMgr:drawOnCanvas()
 end
 
 
