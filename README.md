@@ -2,25 +2,22 @@
 
 A work-in-progress UI engine for LOVE2D, intended for implementation into OpenSMCE at some point!
 
-## Refactor In Progress
-
-This project is a bit broken for now!
-Use the commit `d090a20` for the most stable version.
-
 ## What's Done
 
 - Nodes
 - Widgets attached to Nodes (texts, boxes, sprites, primitive buttons) with some robust functionality
 - Node creation, duplication, removal, ordering, parenting
-- Node and widget manipulation with a list of properties
-- Layout loading and saving
+- Node and widget manipulation with a list of properties, almost all of which are editable
+- Project and layout loading and saving
 - Fully functional undo/redo stack with working transactions/groups that will be undone at once
+- Layout grid and viewport scaling
+- Preview mode
+- Simple timeline support
 
 ## What's To Do
 
-- Support for editing of some types (shortcuts, images, etc.)
-- Node animations via timelines
-- All the necessary refactoring and stuff
+- Timeline support (loading, saving, editing, etc.)
+- More yet unknown features
 - Integration into OpenSMCE
 
 ## About
