@@ -60,6 +60,18 @@ function MainCanvas:getScale()
     return math.min(scale.x, scale.y)
 end
 
+---Returns the global position on which this Canvas will be drawn.
+---@return Vector2
+function MainCanvas:getGlobalPos()
+    return self.pos - self.zoomPan * self:getScale()
+end
+
+---Returns the global size with which this Canvas will be drawn.
+---@return Vector2
+function MainCanvas:getGlobalSize()
+    return self.resolution * self:getScale()
+end
+
 ---Converts the global screen position to the position on this canvas.
 ---@param pos Vector2 The global screen position.
 ---@return Vector2
@@ -97,8 +109,8 @@ function MainCanvas:draw()
     love.graphics.setColor(1, 1, 1)
     love.graphics.setCanvas()
     love.graphics.setScissor(self.pos.x, self.pos.y, self.size.x, self.size.y)
-    local s = self:getScale()
-    love.graphics.draw(self.canvas, self.pos.x - self.zoomPan.x * s, self.pos.y - self.zoomPan.y * s, 0, s, s)
+    local pos = self:getGlobalPos()
+    love.graphics.draw(self.canvas, pos.x, pos.y, 0, self:getScale())
     love.graphics.setScissor()
 end
 

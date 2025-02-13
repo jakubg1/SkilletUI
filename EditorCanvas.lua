@@ -134,8 +134,21 @@ end
 
 ---Draws everything that lies under the canvas, i.e. background and the status bar.
 function EditorCanvas:drawUnderCanvas()
-    love.graphics.setColor(0.2, 0.2, 0.2)
+    -- Very background
+    love.graphics.setColor(0.1, 0.1, 0.1)
     love.graphics.rectangle("fill", self.canvas.pos.x, self.canvas.pos.y, self.canvas.size.x, self.canvas.size.y)
+    love.graphics.setColor(0.15, 0.15, 0.15)
+    self.editor:drawStripedRectangle(self.canvas.pos.x, self.canvas.pos.y, self.canvas.size.x, self.canvas.size.y, 8)
+    -- Canvas outline (looks bad)
+    --[[
+    love.graphics.setScissor(self.canvas.pos.x, self.canvas.pos.y, self.canvas.size.x, self.canvas.size.y)
+    love.graphics.setColor(0, 0, 0, 0.4)
+    local pos = self.canvas:getGlobalPos()
+    local size = self.canvas:getGlobalSize()
+    love.graphics.rectangle("fill", pos.x - 5, pos.y - 5, size.x + 10, size.y + 10)
+    love.graphics.setScissor()
+    ]]
+    -- Status bar
     love.graphics.setColor(0, 0, 1, 0.5)
     love.graphics.rectangle("fill", self.canvas.pos.x, self.canvas.pos.y + self.canvas.size.y, self.canvas.size.x, 20)
     self.editor:drawShadowedText(string.format("Zoom: %.1f%% | Scale: %sx", self.zoom * 100, self.canvas:getScale()), self.canvas.pos.x + 5, self.canvas.pos.y + self.canvas.size.y + 1)

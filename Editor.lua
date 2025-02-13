@@ -1011,6 +1011,7 @@ end
 
 ---Draws the Editor's UI part that should land behind the canvas.
 function Editor:drawUnderCanvas()
+    love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor").font)
     self.canvasMgr:drawUnderCanvas()
 end
 
@@ -1117,6 +1118,42 @@ function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha, noSh
     end
     love.graphics.setColor(color.r, color.g, color.b, alpha)
     love.graphics.print(text, x, y)
+end
+
+
+
+---Draws a striped rectangle (or actually only the stripes of it).
+---@param x number The X coordinate.
+---@param y number The Y coordinate.
+---@param w number The width.
+---@param h number The height.
+---@param stripeSize number The size of the stripe.
+function Editor:drawStripedRectangle(x, y, w, h, stripeSize)
+    local stripes = math.floor((w + h) / stripeSize / 2 + 0.5)
+    for i = 1, stripes do
+        -- Distance from top left corner along either left -> down or down -> left (sides up/right, left/down)
+        local p1 = (i * 2 - 1) * stripeSize
+        local p2 = math.min(i * 2 * stripeSize, w + h)
+        -- Top left/right up
+        local x1 = x + (p1 < w and p1 or w)
+        local y1 = y + (p1 < w and 0 or p1 - w)
+        -- Corner point (top right)
+        local x12 = x + ((p1 < w and p2 > w) and w or x1 - x)
+        local y12 = y + ((p1 < w and p2 > w) and 0 or y1 - y)
+        -- Top right/right down
+        local x2 = x + (p2 < w and p2 or w)
+        local y2 = y + (p2 < w and 0 or p2 - w)
+        -- Left down/bottom right
+        local x3 = x + (p2 < h and 0 or p2 - h)
+        local y3 = y + (p2 < h and p2 or h)
+        -- Corner point (bottom left)
+        local x34 = x + ((p1 < h and p2 > h) and 0 or x3 - x)
+        local y34 = y + ((p1 < h and p2 > h) and h or y3 - y)
+        -- Left up/bottom left
+        local x4 = x + (p1 < h and 0 or p1 - h)
+        local y4 = y + (p1 < h and p1 or h)
+        love.graphics.polygon("fill", x1, y1, x12, y12, x2, y2, x3, y3, x34, y34, x4, y4)
+    end
 end
 
 
