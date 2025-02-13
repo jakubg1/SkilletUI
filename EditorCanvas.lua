@@ -151,7 +151,7 @@ function EditorCanvas:drawUnderCanvas()
     -- Status bar
     love.graphics.setColor(0, 0, 1, 0.5)
     love.graphics.rectangle("fill", self.canvas.pos.x, self.canvas.pos.y + self.canvas.size.y, self.canvas.size.x, 20)
-    self.editor:drawShadowedText(string.format("Zoom: %.1f%% | Scale: %sx", self.zoom * 100, self.canvas:getScale()), self.canvas.pos.x + 5, self.canvas.pos.y + self.canvas.size.y + 1)
+    self.editor:drawShadowedText(string.format("Zoom: %.1f%% | Scale: %sx | Pos: %s", self.zoom * 100, self.canvas:getScale(), _MouseCPos), self.canvas.pos.x + 5, self.canvas.pos.y + self.canvas.size.y + 1)
 end
 
 ---Draws everything that lies on the canvas, such as the grid, selected and hovered node outlines, etc.

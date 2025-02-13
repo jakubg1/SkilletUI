@@ -869,18 +869,18 @@ end
 function Editor:load()
     self.UI = Node(_Utils.loadJson("editor_ui.json"))
     local NEW_X = 5
-    local NEW_Y = 100
-    local UTILITY_X = 0
-    local UTILITY_Y = 700
+    local NEW_Y = 45
+    local UTILITY_X = 5
+    local UTILITY_Y = 600
     local ALIGN_X = 240
     local ALIGN_Y = 595
     local PALIGN_X = 360
     local PALIGN_Y = 595
-    local FILE_X = 250
-    local FILE_Y = 5
+    local FILE_X = 5
+    local FILE_Y = 0
     local nodes = {
         self:button(UTILITY_X, UTILITY_Y, 100, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
-        self:button(UTILITY_X + 100, UTILITY_Y, 100, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"}),
+        self:button(UTILITY_X + 100, UTILITY_Y, 100, "Dupe [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"}),
         self:button(UTILITY_X, UTILITY_Y + 20, 200, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"}),
         self:button(UTILITY_X, UTILITY_Y + 40, 200, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"}),
         self:button(UTILITY_X, UTILITY_Y + 60, 200, "To Top [Shift+PgUp]", function() self:moveSelectedNodeToTop() end, {shift = true, key = "pageup"}),
@@ -920,9 +920,9 @@ function Editor:load()
         self:button(PALIGN_X + 30, PALIGN_Y + 60, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
         self:button(PALIGN_X + 60, PALIGN_Y + 60, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
 
-        self:label(FILE_X, FILE_Y, "Project: (none)", "lb_project"),
+        self:label(FILE_X, FILE_Y + 1, "Project: (none)", "lb_project"),
         self:button(FILE_X + 250, FILE_Y, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"}),
-        self:label(FILE_X + 360, FILE_Y, "Layout: (none)", "lb_layout"),
+        self:label(FILE_X + 360, FILE_Y + 1, "Layout: (none)", "lb_layout"),
         self:button(FILE_X + 560, FILE_Y, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"}),
         self:button(FILE_X + 620, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false, _PROJECT:getLayoutDirectory()) end, {ctrl = true, key = "l"}),
         self:button(FILE_X + 680, FILE_Y, 60, "Save", function() self:trySaveCurrentScene() end, {ctrl = true, key = "s"}),
@@ -1024,10 +1024,6 @@ function Editor:draw()
         self.keyframeEditor:draw()
         return
     end
-    self.UI:findChildByName("drawtime"):setText(string.format("Drawing took approximately %.1fms", _DrawTime * 1000))
-    self.UI:findChildByName("pos"):setText(string.format("Mouse position: %s", _MouseCPos))
-    self.UI:findChildByName("line3"):setText(string.format("Vecs per frame: %s", _VEC2S_PER_FRAME))
-    _VEC2S_PER_FRAME = 0
     self.UI:findChildByName("hovText"):setText("")
     self.UI:findChildByName("selText"):setText("")
     self.UI:findChildByName("hovEvText"):setText("")
@@ -1058,6 +1054,10 @@ function Editor:draw()
     if selectedEvent then
         self.UI:findChildByName("selEvText"):setText(string.format("Selected: %s {%s} time: %s -> %s", selectedEvent.type, selectedEvent.node, selectedEvent.time, selectedEvent.time + (selectedEvent.duration or 0)))
     end
+
+    -- Before the UI itself will be drawn, make some nice background for the top bar.
+    love.graphics.setColor(0, 0, 1, 0.5)
+    love.graphics.rectangle("fill", 0, 0, _WINDOW_SIZE.x, 20)
     self.UI:draw()
 
     -- Other UI that will be hardcoded for now.
@@ -1075,7 +1075,8 @@ function Editor:draw()
     -- Status bar
     love.graphics.setColor(0, 0, 1, 0.5)
     love.graphics.rectangle("fill", 0, _WINDOW_SIZE.y - 20, _WINDOW_SIZE.x, 20)
-    local text = string.format("Drag Origin: %s | Drag Snap: %s | Resize Origin: %s | Resize Direction: %s | Resize H ID: %s", self.nodeDragOrigin, self.nodeDragSnap, self.nodeResizeOrigin, self.nodeResizeDirection, self.nodeResizeHandleID)
+    local text = string.format("Draw: %.1fms | Vecs/frame: %s", _DrawTime * 1000, _VEC2S_PER_FRAME)
+    _VEC2S_PER_FRAME = 0
     --text = text .. "          [Tab] Presentation Mode   [Arrow Keys] Move Selected Nodes   [Ctrl + P] Show Internal UI Tree   [M] Parent Selected to Hovered"
     self:drawShadowedText(text, 5, _WINDOW_SIZE.y - 19)
 

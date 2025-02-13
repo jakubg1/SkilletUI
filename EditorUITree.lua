@@ -21,7 +21,7 @@ local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
 function EditorUITree:new(editor)
     self.editor = editor
 
-    self.POS = Vec2(5, 150)
+    self.POS = Vec2(5, 90)
     self.SIZE = Vec2(220, 500)
     self.ITEM_HEIGHT = 20
     self.ITEM_INDENT = 20
