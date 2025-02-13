@@ -323,35 +323,6 @@ end
 
 
 
----Returns the position of the resize handle for this Node's widget.
----@param id integer 1 to 8: 1 is top left, then clockwise.
----@param margin integer The margin, in pixels. 0 will return the positions exactly at the Node's bounding box, positive values will set them apart.
----@return Vector2
-function Node:getResizeHandlePos(id, margin)
-    local pos = self:getGlobalPos()
-    local size = self:getSize()
-    if id == 1 then
-        return Vec2(pos.x - margin, pos.y - margin)
-    elseif id == 2 then
-        return Vec2(pos.x + size.x / 2, pos.y - margin)
-    elseif id == 3 then
-        return Vec2(pos.x + size.x + margin, pos.y - margin)
-    elseif id == 4 then
-        return Vec2(pos.x + size.x + margin, pos.y + size.y / 2)
-    elseif id == 5 then
-        return Vec2(pos.x + size.x + margin, pos.y + size.y + margin)
-    elseif id == 6 then
-        return Vec2(pos.x + size.x / 2, pos.y + size.y + margin)
-    elseif id == 7 then
-        return Vec2(pos.x - margin, pos.y + size.y + margin)
-    elseif id == 8 then
-        return Vec2(pos.x - margin, pos.y + size.y / 2)
-    end
-    error(string.format("Invalid resize handle ID: %s (expected 1..8)", id))
-end
-
-
-
 ---Returns this Node's icon based on its Widget's type, for use in editors.
 ---@return Image
 function Node:getIcon()
@@ -464,24 +435,6 @@ end
 ---Returns whether this Node is hovered.
 function Node:isHovered()
     return self:hasPixel(self:isCanvasInputModeEnabled() and _MouseCPos or _MousePos)
-end
-
-
-
----Returns the ID of the hovered resize handle of this Node's widget, if any is hovered.
----If none of the resize handles are hovered, returns `nil`.
----@return integer?
-function Node:getHoveredResizeHandleID()
-    if not self:isResizable() then
-        return nil
-    end
-    for i = 1, 8 do
-        local pos = self:getResizeHandlePos(i, 3)
-        if _Utils.isPointInsideBox(self:isCanvasInputModeEnabled() and _MouseCPos or _MousePos, pos - 4, Vec2(8)) then
-            return i
-        end
-    end
-    return nil
 end
 
 

@@ -197,6 +197,44 @@ function Editor:getHoveredNode()
     end
 end
 
+---Returns the global screen position of the given selected node's resize handle.
+---If the node is not resizable or more than one (or none) nodes are selected, returns `nil`.
+---@param id integer 1 to 8: 1 is top left, then clockwise.
+---@return Vector2?
+function Editor:getNodeResizeHandlePos(id)
+    assert(id >= 1 and id <= 8, string.format("Invalid resize handle ID: %s (expected 1..8)", id))
+    if self.selectedNodes:getSize() ~= 1 then
+        return nil
+    end
+    local node = self.selectedNodes:getNode(1)
+    assert(node, "size > 0, but nodes[1] = nil. This should never happen")
+    local pos, size = _CANVAS:pixelToPosBox(node:getGlobalPos(), node:getSize())
+    pos = pos - 6
+    size = size + 12
+    return pos + size * (self.NODE_RESIZE_DIRECTIONS[id] + 1) / 2
+end
+
+---Returns the currently hovered node's resize handle ID of the selected node.
+---If none of the resize handles are hovered, returns `nil`.
+---@return integer?
+function Editor:getHoveredNodeResizeHandleID()
+    if self.selectedNodes:getSize() ~= 1 then
+        return nil
+    end
+    local node = self.selectedNodes:getNode(1)
+    assert(node, "size > 0, but nodes[1] = nil. This should never happen")
+    if not node:isResizable() then
+        return nil
+    end
+    for i = 1, 8 do
+        local pos = self:getNodeResizeHandlePos(i)
+        if _Utils.isPointInsideBox(_MousePos, pos - 8, Vec2(16)) then
+            return i
+        end
+    end
+    return nil
+end
+
 
 
 ---Returns `true` if the given Node Property is currently supported by the editor.
@@ -992,7 +1030,7 @@ function Editor:update(dt)
 
     -- Update the mouse cursor.
     local cursor = love.mouse.getSystemCursor("arrow")
-    local resizeHandleID = self.nodeResizeHandleID or (self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1):getHoveredResizeHandleID())
+    local resizeHandleID = self.nodeResizeHandleID or self:getHoveredNodeResizeHandleID()
     if resizeHandleID then
         if resizeHandleID % 4 == 0 then
             cursor = love.mouse.getSystemCursor("sizewe")
@@ -1184,7 +1222,7 @@ function Editor:mousepressed(x, y, button, istouch, presses)
     if button == 1 and not self:isUIHovered() then
         local startedResizing = false
         if self.selectedNodes:getSize() == 1 then
-            local resizeHandleID = self.selectedNodes:getNode(1):getHoveredResizeHandleID()
+            local resizeHandleID = self:getHoveredNodeResizeHandleID()
             if resizeHandleID then
                 -- We've grabbed a resize handle of the currently selected node!
                 self:startResizingSelectedNode(resizeHandleID)

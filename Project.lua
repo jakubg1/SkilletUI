@@ -27,6 +27,7 @@ function Project:new(path)
 
     self.nativeResolution = Vec2(320, 180)
     self.gridSize = nil
+    self.gridVisible = false
 
     local data = _Utils.loadJson(path .. "/settings.json")
     self:deserialize(data)
@@ -139,6 +140,12 @@ function Project:getGridSize()
         return nil
     end
     return self.gridSize
+end
+
+---Returns whether the grid is visible.
+---@return boolean
+function Project:isGridVisible()
+    return self.gridVisible
 end
 
 --######################################--

@@ -159,7 +159,9 @@ function EditorCanvas:drawOnCanvas()
     -- Place a scissor.
     love.graphics.setScissor(self.canvas.pos.x, self.canvas.pos.y, self.canvas.size.x, self.canvas.size.y)
     -- Draw the grid.
-    self:drawGrid()
+    if _PROJECT:isGridVisible() then
+        self:drawGrid()
+    end
     -- Draw a frame around the hovered node and frames around the selected nodes.
     self:drawUIForNodes()
     -- Debug resize crosshair
@@ -248,7 +250,7 @@ function EditorCanvas:drawUIForNodes()
         self:drawLine(localPos, localPos2)
         -- Draw resizing boxes if the widget can be resized.
         if node:isResizable() then
-            local id = node:getHoveredResizeHandleID()
+            local id = self.editor:getHoveredNodeResizeHandleID()
             for j = 1, 8 do
                 if j == id or j == self.editor.nodeResizeHandleID then
                     -- This handle is hovered or being dragged.
@@ -256,7 +258,10 @@ function EditorCanvas:drawUIForNodes()
                 else
                     love.graphics.setColor(0, 1, 1)
                 end
-                self:drawFilledRectangle(node:getResizeHandlePos(j, 3) - 1, Vec2(3))
+                local pos = self.editor:getNodeResizeHandlePos(j)
+                if pos then
+                    love.graphics.rectangle("fill", pos.x - 3, pos.y - 3, 7, 7)
+                end
             end
         end
     end
