@@ -197,7 +197,7 @@ function EditorCommands:draw()
     end
 
     -- Background
-    love.graphics.setColor(0, 0, 0, 0.8)
+    love.graphics.setColor(0, 0, 0, 0.7)
     love.graphics.rectangle("fill", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
 
     -- Draw the main text.

@@ -29,6 +29,7 @@ function Input:new()
 	end
 	self.COLOR_MESH = love.graphics.newMesh(vertices, "strip", "static")
 	self.SIDE_COLOR_MESHES = {love.graphics.newMesh(42, "strip", "dynamic"), love.graphics.newMesh(42, "strip", "dynamic")}
+	self.COLOR_CHARACTERS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"}
 
 	self:updateSideColorPickerMeshes()
 
@@ -53,128 +54,6 @@ end
 
 
 
-function Input:update(dt)
-	if self.colorDragging == 1 then
-		local posX, posY = self:getPos()
-		self.inputColor.x = math.min(math.max((_MousePos.x - posX - 20) / 200, 0), 1)
-		self.inputColor.y = math.min(math.max((_MousePos.y - posY - 50) / 200, 0), 1)
-		self:updateSideColorPickerMeshes()
-	elseif self.colorDragging == 2 then
-		local posX, posY = self:getPos()
-		self.inputColor.z = math.min(math.max((_MousePos.y - posY - 50) / 200, 0), 1)
-	end
-end
-
-
-
-function Input:mousepressed(x, y, button, istouch, presses)
-	if not self.inputType then
-		return false
-	end
-	if button == 1 then
-		if self:isColorMeshHovered() then
-			self.colorDragging = 1
-			return true
-		elseif self:isSideColorMeshHovered() then
-			self.colorDragging = 2
-			return true
-		elseif self:isFileInputBoxHovered() then
-			local entry = self:getHoveredFileEntryIndex()
-			if entry then
-				if self.inputType == "file" then
-					self.inputText = self.itemList[entry]
-				elseif self.inputType == "Font" then
-					self.selectedResource = self.itemList[entry].font
-				elseif self.inputType == "NineImage" then
-					self.selectedResource = self.itemList[entry].resource
-				end
-				if presses >= 2 then
-					self:inputAccept()
-				end
-			end
-			return true
-		elseif self:isConfirmButtonHovered() then
-			self:inputAccept()
-			return true
-		elseif self:isCancelButtonHovered() then
-			self:inputCancel()
-			return true
-		elseif self:isOverwriteYesButtonHovered() then
-			self:inputAccept()
-			return true
-		elseif self:isOverwriteNoButtonHovered() then
-			self:inputCancel()
-			return true
-		elseif not self:isHovered() then
-			self:inputCancel()
-			return true
-		end
-	end
-	return false
-end
-
-
-
-function Input:mousereleased(x, y, button)
-	if button == 1 then
-		self.colorDragging = nil
-	end
-end
-
-
-
-function Input:wheelmoved(x, y)
-	if self.inputType == "file" then
-		local maxY = math.max(#self.itemList - self.ITEM_LIST_MAX_ENTRIES, 0)
-		self.itemListOffset = math.min(math.max(self.itemListOffset - y * 3, 0), maxY)
-	end
-end
-
-
-
-function Input:keypressed(key)
-	if not self.inputType then
-		return false
-	end
-	if key == "backspace" then
-		if self.inputType == "string" or self.inputType == "number" or self.inputType == "file" then
-			local offset = utf8.offset(self.inputText, -1)
-			if offset then
-				self.inputText = self.inputText:sub(1, offset - 1)
-				self.error = nil
-			end
-		end
-		return true
-	elseif key == "return" then
-		self:inputAccept()
-		return true
-	elseif key == "escape" then
-		self:inputCancel()
-		return true
-	end
-	if self.inputType then
-		if self.inputType == "shortcut" and not (key == "lctrl" or key == "lshift" or key == "rctrl" or key == "rshift") then
-			self.shortcut = {key = key, ctrl = _IsCtrlPressed(), shift = _IsShiftPressed()}
-		end
-		-- Do not let anything else catch the keyboard input if the input box is currently active.
-		return true
-	end
-	return false
-end
-
-
-
-function Input:textinput(text)
-	if self.inputType == "string" or self.inputType == "number" or self.inputType == "file" then
-		self.inputText = self.inputText .. text
-		self.error = nil
-	end
-end
-
-
-
-
-
 function Input:inputAsk(type, value, extensions, warnWhenFileExists, basePath, pathFilter)
 	self.inputType = type
 	if type == "string" then
@@ -184,6 +63,7 @@ function Input:inputAsk(type, value, extensions, warnWhenFileExists, basePath, p
 	elseif type == "color" then
 		value = value or _COLORS.white
 		self:setInputColor(value.r, value.g, value.b)
+		self.inputText = self:getInputColorHex()
 	elseif type == "file" then
 		self.inputText = value or ""
 		self.fileWarnWhenExists = warnWhenFileExists
@@ -276,6 +156,11 @@ function Input:getInputColor()
 	end
 end
 
+function Input:getInputColorHex()
+	local r, g, b = self:getInputColor()
+	return string.format("%02x%02x%02x", r * 255, g * 255, b * 255)
+end
+
 
 
 function Input:setInputColor(r, g, b)
@@ -314,6 +199,14 @@ function Input:setInputColor(r, g, b)
 	self.inputColor = {x = x, y = y, z = 1 - z}
 	self:updateSideColorPickerMeshes()
 	--return x, y, 1 - z
+end
+
+function Input:setInputColorHex(hex)
+	while hex:len() < 6 do
+		hex = hex .. "0"
+	end
+	local r, g, b = tonumber(hex:sub(1, 2), 16), tonumber(hex:sub(3, 4), 16), tonumber(hex:sub(5, 6), 16)
+	self:setInputColor(r / 255, g / 255, b / 255)
 end
 
 
@@ -508,7 +401,19 @@ end
 
 
 
-
+function Input:update(dt)
+	if self.colorDragging == 1 then
+		local posX, posY = self:getPos()
+		self.inputColor.x = math.min(math.max((_MousePos.x - posX - 20) / 200, 0), 1)
+		self.inputColor.y = math.min(math.max((_MousePos.y - posY - 50) / 200, 0), 1)
+		self:updateSideColorPickerMeshes()
+		self.inputText = self:getInputColorHex()
+	elseif self.colorDragging == 2 then
+		local posX, posY = self:getPos()
+		self.inputColor.z = math.min(math.max((_MousePos.y - posY - 50) / 200, 0), 1)
+		self.inputText = self:getInputColorHex()
+	end
+end
 
 function Input:draw()
 	if not self.inputType then
@@ -517,7 +422,7 @@ function Input:draw()
 
 	local posX, posY = self:getPos()
 	local sizeX, sizeY = self:getSize()
-	
+
 	love.graphics.setLineWidth(3)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.rectangle("fill", posX, posY, sizeX, sizeY)
@@ -566,7 +471,7 @@ function Input:draw()
 		--love.graphics.print(string.format("X: %s", x), posX + 350, posY + 180)
 		--love.graphics.print(string.format("Y: %s", y), posX + 350, posY + 200)
 		--love.graphics.print(string.format("Z: %s", z), posX + 350, posY + 220)
-		love.graphics.print(string.format("Hex: %02x%02x%02x", r * 255, g * 255, b * 255), posX + 300, posY + 180)
+		love.graphics.print(string.format("Hex: %s", self.inputText), posX + 300, posY + 180)
 	elseif self.inputType == "file" or self.inputType == "Font" or self.inputType == "NineImage" then
 		local hoveredEntry = self:getHoveredFileEntryIndex()
 		-- File list
@@ -639,6 +544,108 @@ function Input:draw()
 		love.graphics.setColor(0, 1, 1)
 	end
 	love.graphics.print("[ Esc ] = Cancel", posX + sizeX - 180, posY + sizeY - 30)
+end
+
+function Input:mousepressed(x, y, button, istouch, presses)
+	if not self.inputType then
+		return false
+	end
+	if button == 1 then
+		if self:isColorMeshHovered() then
+			self.colorDragging = 1
+			return true
+		elseif self:isSideColorMeshHovered() then
+			self.colorDragging = 2
+			return true
+		elseif self:isFileInputBoxHovered() then
+			local entry = self:getHoveredFileEntryIndex()
+			if entry then
+				if self.inputType == "file" then
+					self.inputText = self.itemList[entry]
+				elseif self.inputType == "Font" then
+					self.selectedResource = self.itemList[entry].font
+				elseif self.inputType == "NineImage" then
+					self.selectedResource = self.itemList[entry].resource
+				end
+				if presses >= 2 then
+					self:inputAccept()
+				end
+			end
+			return true
+		elseif self:isConfirmButtonHovered() then
+			self:inputAccept()
+			return true
+		elseif self:isCancelButtonHovered() then
+			self:inputCancel()
+			return true
+		elseif self:isOverwriteYesButtonHovered() then
+			self:inputAccept()
+			return true
+		elseif self:isOverwriteNoButtonHovered() then
+			self:inputCancel()
+			return true
+		elseif not self:isHovered() then
+			self:inputCancel()
+			return true
+		end
+	end
+	return false
+end
+
+function Input:mousereleased(x, y, button)
+	if button == 1 then
+		self.colorDragging = nil
+	end
+end
+
+function Input:wheelmoved(x, y)
+	if self.inputType == "file" then
+		local maxY = math.max(#self.itemList - self.ITEM_LIST_MAX_ENTRIES, 0)
+		self.itemListOffset = math.min(math.max(self.itemListOffset - y * 3, 0), maxY)
+	end
+end
+
+function Input:keypressed(key)
+	if not self.inputType then
+		return false
+	end
+	if key == "backspace" then
+		if self.inputType == "string" or self.inputType == "number" or self.inputType == "file" or self.inputType == "color" then
+			local offset = utf8.offset(self.inputText, -1)
+			if offset then
+				self.inputText = self.inputText:sub(1, offset - 1)
+				self.error = nil
+				if self.inputType == "color" then
+					self:setInputColorHex(self.inputText)
+				end
+			end
+		end
+		return true
+	elseif key == "return" then
+		self:inputAccept()
+		return true
+	elseif key == "escape" then
+		self:inputCancel()
+		return true
+	end
+	if self.inputType then
+		if self.inputType == "shortcut" and not (key == "lctrl" or key == "lshift" or key == "rctrl" or key == "rshift") then
+			self.shortcut = {key = key, ctrl = _IsCtrlPressed(), shift = _IsShiftPressed()}
+		end
+		-- Do not let anything else catch the keyboard input if the input box is currently active.
+		return true
+	end
+	return false
+end
+
+function Input:textinput(text)
+	if self.inputType == "string" or self.inputType == "number" or self.inputType == "file" then
+		self.inputText = self.inputText .. text
+		self.error = nil
+	elseif self.inputType == "color" and _Utils.isValueInTable(self.COLOR_CHARACTERS, text) and self.inputText:len() < 6 then
+		self.inputText = self.inputText .. text
+		self:setInputColorHex(self.inputText)
+	end
 end
 
 
