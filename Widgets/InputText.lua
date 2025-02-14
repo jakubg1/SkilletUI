@@ -123,10 +123,10 @@ end
 ---@param value any? The new value for this InputText.
 ---@param group boolean? If set, all calls from the same input field with this value set will be grouped. Used when scrolling or typing in text so that everything can be undone at once.
 function InputText:setValue(value, group)
-    if self.minValue then
+    if value and self.minValue then
         value = math.max(value, self.minValue)
     end
-    if self.maxValue then
+    if value and self.maxValue then
         value = math.min(value, self.maxValue)
     end
     self.value = value
@@ -145,6 +145,9 @@ function InputText:setAffectedEntityValue(value, group)
             _EDITOR:setSelectedNodeProperty(self.propertyKey, value, group and self.propertyKey or nil)
         elseif self.affectedType == "widget" then
             _EDITOR:setSelectedNodeWidgetProperty(self.propertyKey, value, group and self.propertyKey or nil)
+        elseif self.affectedType == "project" then
+            -- TODO: Make property change for Projects a command.
+            _PROJECT:setProperty(self.propertyKey, value)
         end
     end
 end

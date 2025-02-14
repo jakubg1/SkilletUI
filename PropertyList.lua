@@ -23,7 +23,7 @@ local Color = require("Color")
 --- - `defaultValue` - The default value for this property.
 --- - `defaultValueNoData` - The default value for this property used only if the property is deserialized with NO DATA WHATSOEVER.
 ---@param properties table A list of property entries. Each of the property entries can have various parameters.
----@param data table A table of values, keyed by properties' keys. If any of the properties are missing, the default values specified in `data` will be prepended.
+---@param data table? A table of values, keyed by properties' keys. If any of the properties are missing, the default values specified in `data` will be prepended.
 function PropertyList:new(properties, data)
     self.properties = properties
 
@@ -31,7 +31,7 @@ function PropertyList:new(properties, data)
     self.baseValues = {}
     self.animations = {}
 
-    self:deserialize(data)
+    self:deserialize(data or {})
 end
 
 

@@ -18,6 +18,7 @@ function Font:new(path)
         else
             self.font = love.graphics.newFont()
         end
+        self.font:setFilter("linear", "linear")
     elseif data.type == "image" then
         self.font = love.graphics.newImageFont(data.image, data.characters, data.spacing or 1)
     end

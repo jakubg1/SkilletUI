@@ -52,8 +52,9 @@ end
 ---@param node Node? The UI node of which the tree should be added to the list.
 ---@param tab table? The table, used internally.
 ---@param indent integer? The starting indentation.
+---@param ignoreCollapses boolean? If set to `true`, the result will contain nodes that should be invisible in the UI tree. This is required by `NodeList:sortByTreeOrder()` and at some point will be removed.
 ---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
-function EditorUITree:getUITreeInfo(node, tab, indent)
+function EditorUITree:getUITreeInfo(node, tab, indent, ignoreCollapses)
     node = node or _PROJECT:getCurrentLayout()
     if not node then
         -- Currently no layout is open.
@@ -63,7 +64,9 @@ function EditorUITree:getUITreeInfo(node, tab, indent)
     indent = indent or 0
     table.insert(tab, {node = node, indent = indent})
     for i, child in ipairs(node.children) do
-        self:getUITreeInfo(child, tab, indent + 1)
+        if ignoreCollapses or child:isVisibleInUITree() then
+            self:getUITreeInfo(child, tab, indent + 1, ignoreCollapses)
+        end
     end
     return tab
 end
@@ -255,7 +258,7 @@ function EditorUITree:draw()
             love.graphics.rectangle("line", x + 23, y + 1, self.SIZE.x - x - 20, self.ITEM_HEIGHT - 2)
             self.editor:drawShadowedText(self.nameEditValue, x + 25, y + 2, _COLORS.black, nil, alpha, true)
         else
-            self.editor:drawShadowedText(line.node:getName(), x + 25, y + 2, color, nil, alpha)
+            self.editor:drawShadowedText(line.node:getName() .. (line.node:isCollapsed() and " ..." or ""), x + 25, y + 2, color, nil, alpha)
         end
         -- If dragged over, additional signs will be shown.
         if self.dragOrigin and not self.dragSnap and not self.editor:isNodeSelected(line.node) and line.node == self.editor.hoveredNode then
@@ -300,7 +303,6 @@ function EditorUITree:draw()
 
     -- Dragged element in node tree
     if self.dragOrigin and not self.dragSnap then
-        print("a")
         local selectedNode = self.editor.selectedNodes:getNode(1)
         if selectedNode then
             self.editor:drawShadowedText(string.format("%s {%s}", selectedNode:getName(), selectedNode.type), _MousePos.x + 10, _MousePos.y + 15, _COLORS.white, _COLORS.blue)
@@ -319,22 +321,22 @@ end
 ---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
 ---@return boolean
 function EditorUITree:mousepressed(x, y, button, istouch, presses)
+    local hoveredNode = self:getHoveredNode()
     if button == 1 then
-        local node = self:getHoveredNode()
-        if not node then
+        if not hoveredNode then
             self.nameEditNode = nil
             self.nameEditValue = nil
         end
         if presses >= 2 then
-            if node then
-                if node == self.nameEditLastClickedNode then
+            if hoveredNode then
+                if hoveredNode == self.nameEditLastClickedNode then
                     -- We've clicked this actual Node the second time. Enable the name edit box.
-                    self.nameEditNode = node
-                    self.nameEditValue = node:getName()
+                    self.nameEditNode = hoveredNode
+                    self.nameEditValue = hoveredNode:getName()
                     return true
                 else
                     -- We've clicked a different Node. If that one will be clicked the second time now, its name could be edited.
-                    self.nameEditLastClickedNode = node
+                    self.nameEditLastClickedNode = hoveredNode
                 end
             end
         else
@@ -342,7 +344,19 @@ function EditorUITree:mousepressed(x, y, button, istouch, presses)
                 self.nameEditNode = nil
                 self.nameEditValue = nil
             end
-            self.nameEditLastClickedNode = node
+            self.nameEditLastClickedNode = hoveredNode
+            if hoveredNode and self.editor:isNodeSelected(hoveredNode) then
+                self:startDraggingSelectedNodeInNodeTree()
+            end
+        end
+    elseif button == 2 then
+        if hoveredNode then
+            if hoveredNode:hasChildren() then
+                hoveredNode:toggleCollapse()
+            else
+                -- Nodes with no children shouldn't ever be able to be collapsed.
+                hoveredNode:setCollapsed(false)
+            end
         end
     end
     return false

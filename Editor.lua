@@ -263,13 +263,37 @@ end
 function Editor:updateUI()
     -- If any of the selected nodes have been removed, deselect them.
     self.selectedNodes:removeNodesFunction(function(node) return not self:doesNodeExistSomewhere(node) end)
-    if self.selectedNodes:getSize() == 1 then
+    if self.selectedNodes:getSize() == 0 then
+        -- Display the project property list if no nodes are selected.
+        self:generateProjectPropertyUI()
+    elseif self.selectedNodes:getSize() == 1 then
         -- Display property UI only if a single node has been selected.
         self:generateNodePropertyUI(self.selectedNodes:getNode(1))
     else
         -- TODO: Make property UI for multiple nodes (show common values)
         self:generateNodePropertyUI()
     end
+end
+
+
+
+---Clears and regenerates the UI for the currently loaded project's properties.
+function Editor:generateProjectPropertyUI()
+    -- Clear all properties.
+    local previousPropertiesUI = self.UI:findChildByName("properties")
+    if previousPropertiesUI then
+        previousPropertiesUI:removeSelf()
+    end
+    if not _PROJECT then
+        return
+    end
+    -- Make a new property list UI.
+    local propertiesUI = Node({name = "properties", pos = {1200, 25}})
+    local listWrapperUI = Node({pos = {0, 0}})
+    local listUI = self:generatePropertyListUI(_PROJECT, _PROJECT:getPropertyList(), "Project Properties", "project")
+    listWrapperUI:addChild(listUI)
+    propertiesUI:addChild(listWrapperUI)
+    self.UI:addChild(propertiesUI)
 end
 
 
@@ -282,30 +306,32 @@ function Editor:generateNodePropertyUI(node)
     if previousPropertiesUI then
         previousPropertiesUI:removeSelf()
     end
-    -- Make a new property list UI.
-    if node then
-        local widget = node.widget
-        local propertiesUI = Node({name = "properties", pos = {1200, 30}})
-        local propertyWidgetInfoUI = self:label(20, 0, "")
-        if widget then
-            if not widget.getPropertyList then
-                propertyWidgetInfoUI.widget:setProp("text", "This Widget does not support properties yet!")
-            end
-        else
-            propertyWidgetInfoUI.widget:setProp("text", "This Node does not have a widget.")
-        end
-        local widgetListWrapperUI = Node({pos = {0, 30}})
-        local widgetListUI = self:generatePropertyListUI(node, node:getPropertyList(), "Node Properties " .. tostring(math.floor(math.random() * 1000000)), "node", node:isControlled())
-        widgetListWrapperUI:addChild(widgetListUI)
-        propertiesUI:addChild(widgetListWrapperUI)
-        if widget and widget.getPropertyList then
-            local nodeListWrapperUI = Node({pos = {0, 250}})
-            local nodeListUI = self:generatePropertyListUI(widget, widget:getPropertyList(), "Widget Properties", "widget", false)
-            nodeListWrapperUI:addChild(nodeListUI)
-            propertiesUI:addChild(nodeListWrapperUI)
-        end
-        self.UI:addChild(propertiesUI)
+    if not node then
+        return
     end
+    -- Make a new property list UI.
+    local widget = node.widget
+    local propertiesUI = Node({name = "properties", pos = {1200, 25}})
+    local propertyWidgetInfoUI = self:label(0, -24, "")
+    if widget then
+        if not widget.getPropertyList then
+            propertyWidgetInfoUI.widget:setProp("text", "This Widget does not support properties yet!")
+        end
+    else
+        propertyWidgetInfoUI.widget:setProp("text", "This Node does not have a widget.")
+    end
+    propertiesUI:addChild(propertyWidgetInfoUI)
+    local widgetListWrapperUI = Node({pos = {0, 0}})
+    local widgetListUI = self:generatePropertyListUI(node, node:getPropertyList(), "Node Properties", "node", node:isControlled())
+    widgetListWrapperUI:addChild(widgetListUI)
+    propertiesUI:addChild(widgetListWrapperUI)
+    if widget and widget.getPropertyList then
+        local nodeListWrapperUI = Node({pos = {0, 240}})
+        local nodeListUI = self:generatePropertyListUI(widget, widget:getPropertyList(), "Widget Properties", "widget")
+        nodeListWrapperUI:addChild(nodeListUI)
+        propertiesUI:addChild(nodeListWrapperUI)
+    end
+    self.UI:addChild(propertiesUI)
 end
 
 
@@ -314,23 +340,25 @@ end
 ---@param widgetOrNode Node|Widget* The Node or Widget to get the values from.
 ---@param properties table The property list to be generated from.
 ---@param header string The header text for this list.
----@param affectedType "node"|"widget" What to change when the input box value is submitted.
----@param controlled boolean If set, the properties marked as `disabledIfControlled` will be disabled.
+---@param affectedType "node"|"widget"|"project" What to change when the input box value is submitted.
+---@param controlled boolean? If set, the properties marked as `disabledIfControlled` will be disabled.
 ---@return Node
 function Editor:generatePropertyListUI(widgetOrNode, properties, header, affectedType, controlled)
+    controlled = controlled or false
     local listUI = Node({name = "proplist"})
     local y = 0
     local propertyHeaderUI = self:label(0, y, header)
     propertyHeaderUI.widget:setProp("underline", true)
-    propertyHeaderUI.widget:setProp("characterSeparation", 2)
+    propertyHeaderUI.widget:setProp("characterSeparation", 1)
+    propertyHeaderUI.widget:setProp("boldness", 2)
     y = y + 20
     listUI:addChild(propertyHeaderUI)
     for i, property in ipairs(properties) do
         local inputValue = widgetOrNode.properties:getBaseValue(property.key)
-        local propertyUI = Node({name = "input", pos = {20, y}})
+        local propertyUI = Node({name = "input", pos = {10, y}})
         y = y + 20
-        local propertyText = self:label(0, 0, property.name)
-        local propertyInput = self:input(200, 0, 150, property, inputValue, affectedType, nil)
+        local propertyText = self:label(0, 1, property.name, nil, 145)
+        local propertyInput = self:input(150, 0, 200, property, inputValue, affectedType, nil)
         self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (controlled and property.disabledIfControlled))
         propertyUI:addChild(propertyText)
         propertyUI:addChild(propertyInput)
@@ -727,9 +755,10 @@ end
 ---@param y number The Y coordinate of the label position.
 ---@param text string The text that should be written on the label.
 ---@param name string? The label name.
+---@param maxWidth number? The maximum width of the label. If the label is exceeding it, the text will be squished.
 ---@return Node
-function Editor:label(x, y, text, name)
-    local label = Node({name = name or ("lb_" .. text), type = "text", widget = {font = "editor", text = text, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x, y}})
+function Editor:label(x, y, text, name, maxWidth)
+    local label = Node({name = name or ("lb_" .. text), type = "text", widget = {font = "editor", text = text, maxWidth = maxWidth, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x, y}})
     return label
 end
 
@@ -744,7 +773,7 @@ end
 ---@param shortcut table? The key which will activate this button.
 ---@return Node
 function Editor:button(x, y, w, text, fn, shortcut)
-    local button = Node({name = "btn_" .. text, type = "9sprite", widget = {image = "ed_button", clickImage = "ed_button_click", size = {w, 20}, scale = 2}, shortcut = shortcut, pos = {x, y}, children = {{name = "$text", type = "text", widget = {font = "default", text = text, color = _COLORS.black}, pos = {0, -1}, align = "center", parentAlign = "center"}}})
+    local button = Node({name = "btn_" .. text, type = "9sprite", widget = {image = "ed_button", clickImage = "ed_button_click", size = {w, 20}, scale = 2}, shortcut = shortcut, pos = {x, y}, children = {{name = "$text", type = "text", widget = {font = "default", text = text, color = _COLORS.black, maxWidth = w - 8}, pos = {0, -1}, align = "center", parentAlign = "center"}}})
     button:setOnClick(fn)
     return button
 end
@@ -757,7 +786,7 @@ end
 ---@param w number The width of the input field. Height is always 20.
 ---@param property table The input property data.
 ---@param value string|number|Color The value that should be initially set in the input field.
----@param affectedType "node"|"widget" Whether the specified property is belonging to the selected Node or its Widget.
+---@param affectedType "node"|"widget"|"project" Whether the specified property is belonging to the selected Node, its Widget or the currently open Project.
 ---@param extensions table? If `property.type` == `"file"`, the list of file extensions to be listed in the file picker.
 ---@return Node
 function Editor:input(x, y, w, property, value, affectedType, extensions)
@@ -771,7 +800,8 @@ function Editor:input(x, y, w, property, value, affectedType, extensions)
                 type = "text",
                 widget = {
                     font = "default",
-                    color = _COLORS.white
+                    color = _COLORS.white,
+                    maxWidth = w - 8
                 },
                 pos = {4, -1},
                 align = "left",
@@ -917,16 +947,6 @@ function Editor:load()
     local FILE_X = 5
     local FILE_Y = 0
     local nodes = {
-        self:button(UTILITY_X, UTILITY_Y, 100, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
-        self:button(UTILITY_X + 100, UTILITY_Y, 100, "Dupe [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"}),
-        self:button(UTILITY_X, UTILITY_Y + 20, 200, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"}),
-        self:button(UTILITY_X, UTILITY_Y + 40, 200, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"}),
-        self:button(UTILITY_X, UTILITY_Y + 60, 200, "To Top [Shift+PgUp]", function() self:moveSelectedNodeToTop() end, {shift = true, key = "pageup"}),
-        self:button(UTILITY_X, UTILITY_Y + 80, 200, "To Bottom [Shift+PgDown]", function() self:moveSelectedNodeToBottom() end, {shift = true, key = "pagedown"}),
-        self:button(UTILITY_X, UTILITY_Y + 100, 100, "Undo [Ctrl+Z]", function() self:undoLastCommand() end, {ctrl = true, key = "z"}),
-        self:button(UTILITY_X + 100, UTILITY_Y + 100, 100, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"}),
-        self:button(UTILITY_X, UTILITY_Y + 120, 100, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"}),
-        self:button(UTILITY_X + 100, UTILITY_Y + 120, 100, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"}),
         self:label(NEW_X, NEW_Y - 20, "New Widget:"),
         self:button(NEW_X, NEW_Y, 55, "Node", function() self:addNode(Node({})) end),
         self:button(NEW_X + 55, NEW_Y, 55, "Box", function() self:addNode(Node({type = "box"})) end),
@@ -935,6 +955,16 @@ function Editor:load()
         self:button(NEW_X, NEW_Y + 20, 110, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end),
         self:button(NEW_X + 110, NEW_Y + 20, 55, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite"}}})) end),
         self:button(NEW_X + 165, NEW_Y + 20, 55, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end),
+        self:button(UTILITY_X, UTILITY_Y, 110, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
+        self:button(UTILITY_X + 110, UTILITY_Y, 110, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"}),
+        self:button(UTILITY_X, UTILITY_Y + 20, 220, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"}),
+        self:button(UTILITY_X, UTILITY_Y + 40, 220, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"}),
+        self:button(UTILITY_X, UTILITY_Y + 60, 220, "To Top [Shift+PgUp]", function() self:moveSelectedNodeToTop() end, {shift = true, key = "pageup"}),
+        self:button(UTILITY_X, UTILITY_Y + 80, 220, "To Bottom [Shift+PgDown]", function() self:moveSelectedNodeToBottom() end, {shift = true, key = "pagedown"}),
+        self:button(UTILITY_X, UTILITY_Y + 100, 110, "Undo [Ctrl+Z]", function() self:undoLastCommand() end, {ctrl = true, key = "z"}),
+        self:button(UTILITY_X + 110, UTILITY_Y + 100, 110, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"}),
+        self:button(UTILITY_X, UTILITY_Y + 120, 110, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"}),
+        self:button(UTILITY_X + 110, UTILITY_Y + 120, 110, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"}),
 
         self:label(ALIGN_X, ALIGN_Y, "Node Align"),
         self:button(ALIGN_X, ALIGN_Y + 20, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
@@ -969,6 +999,8 @@ function Editor:load()
     for i, node in ipairs(nodes) do
         self.UI:addChild(node)
     end
+
+    self:updateUI()
 end
 
 
@@ -1252,10 +1284,6 @@ function Editor:mousepressed(x, y, button, istouch, presses)
                     if not self.isNodeHoverIndirect then
                         -- Start dragging the actual node on the screen.
                         self:startDraggingSelectedNode()
-                    else
-                        -- Start dragging the node on the node tree list.
-                        -- TODO: Move this call to the `EditorUITree` class.
-                        self.uiTree:startDraggingSelectedNodeInNodeTree()
                     end
                 end
             else

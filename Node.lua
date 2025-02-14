@@ -40,12 +40,13 @@ function Node:new(data, parent)
         {name = "Align", key = "align", type = "align", defaultValue = _ALIGNMENTS.topLeft},
         {name = "Parent Align", key = "parentAlign", type = "align", defaultValue = _ALIGNMENTS.topLeft},
         {name = "Visible", key = "visible", type = "boolean", defaultValue = true},
+        {name = "Collapsed", key = "collapsed", type = "boolean", defaultValue = false},
         {name = "Locked", key = "locked", type = "boolean", defaultValue = false},
         {name = "Canvas Input Mode", key = "canvasInputMode", type = "boolean", defaultValue = false},
         {name = "Shortcut", key = "shortcut", type = "shortcut", nullable = true},
         {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true}
     }
-    self.properties = PropertyList(self.PROPERTY_LIST, data)
+    self.properties = PropertyList(self.PROPERTY_LIST)
 
     self.dragPos = nil
     self.scaleSize = nil
@@ -470,6 +471,33 @@ end
 ---@param visible boolean Whether this Node should be visible. If a Node is not visible, it cannot be seen, including all its children.
 function Node:setVisible(visible)
     self:setPropBase("visible", visible)
+end
+
+---Returns whether this Node is collapsed.
+---@return boolean
+function Node:isCollapsed()
+    return self:getProp("collapsed")
+end
+
+---Sets whether this Node should be collapsed. Collapsed nodes do not have their children visible in the UI tree.
+---@param collapsed boolean Whether this Node should be collapsed.
+function Node:setCollapsed(collapsed)
+    self:setPropBase("collapsed", collapsed)
+end
+
+---Sets whether this Node is collapsed: collapses it if it was not and vice versa.
+function Node:toggleCollapse()
+    self:setPropBase("collapsed", not self:getProp("collapsed"))
+end
+
+---Returns whether this Node is visible in the UI tree.
+---This only returns `false` if any parent up its hierarchy is currently collapsed.
+---@return boolean
+function Node:isVisibleInUITree()
+    if self.parent then
+        return self.parent:isVisibleInUITree() and not self.parent:isCollapsed()
+    end
+    return true
 end
 
 ---Returns whether this Node is locked. Locked nodes cannot be hovered.

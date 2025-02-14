@@ -6,6 +6,7 @@ local Project = class:derive("Project")
 
 -- Place your imports here
 local Vec2 = require("Vector2")
+local PropertyList = require("PropertyList")
 local Node = require("Node")
 local Timeline = require("Timeline")
 
@@ -25,9 +26,12 @@ function Project:new(path)
     }
     self.currentTimeline = "test"
 
-    self.nativeResolution = Vec2(320, 180)
-    self.gridSize = nil
-    self.gridVisible = false
+    self.PROPERTY_LIST = {
+        {name = "Native Resolution", key = "nativeResolution", type = "Vector2", defaultValue = Vec2(320, 180)},
+        {name = "Grid Size", key = "gridSize", type = "Vector2", nullable = true},
+        {name = "Grid Visible", key = "gridVisible", type = "boolean", defaultValue = false}
+    }
+    self.properties = PropertyList(self.PROPERTY_LIST)
 
     local data = _Utils.loadJson(path .. "/settings.json")
     self:deserialize(data)
@@ -126,26 +130,47 @@ end
 ---------------- S E T T I N G S ---------------
 --############################################--
 
+---Returns the given property of this Project.
+---@param key string The property key.
+---@return any?
+function Project:getProperty(key)
+    return self.properties:getValue(key)
+end
+
+---Sets the given property of this Project to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Project:setProperty(key, value)
+    self.properties:setBaseValue(key, value)
+end
+
+---Returns the property list manifest for use in the editor's property UI generator.
+---@return table
+function Project:getPropertyList()
+    return self.PROPERTY_LIST
+end
+
 ---Returns the native resolution of this Project.
 ---@return Vector2
 function Project:getNativeResolution()
-    return self.nativeResolution
+    return self:getProperty("nativeResolution")
 end
 
 ---Returns the current grid size, or `nil` if the grid is disabled.
 ---@return Vector2?
 function Project:getGridSize()
-    if not self.gridSize or self.gridSize.x == 0 or self.gridSize.y == 0 then
+    local gridSize = self:getProperty("gridSize")
+    if not gridSize or gridSize.x == 0 or gridSize.y == 0 then
         -- Prevent an infinite loop :>
         return nil
     end
-    return self.gridSize
+    return gridSize
 end
 
 ---Returns whether the grid is visible.
 ---@return boolean
 function Project:isGridVisible()
-    return self.gridVisible
+    return self:getProperty("gridVisible")
 end
 
 --######################################--
@@ -207,10 +232,9 @@ end
 ---Loads the project's properties from the given data.
 ---@param data table The project properties.
 function Project:deserialize(data)
-    self.nativeResolution = Vec2(data.nativeResolution)
-    self.gridSize = data.gridSize and Vec2(data.gridSize)
+    self.properties:deserialize(data)
 
-    _CANVAS:setResolution(self.nativeResolution)
+    _CANVAS:setResolution(self:getProperty("nativeResolution"))
 end
 
 return Project

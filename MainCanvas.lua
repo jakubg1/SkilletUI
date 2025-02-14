@@ -14,6 +14,7 @@ function MainCanvas:new()
     self.zoomScale = 1
     self.zoomPan = Vec2()
     self.canvas = love.graphics.newCanvas(self.resolution.x, self.resolution.y)
+    self.canvas:setFilter("linear", "nearest")
 end
 
 ---Sets a new top left corner position of this Canvas on the screen.
@@ -33,6 +34,7 @@ end
 function MainCanvas:setResolution(resolution)
     self.resolution = resolution
     self.canvas = love.graphics.newCanvas(resolution.x, resolution.y)
+    self.canvas:setFilter("linear", "nearest")
 end
 
 ---Sets the zoom factor of this Canvas. The zoom origin is in the top left corner.

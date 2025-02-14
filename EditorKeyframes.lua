@@ -14,8 +14,8 @@ local Vec2 = require("Vector2")
 function EditorKeyframes:new(editor)
     self.editor = editor
 
-    self.POS = Vec2(215, 685)
-    self.SIZE = Vec2(1000, 200)
+    self.POS = Vec2(230, 685)
+    self.SIZE = Vec2(960, 200)
     self.NODE_LIST_WIDTH = 200
     self.KEYFRAME_AREA_X = self.POS.x + self.NODE_LIST_WIDTH
     self.KEYFRAME_AREA_WIDTH = self.SIZE.x - self.NODE_LIST_WIDTH

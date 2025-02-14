@@ -36,7 +36,8 @@ function Text:new(node, data)
         {name = "Gradient Wave Frequency", key = "gradientWaveFrequency", type = "number", nullable = true},
         {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number", nullable = true},
         {name = "Type-in Progress", key = "typeInProgress", type = "number", nullable = true, minValue = 0, maxValue = 1, scrollStep = 0.1},
-        {name = "Input Caret", key = "inputCaret", type = "boolean", defaultValue = false}
+        {name = "Input Caret", key = "inputCaret", type = "boolean", defaultValue = false},
+        {name = "Max Width", key = "maxWidth", type = "number", nullable = true, minValue = 1, scrollStep = 10}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 end
@@ -83,16 +84,35 @@ end
 ---@return Vector2
 function Text:getSize()
     local prop = self.properties:getValues()
-    local text = self:getText()
-    return Vec2(prop.font:getWidth(text) - 1, prop.font:getHeight()) * prop.scale + Vec2(self:getEffectiveCharacterSeparation() * (utf8.len(text) - 1) + prop.boldness - 1, 0)
+    local width = self:getWidthBeforeMaxWidth()
+    if prop.maxWidth then
+        width = math.min(width, prop.maxWidth)
+    end
+    return Vec2(width, prop.font:getHeight() * prop.scale)
 end
-
-
 
 ---Sets the size of this Text. But you actually cannot set it. Don't even try :)
 ---@param size Vector2 The new size of this Text.
 function Text:setSize(size)
     error("Texts cannot be resized!")
+end
+
+---Returns the width of this Text, before the `maxWidth` property is taken into effect.
+---@return number
+function Text:getWidthBeforeMaxWidth()
+    local prop = self.properties:getValues()
+    local text = self:getText()
+    return (prop.font:getWidth(text) - 1) * prop.scale + self:getEffectiveCharacterSeparation() * (utf8.len(text) - 1) + prop.boldness - 1
+end
+
+---Returns the width scaling (squish) of this Text: 1 if it falls into the `maxWidth` property, less than 1 if not.
+---@return number
+function Text:getWidthScale()
+    local maxWidth = self:getProp("maxWidth")
+    if not maxWidth then
+        return 1
+    end
+    return math.min(maxWidth / self:getWidthBeforeMaxWidth(), 1)
 end
 
 
@@ -151,6 +171,7 @@ end
 ---Draws the Text on the screen.
 function Text:draw()
     local pos = self.node:getGlobalPos()
+    local widthScale = self:getWidthScale()
     local text = self:getText()
     local prop = self.properties:getValues()
 
@@ -163,10 +184,10 @@ function Text:draw()
         -- Optimize drawing if there are no effects which require drawing each character separately.
         if prop.shadowOffset then
             love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-            love.graphics.print(text, math.floor(pos.x + prop.shadowOffset.x + 0.5), math.floor(pos.y + prop.shadowOffset.y + 0.5), 0, prop.scale)
+            love.graphics.print(text, math.floor(pos.x + prop.shadowOffset.x + 0.5), math.floor(pos.y + prop.shadowOffset.y + 0.5), 0, prop.scale * widthScale, prop.scale)
         end
         love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
-        love.graphics.print(text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, prop.scale)
+        love.graphics.print(text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, prop.scale * widthScale, prop.scale)
     else
         -- Draw everything character by character.
         local x = 0
@@ -193,15 +214,15 @@ function Text:draw()
                 for j = 1, prop.boldness do
                     local bx = j - 1
                     love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-                    love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5 + prop.shadowOffset.x), math.floor(pos.y + y + 0.5 + prop.shadowOffset.y), 0, prop.scale)
+                    love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5 + prop.shadowOffset.x), math.floor(pos.y + y + 0.5 + prop.shadowOffset.y), 0, prop.scale * widthScale, prop.scale)
                 end
             end
             for j = 1, prop.boldness do
                 local bx = j - 1
                 love.graphics.setColor(charColor.r, charColor.g, charColor.b, prop.alpha)
-                love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5), math.floor(pos.y + y + 0.5), 0, prop.scale)
+                love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5), math.floor(pos.y + y + 0.5), 0, prop.scale * widthScale, prop.scale)
             end
-            x = x + w + sep
+            x = x + (w + sep) * widthScale
         end
     end
 
