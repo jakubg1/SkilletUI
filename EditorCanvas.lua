@@ -16,7 +16,7 @@ function EditorCanvas:new(editor, canvas)
     self.canvas = canvas
 
     self.SIZE_EDITOR = Vec2(960, 540)
-    self.OFFSET_EDITOR = Vec2(230, 30)
+    self.OFFSET_EDITOR = Vec2(230, 25)
     self.SIZE_PRESENTATION = _WINDOW_SIZE
     self.OFFSET_PRESENTATION = Vec2()
 
@@ -368,6 +368,7 @@ end
 ---@param w integer The new width of the window.
 ---@param h integer The new height of the window.
 function EditorCanvas:resize(w, h)
+    self.SIZE_EDITOR = Vec2(w - 640, h - 360)
     self.SIZE_PRESENTATION = Vec2(w, h)
     self:updateCanvas()
 end

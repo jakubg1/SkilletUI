@@ -14,7 +14,7 @@ local Vec2 = require("Vector2")
 function EditorKeyframes:new(editor)
     self.editor = editor
 
-    self.POS = Vec2(230, 685)
+    self.POS = Vec2(230, 675)
     self.SIZE = Vec2(960, 200)
     self.NODE_LIST_WIDTH = 200
     self.KEYFRAME_AREA_X = self.POS.x + self.NODE_LIST_WIDTH
@@ -309,6 +309,15 @@ function EditorKeyframes:wheelmoved(x, y)
     if self:isHovered() then
         self.scrollOffset = math.min(math.max(self.scrollOffset - y * self.ITEM_HEIGHT * 3, 0), self.maxScrollOffset)
     end
+end
+
+---LOVE callback for when the window is resized.
+---@param w integer The new width of the window.
+---@param h integer The new height of the window.
+function EditorKeyframes:resize(w, h)
+    self.POS = Vec2(230, h - 225)
+    self.SIZE = Vec2(w - 640, 200)
+    self.KEYFRAME_AREA_WIDTH = self.SIZE.x - self.NODE_LIST_WIDTH
 end
 
 

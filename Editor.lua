@@ -60,14 +60,18 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Font and image support for parameters
 --- - Grid and snapping to it
 --- - Canvas zooming and panning
+--- - Responsiveness for the editor UI
 ---
 --- To Do (arbitrary order):
---- - Vector support for parameters
+--- - Vector edit support for parameters
 --- - Node modifier system, where you could add a rule, like: "modify this node and all its children's widgets' alpha by multiplying it by 0.5"
 --- - Property modifier system: instead of always having just the base and current value, make it a base value and a list of any modifiers (current value could be cached and got but could not be set)
 --- - Timeline editing
 --- - Fix ctrl+drag in node tree
+--- - Resizable text (so that maxWidth can go)
 --- - Multiline text and inline formatting
+--- - Attaching sides of Nodes to other Nodes' sides with margin
+--- - Projects load all their layouts and all the layouts are listed
 
 
 
@@ -288,12 +292,9 @@ function Editor:generateProjectPropertyUI()
         return
     end
     -- Make a new property list UI.
-    local propertiesUI = Node({name = "properties", pos = {1200, 25}})
-    local listWrapperUI = Node({pos = {0, 0}})
-    local listUI = self:generatePropertyListUI(_PROJECT, _PROJECT:getPropertyList(), "Project Properties", "project")
-    listWrapperUI:addChild(listUI)
-    propertiesUI:addChild(listWrapperUI)
-    self.UI:addChild(propertiesUI)
+    local propertiesUI = self:node(self.UI:findChildByName("s_properties"), 0, 0, "properties")
+    local listWrapperUI = self:node(propertiesUI, 0, 0)
+    local listUI = self:generatePropertyListUI(listWrapperUI, _PROJECT, _PROJECT:getPropertyList(), "Project Properties", "project")
 end
 
 
@@ -311,8 +312,8 @@ function Editor:generateNodePropertyUI(node)
     end
     -- Make a new property list UI.
     local widget = node.widget
-    local propertiesUI = Node({name = "properties", pos = {1200, 25}})
-    local propertyWidgetInfoUI = self:label(0, -24, "")
+    local propertiesUI = self:node(self.UI:findChildByName("s_properties"), 0, 0, "properties")
+    local propertyWidgetInfoUI = self:label(propertiesUI, 0, -24, "")
     if widget then
         if not widget.getPropertyList then
             propertyWidgetInfoUI.widget:setProp("text", "This Widget does not support properties yet!")
@@ -320,50 +321,43 @@ function Editor:generateNodePropertyUI(node)
     else
         propertyWidgetInfoUI.widget:setProp("text", "This Node does not have a widget.")
     end
-    propertiesUI:addChild(propertyWidgetInfoUI)
-    local widgetListWrapperUI = Node({pos = {0, 0}})
-    local widgetListUI = self:generatePropertyListUI(node, node:getPropertyList(), "Node Properties", "node", node:isControlled())
-    widgetListWrapperUI:addChild(widgetListUI)
-    propertiesUI:addChild(widgetListWrapperUI)
+    local widgetListWrapperUI = self:node(propertiesUI, 0, 0)
+    local widgetListUI = self:generatePropertyListUI(widgetListWrapperUI, node, node:getPropertyList(), "Node Properties", "node", node:isControlled())
     if widget and widget.getPropertyList then
-        local nodeListWrapperUI = Node({pos = {0, 240}})
-        local nodeListUI = self:generatePropertyListUI(widget, widget:getPropertyList(), "Widget Properties", "widget")
-        nodeListWrapperUI:addChild(nodeListUI)
-        propertiesUI:addChild(nodeListWrapperUI)
+        local nodeListWrapperUI = self:node(propertiesUI, 0, 240)
+        local nodeListUI = self:generatePropertyListUI(nodeListWrapperUI, widget, widget:getPropertyList(), "Widget Properties", "widget")
     end
-    self.UI:addChild(propertiesUI)
 end
 
 
 
 ---Generates a property list UI and returns a Node with a header, the properties and their labels.
+---@param parent Node The parent Node to attach the generated UI to.
 ---@param widgetOrNode Node|Widget* The Node or Widget to get the values from.
 ---@param properties table The property list to be generated from.
 ---@param header string The header text for this list.
 ---@param affectedType "node"|"widget"|"project" What to change when the input box value is submitted.
 ---@param controlled boolean? If set, the properties marked as `disabledIfControlled` will be disabled.
 ---@return Node
-function Editor:generatePropertyListUI(widgetOrNode, properties, header, affectedType, controlled)
+function Editor:generatePropertyListUI(parent, widgetOrNode, properties, header, affectedType, controlled)
     controlled = controlled or false
     local listUI = Node({name = "proplist"})
     local y = 0
-    local propertyHeaderUI = self:label(0, y, header)
+    local propertyHeaderUI = self:label(listUI, 0, y, header)
     propertyHeaderUI.widget:setProp("underline", true)
     propertyHeaderUI.widget:setProp("characterSeparation", 1)
     propertyHeaderUI.widget:setProp("boldness", 2)
     y = y + 20
-    listUI:addChild(propertyHeaderUI)
     for i, property in ipairs(properties) do
         local inputValue = widgetOrNode.properties:getBaseValue(property.key)
         local propertyUI = Node({name = "input", pos = {10, y}})
         y = y + 20
-        local propertyText = self:label(0, 1, property.name, nil, 145)
-        local propertyInput = self:input(150, 0, 200, property, inputValue, affectedType, nil)
+        local propertyText = self:label(propertyUI, 0, 1, property.name, nil, 145)
+        local propertyInput = self:input(propertyUI, 150, 0, 200, property, inputValue, affectedType, nil)
         self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (controlled and property.disabledIfControlled))
-        propertyUI:addChild(propertyText)
-        propertyUI:addChild(propertyInput)
         listUI:addChild(propertyUI)
     end
+    parent:addChild(listUI)
     return listUI
 end
 
@@ -750,21 +744,38 @@ end
 
 
 
+---Convenience function which creates an empty editor node.
+---@param parent Node The parent Node to which this node should be added.
+---@param x number The X coordinate of the node position.
+---@param y number The Y coordinate of the node position.
+---@param name string? The node name.
+---@return Node
+function Editor:node(parent, x, y, name)
+    local node = Node({name = name, pos = {x, y}})
+    parent:addChild(node)
+    return node
+end
+
+
+
 ---Convenience function which creates an editor label.
+---@param parent Node The parent Node to which this label should be added.
 ---@param x number The X coordinate of the label position.
 ---@param y number The Y coordinate of the label position.
 ---@param text string The text that should be written on the label.
 ---@param name string? The label name.
 ---@param maxWidth number? The maximum width of the label. If the label is exceeding it, the text will be squished.
 ---@return Node
-function Editor:label(x, y, text, name, maxWidth)
+function Editor:label(parent, x, y, text, name, maxWidth)
     local label = Node({name = name or ("lb_" .. text), type = "text", widget = {font = "editor", text = text, maxWidth = maxWidth, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x, y}})
+    parent:addChild(label)
     return label
 end
 
 
 
 ---Convenience function which creates an editor button.
+---@param parent Node The parent Node to which this button should be added.
 ---@param x number The X coordinate of the button position.
 ---@param y number The Y coordinate of the button position.
 ---@param w number The width of the button. Height is always 20.
@@ -772,15 +783,17 @@ end
 ---@param fn function? The function to be executed when this button is clicked.
 ---@param shortcut table? The key which will activate this button.
 ---@return Node
-function Editor:button(x, y, w, text, fn, shortcut)
+function Editor:button(parent, x, y, w, text, fn, shortcut)
     local button = Node({name = "btn_" .. text, type = "9sprite", widget = {image = "ed_button", clickImage = "ed_button_click", size = {w, 20}, scale = 2}, shortcut = shortcut, pos = {x, y}, children = {{name = "$text", type = "text", widget = {font = "default", text = text, color = _COLORS.black, maxWidth = w - 8}, pos = {0, -1}, align = "center", parentAlign = "center"}}})
     button:setOnClick(fn)
+    parent:addChild(button)
     return button
 end
 
 
 
 ---Convenience function which creates an editor input field.
+---@param parent Node The parent Node to which this input field should be added.
 ---@param x number The X coordinate of the position.
 ---@param y number The Y coordinate of the position.
 ---@param w number The width of the input field. Height is always 20.
@@ -789,7 +802,7 @@ end
 ---@param affectedType "node"|"widget"|"project" Whether the specified property is belonging to the selected Node, its Widget or the currently open Project.
 ---@param extensions table? If `property.type` == `"file"`, the list of file extensions to be listed in the file picker.
 ---@return Node
-function Editor:input(x, y, w, property, value, affectedType, extensions)
+function Editor:input(parent, x, y, w, property, value, affectedType, extensions)
     local data = {
         name = "inp_" .. property.type,
         type = "input_text",
@@ -871,6 +884,7 @@ function Editor:input(x, y, w, property, value, affectedType, extensions)
     input.widget.maxValue = property.maxValue
     input.widget.scrollStep = property.scrollStep
     input:setOnClick(function() self:askForInput(input, property.type, extensions) end)
+    parent:addChild(input)
     return input
 end
 
@@ -936,69 +950,60 @@ end
 ---Initializes the UI for this Editor.
 function Editor:load()
     self.UI = Node(_Utils.loadJson("editor_ui.json"))
-    local NEW_X = 5
-    local NEW_Y = 45
-    local UTILITY_X = 5
-    local UTILITY_Y = 600
-    local ALIGN_X = 240
-    local ALIGN_Y = 595
-    local PALIGN_X = 360
-    local PALIGN_Y = 595
-    local FILE_X = 5
-    local FILE_Y = 0
-    local nodes = {
-        self:label(NEW_X, NEW_Y - 20, "New Widget:"),
-        self:button(NEW_X, NEW_Y, 55, "Node", function() self:addNode(Node({})) end),
-        self:button(NEW_X + 55, NEW_Y, 55, "Box", function() self:addNode(Node({type = "box"})) end),
-        self:button(NEW_X + 110, NEW_Y, 55, "Text", function() self:addNode(Node({type = "text"})) end),
-        self:button(NEW_X + 165, NEW_Y, 55, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end),
-        self:button(NEW_X, NEW_Y + 20, 110, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end),
-        self:button(NEW_X + 110, NEW_Y + 20, 55, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite"}}})) end),
-        self:button(NEW_X + 165, NEW_Y + 20, 55, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end),
-        self:button(UTILITY_X, UTILITY_Y, 110, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"}),
-        self:button(UTILITY_X + 110, UTILITY_Y, 110, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"}),
-        self:button(UTILITY_X, UTILITY_Y + 20, 220, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"}),
-        self:button(UTILITY_X, UTILITY_Y + 40, 220, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"}),
-        self:button(UTILITY_X, UTILITY_Y + 60, 220, "To Top [Shift+PgUp]", function() self:moveSelectedNodeToTop() end, {shift = true, key = "pageup"}),
-        self:button(UTILITY_X, UTILITY_Y + 80, 220, "To Bottom [Shift+PgDown]", function() self:moveSelectedNodeToBottom() end, {shift = true, key = "pagedown"}),
-        self:button(UTILITY_X, UTILITY_Y + 100, 110, "Undo [Ctrl+Z]", function() self:undoLastCommand() end, {ctrl = true, key = "z"}),
-        self:button(UTILITY_X + 110, UTILITY_Y + 100, 110, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"}),
-        self:button(UTILITY_X, UTILITY_Y + 120, 110, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"}),
-        self:button(UTILITY_X + 110, UTILITY_Y + 120, 110, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"}),
+    local s_new = self:node(self.UI, 5, 45, "s_new")
+    local s_utility = self:node(self.UI, 5, 600, "s_utility")
+    local s_align = self:node(self.UI, 240, 590, "s_align")
+    local s_palign = self:node(self.UI, 360, 590, "s_palign")
+    local s_file = self:node(self.UI, 5, 0, "s_file")
+    local s_properties = self:node(self.UI, 1200, 25, "s_properties")
+    self:label(s_new, 0, -20, "New Widget:")
+    self:button(s_new, 0, 0, 55, "Node", function() self:addNode(Node({})) end)
+    self:button(s_new, 55, 0, 55, "Box", function() self:addNode(Node({type = "box"})) end)
+    self:button(s_new, 110, 0, 55, "Text", function() self:addNode(Node({type = "text"})) end)
+    self:button(s_new, 165, 0, 55, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end)
+    self:button(s_new, 0, 20, 110, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end)
+    self:button(s_new, 110, 20, 55, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite", widget = {image = "button", size = {64, 16}}}}})) end)
+    self:button(s_new, 165, 20, 55, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end)
+    self:button(s_utility, 0, 0, 110, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"})
+    self:button(s_utility, 110, 0, 110, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"})
+    self:button(s_utility, 0, 20, 220, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"})
+    self:button(s_utility, 0, 40, 220, "Layer Down [PgDown]", function() self:moveSelectedNodeDown() end, {key = "pagedown"})
+    self:button(s_utility, 0, 60, 220, "To Top [Shift+PgUp]", function() self:moveSelectedNodeToTop() end, {shift = true, key = "pageup"})
+    self:button(s_utility, 0, 80, 220, "To Bottom [Shift+PgDown]", function() self:moveSelectedNodeToBottom() end, {shift = true, key = "pagedown"})
+    self:button(s_utility, 0, 100, 110, "Undo [Ctrl+Z]", function() self:undoLastCommand() end, {ctrl = true, key = "z"})
+    self:button(s_utility, 110, 100, 110, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"})
+    self:button(s_utility, 0, 120, 110, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"})
+    self:button(s_utility, 110, 120, 110, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"})
 
-        self:label(ALIGN_X, ALIGN_Y, "Node Align"),
-        self:button(ALIGN_X, ALIGN_Y + 20, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end),
-        self:button(ALIGN_X + 30, ALIGN_Y + 20, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end),
-        self:button(ALIGN_X + 60, ALIGN_Y + 20, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end),
-        self:button(ALIGN_X, ALIGN_Y + 40, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end),
-        self:button(ALIGN_X + 30, ALIGN_Y + 40, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end),
-        self:button(ALIGN_X + 60, ALIGN_Y + 40, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end),
-        self:button(ALIGN_X, ALIGN_Y + 60, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(ALIGN_X + 30, ALIGN_Y + 60, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end),
-        self:button(ALIGN_X + 60, ALIGN_Y + 60, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end),
+    self:label(s_align, 0, 0, "Node Align")
+    self:button(s_align, 0, 20, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end)
+    self:button(s_align, 30, 20, 30, "T", function() self:setSelectedNodeAlign(_ALIGNMENTS.top) end)
+    self:button(s_align, 60, 20, 30, "TR", function() self:setSelectedNodeAlign(_ALIGNMENTS.topRight) end)
+    self:button(s_align, 0, 40, 30, "ML", function() self:setSelectedNodeAlign(_ALIGNMENTS.left) end)
+    self:button(s_align, 30, 40, 30, "M", function() self:setSelectedNodeAlign(_ALIGNMENTS.center) end)
+    self:button(s_align, 60, 40, 30, "MR", function() self:setSelectedNodeAlign(_ALIGNMENTS.right) end)
+    self:button(s_align, 0, 60, 30, "BL", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomLeft) end)
+    self:button(s_align, 30, 60, 30, "B", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottom) end)
+    self:button(s_align, 60, 60, 30, "BR", function() self:setSelectedNodeAlign(_ALIGNMENTS.bottomRight) end)
 
-        self:label(PALIGN_X, PALIGN_Y, "Parent Align"),
-        self:button(PALIGN_X, PALIGN_Y + 20, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end),
-        self:button(PALIGN_X + 30, PALIGN_Y + 20, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end),
-        self:button(PALIGN_X + 60, PALIGN_Y + 20, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end),
-        self:button(PALIGN_X, PALIGN_Y + 40, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end),
-        self:button(PALIGN_X + 30, PALIGN_Y + 40, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end),
-        self:button(PALIGN_X + 60, PALIGN_Y + 40, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end),
-        self:button(PALIGN_X, PALIGN_Y + 60, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end),
-        self:button(PALIGN_X + 30, PALIGN_Y + 60, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end),
-        self:button(PALIGN_X + 60, PALIGN_Y + 60, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end),
+    self:label(s_palign, 0, 0, "Parent Align")
+    self:button(s_palign, 0, 20, 30, "TL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topLeft) end)
+    self:button(s_palign, 30, 20, 30, "T", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.top) end)
+    self:button(s_palign, 60, 20, 30, "TR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.topRight) end)
+    self:button(s_palign, 0, 40, 30, "ML", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.left) end)
+    self:button(s_palign, 30, 40, 30, "M", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.center) end)
+    self:button(s_palign, 60, 40, 30, "MR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.right) end)
+    self:button(s_palign, 0, 60, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end)
+    self:button(s_palign, 30, 60, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end)
+    self:button(s_palign, 60, 60, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end)
 
-        self:label(FILE_X, FILE_Y + 1, "Project: (none)", "lb_project"),
-        self:button(FILE_X + 250, FILE_Y, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"}),
-        self:label(FILE_X + 360, FILE_Y + 1, "Layout: (none)", "lb_layout"),
-        self:button(FILE_X + 560, FILE_Y, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"}),
-        self:button(FILE_X + 620, FILE_Y, 60, "Load", function() self:askForInput("load", "file", {".json"}, false, _PROJECT:getLayoutDirectory()) end, {ctrl = true, key = "l"}),
-        self:button(FILE_X + 680, FILE_Y, 60, "Save", function() self:trySaveCurrentScene() end, {ctrl = true, key = "s"}),
-        self:button(FILE_X + 740, FILE_Y, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true, _PROJECT:getLayoutDirectory()) end, {ctrl = true, shift = true, key = "s"})
-    }
-    for i, node in ipairs(nodes) do
-        self.UI:addChild(node)
-    end
+    self:label(s_file, 0, 1, "Project: (none)", "lb_project")
+    self:button(s_file, 250, 0, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"})
+    self:label(s_file, 360, 1, "Layout: (none)", "lb_layout")
+    self:button(s_file, 560, 0, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"})
+    self:button(s_file, 620, 0, 60, "Load", function() self:askForInput("load", "file", {".json"}, false, _PROJECT:getLayoutDirectory()) end, {ctrl = true, key = "l"})
+    self:button(s_file, 680, 0, 60, "Save", function() self:trySaveCurrentScene() end, {ctrl = true, key = "s"})
+    self:button(s_file, 740, 0, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true, _PROJECT:getLayoutDirectory()) end, {ctrl = true, shift = true, key = "s"})
 
     self:updateUI()
 end
@@ -1406,6 +1411,10 @@ end
 ---@param w integer The new width of the window.
 ---@param h integer The new height of the window.
 function Editor:resize(w, h)
+    self.UI:findChildByName("s_align"):setPos(Vec2(240, h - 310))
+    self.UI:findChildByName("s_palign"):setPos(Vec2(360, h - 310))
+    self.UI:findChildByName("s_properties"):setPos(Vec2(w - 400, 25))
+    self.keyframeEditor:resize(w, h)
     self.canvasMgr:resize(w, h)
 end
 
