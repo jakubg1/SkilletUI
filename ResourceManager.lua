@@ -26,6 +26,7 @@ function ResourceManager:new()
         widget_locked = Image("resources/widget_locked.png"),
         widget_ninesprite = Image("resources/widget_ninesprite.png"),
         widget_none = Image("resources/widget_none.png"),
+        widget_sprite = Image("resources/widget_sprite.png"),
         widget_text = Image("resources/widget_text.png"),
         widget_titledigit = Image("resources/widget_titledigit.png")
     }
@@ -97,6 +98,18 @@ end
 ---@param image Image The inage to be looked up.
 function ResourceManager:getImageName(image)
     return self.imageLookup[image]
+end
+
+---Returns the list of all available Images, in the format of `{{name = name, resource = Image}, ...}`.
+---The list is sorted by names alphabetically.
+---@return table
+function ResourceManager:getImageList()
+    local result = {}
+    for name, image in pairs(self.images) do
+        table.insert(result, {name = name, resource = image})
+    end
+    table.sort(result, function(a, b) return a.name < b.name end)
+    return result
 end
 
 ---Returns a NineImage with the provided name.

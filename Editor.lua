@@ -90,6 +90,7 @@ function Editor:new()
         Vec2(-1, 1),
         Vec2(-1, 0)
     }
+    self.EDITABLE_TYPES = {"string", "number", "boolean", "color", "shortcut", "Font", "Image", "NineImage"}
 
     self.clipboard = {}
 
@@ -242,11 +243,11 @@ end
 
 
 
----Returns `true` if the given Node Property is currently supported by the editor.
+---Returns `true` if the given Node Property is currently supported (editable by clicking the property box) by the editor.
 ---@param property table The property in its entirety, as an item of the `Widget:getPropertyList()` result table.
 ---@return boolean
 function Editor:isNodePropertySupported(property)
-    return property.type == "string" or property.type == "number" or property.type == "color" or property.type == "boolean" or property.type == "shortcut" or property.type == "Font" or property.type == "NineImage"
+    return _Utils.isValueInTable(self.EDITABLE_TYPES, property.type)
 end
 
 
@@ -915,7 +916,7 @@ end
 ---@param pathFilter string? If `type` == `"file"`: `"file"`, `"dir"` or `"all"` - show either files or directories or both respectively.
 function Editor:askForInput(input, inputType, extensions, warnWhenFileExists, basePath, pathFilter)
     self.activeInput = input
-    if inputType == "color" or inputType == "shortcut" or inputType == "file" or inputType == "Font" or inputType == "NineImage" then
+    if inputType ~= "number" and inputType ~= "string" then
         local value = ""
         if type(input) ~= "string" then
             value = input.widget:getValue()
@@ -963,14 +964,17 @@ function Editor:load()
     local s_talign = self:node(self.UI, 480, 590, "s_talign")
     local s_file = self:node(self.UI, 5, 0, "s_file")
     local s_properties = self:node(self.UI, 1200, 25, "s_properties")
+
     self:label(s_new, 0, -20, "New Widget:")
     self:button(s_new, 0, 0, 55, "Node", function() self:addNode(Node({})) end)
     self:button(s_new, 55, 0, 55, "Box", function() self:addNode(Node({type = "box"})) end)
-    self:button(s_new, 110, 0, 55, "Text", function() self:addNode(Node({type = "text"})) end)
+    self:button(s_new, 110, 0, 55, "Sprite", function() self:addNode(Node({type = "sprite"})) end)
     self:button(s_new, 165, 0, 55, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end)
-    self:button(s_new, 0, 20, 110, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end)
+    self:button(s_new, 0, 20, 55, "Text", function() self:addNode(Node({type = "text"})) end)
+    self:button(s_new, 55, 20, 55, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end)
     self:button(s_new, 110, 20, 55, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite", widget = {image = "button", size = {64, 16}}}}})) end)
     self:button(s_new, 165, 20, 55, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end)
+
     self:button(s_utility, 0, 0, 110, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"})
     self:button(s_utility, 110, 0, 110, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"})
     self:button(s_utility, 0, 20, 220, "Layer Up [PgUp]", function() self:moveSelectedNodeUp() end, {key = "pageup"})

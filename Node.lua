@@ -11,6 +11,7 @@ local Button = require("Widgets.Button")
 local Canvas = require("Widgets.Canvas")
 local InputText = require("Widgets.InputText")
 local NineSprite = require("Widgets.NineSprite")
+local Sprite = require("Widgets.Sprite")
 local Text = require("Widgets.Text")
 local TitleDigit = require("Widgets.TitleDigit")
 
@@ -29,6 +30,7 @@ function Node:new(data, parent)
         canvas =            {constructor = Canvas,      defaultName = "Canvas",     icon = "widget_canvas"},
         input_text =        {constructor = InputText,   defaultName = "InputText",  icon = "widget_none"},
         ["9sprite"] =       {constructor = NineSprite,  defaultName = "NineSprite", icon = "widget_ninesprite"},
+        sprite =            {constructor = Sprite,      defaultName = "Sprite",     icon = "widget_sprite"},
         text =              {constructor = Text,        defaultName = "Text",       icon = "widget_text"},
         ["@titleDigit"] =   {constructor = TitleDigit,  defaultName = "TitleDigit", icon = "widget_titledigit"}
     }

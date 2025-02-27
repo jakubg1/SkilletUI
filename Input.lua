@@ -74,6 +74,9 @@ function Input:inputAsk(type, value, extensions, warnWhenFileExists, basePath, p
 	elseif type == "Font" then
 		self.selectedResource = value
 		self.itemList = _RESOURCE_MANAGER:getFontList()
+	elseif type == "Image" then
+		self.selectedResource = value
+		self.itemList = _RESOURCE_MANAGER:getImageList()
 	elseif type == "NineImage" then
 		self.selectedResource = value
 		self.itemList = _RESOURCE_MANAGER:getNineImageList()
@@ -117,7 +120,7 @@ function Input:inputAccept()
 		result = Color(self:getInputColor())
 	elseif self.inputType == "shortcut" then
 		result = self.shortcut
-	elseif self.inputType == "Font" or self.inputType == "NineImage" then
+	elseif self.inputType == "Font" or self.inputType == "Image" or self.inputType == "NineImage" then
 		result = self.selectedResource
 	end
 
@@ -268,7 +271,7 @@ function Input:getSize()
 		return 400, 150
 	elseif self.inputType == "color" then
 		return 450, 300
-	elseif self.inputType == "file" or self.inputType == "Font" or self.inputType == "NineImage" then
+	elseif self.inputType == "file" or self.inputType == "Font" or self.inputType == "Image" or self.inputType == "NineImage" then
 		return 400, 500
 	end
 end
@@ -323,7 +326,7 @@ end
 
 
 function Input:isFileInputBoxHovered()
-	if (self.inputType ~= "file" and self.inputType ~= "Font" and self.inputType ~= "NineImage") or self.fileWarningActive then
+	if (self.inputType ~= "file" and self.inputType ~= "Font" and self.inputType ~= "Image" and self.inputType ~= "NineImage") or self.fileWarningActive then
 		return false
 	end
 
@@ -334,7 +337,7 @@ end
 
 
 function Input:getHoveredFileEntryIndex()
-	if (self.inputType ~= "file" and self.inputType ~= "Font" and self.inputType ~= "NineImage") or self.fileWarningActive then
+	if (self.inputType ~= "file" and self.inputType ~= "Font" and self.inputType ~= "Image" and self.inputType ~= "NineImage") or self.fileWarningActive then
 		return nil
 	end
 
@@ -472,7 +475,7 @@ function Input:draw()
 		--love.graphics.print(string.format("Y: %s", y), posX + 350, posY + 200)
 		--love.graphics.print(string.format("Z: %s", z), posX + 350, posY + 220)
 		love.graphics.print(string.format("Hex: %s", self.inputText), posX + 300, posY + 180)
-	elseif self.inputType == "file" or self.inputType == "Font" or self.inputType == "NineImage" then
+	elseif self.inputType == "file" or self.inputType == "Font" or self.inputType == "Image" or self.inputType == "NineImage" then
 		local hoveredEntry = self:getHoveredFileEntryIndex()
 		-- File list
 		love.graphics.rectangle("line", posX + 20, posY + 70, sizeX - 40, 330)
@@ -480,7 +483,7 @@ function Input:draw()
 			local item = self.itemList[i + self.itemListOffset]
 			local y = posY + 75 + (i - 1) * self.ITEM_LIST_ENTRY_HEIGHT
 			love.graphics.setColor(0, 0, 0, 0)
-			if (self.inputType == "file" and item == self.inputText) or (self.inputType == "Font" and item.font == self.selectedResource) or (self.inputType == "NineImage" and item.resource == self.selectedResource) then
+			if (self.inputType == "file" and item == self.inputText) or (self.inputType == "Font" and item.font == self.selectedResource) or item.resource == self.selectedResource then
 				love.graphics.setColor(0, 1, 1, 0.5)
 			elseif hoveredEntry == i + self.itemListOffset then
 				love.graphics.setColor(0, 1, 1, 0.3)
@@ -492,6 +495,9 @@ function Input:draw()
 			elseif self.inputType == "Font" then
 				love.graphics.setFont(item.font.font)
 				love.graphics.print(item.name, posX + 30, y)
+			elseif self.inputType == "Image" then
+				item.resource:draw(Vec2(posX + 31, y + 1))
+				love.graphics.print(item.name, posX + 100, y)
 			elseif self.inputType == "NineImage" then
 				item.resource:draw(Vec2(posX + 31, y + 1), Vec2(58, self.ITEM_LIST_ENTRY_HEIGHT - 2))
 				love.graphics.print(item.name, posX + 100, y)
@@ -564,7 +570,7 @@ function Input:mousepressed(x, y, button, istouch, presses)
 					self.inputText = self.itemList[entry]
 				elseif self.inputType == "Font" then
 					self.selectedResource = self.itemList[entry].font
-				elseif self.inputType == "NineImage" then
+				elseif self.inputType == "Image" or self.inputType == "NineImage" then
 					self.selectedResource = self.itemList[entry].resource
 				end
 				if presses >= 2 then
