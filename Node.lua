@@ -282,7 +282,9 @@ function Node:resizeTo(size, anchor)
     if not self:isResizable() then
         return false
     end
-    self.dragPos = self:getProp("pos") + (size - self.widget:getProp("size")) * (anchor + self:getAlign())
+    -- Texts which did not have the `size` property will use the `:getSize()` function, which calculates the text size.
+    local oldSize = self.widget:getProp("size") or self.widget:getSize()
+    self.dragPos = self:getProp("pos") + (size - oldSize) * (anchor + self:getAlign())
     self.scaleSize = size
     return true
 end

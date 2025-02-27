@@ -101,6 +101,7 @@ function Editor:new()
     self.nodeDragOrigin = nil
     self.nodeDragSnap = false
     self.nodeResizeOrigin = nil
+    self.nodeResizeOriginalSize = nil
     self.nodeResizeOffset = nil -- Offset between the clicked position and the actual corner of the node
     self.nodeResizeDirection = nil
     self.nodeResizeHandleID = nil
@@ -516,8 +517,11 @@ function Editor:startResizingSelectedNode(handleID)
         -- Resizing more than one node at once or none at all does not make any sense.
         return
     end
+    local selectedNode = self.selectedNodes:getNode(1)
+    assert(selectedNode, "size = 1, but nodes[1] = nil. This should never happen")
     self.nodeResizeOrigin = _MouseCPos
-    self.nodeResizeOffset = (self.selectedNodes:getNode(1):getGlobalPos() + (self.NODE_RESIZE_DIRECTIONS[handleID] + 1) / 2 * self.selectedNodes:getNode(1):getSize()) - _MouseCPos
+    self.nodeResizeOriginalSize = selectedNode:getSize()
+    self.nodeResizeOffset = (selectedNode:getGlobalPos() + (self.NODE_RESIZE_DIRECTIONS[handleID] + 1) / 2 * selectedNode:getSize()) - _MouseCPos
     self.nodeResizeDirection = self.NODE_RESIZE_DIRECTIONS[handleID]
     self.nodeResizeHandleID = handleID
 end
@@ -529,6 +533,7 @@ function Editor:finishResizingSelectedNode()
     end
     self:executeCommand(CommandNodeResize(self.selectedNodes))
     self.nodeResizeOrigin = nil
+    self.nodeResizeOriginalSize = nil
     self.nodeResizeOffset = nil
     self.nodeResizeDirection = nil
     self.nodeResizeHandleID = nil
@@ -538,6 +543,7 @@ end
 function Editor:cancelResizingSelectedNode()
     self.selectedNodes:bulkCancelResize()
     self.nodeResizeOrigin = nil
+    self.nodeResizeOriginalSize = nil
     self.nodeResizeOffset = nil
     self.nodeResizeDirection = nil
     self.nodeResizeHandleID = nil
@@ -954,6 +960,7 @@ function Editor:load()
     local s_utility = self:node(self.UI, 5, 600, "s_utility")
     local s_align = self:node(self.UI, 240, 590, "s_align")
     local s_palign = self:node(self.UI, 360, 590, "s_palign")
+    local s_talign = self:node(self.UI, 480, 590, "s_talign")
     local s_file = self:node(self.UI, 5, 0, "s_file")
     local s_properties = self:node(self.UI, 1200, 25, "s_properties")
     self:label(s_new, 0, -20, "New Widget:")
@@ -996,6 +1003,17 @@ function Editor:load()
     self:button(s_palign, 0, 60, 30, "BL", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomLeft) end)
     self:button(s_palign, 30, 60, 30, "B", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottom) end)
     self:button(s_palign, 60, 60, 30, "BR", function() self:setSelectedNodeParentAlign(_ALIGNMENTS.bottomRight) end)
+
+    self:label(s_talign, 0, 0, "Text Align")
+    self:button(s_talign, 0, 20, 30, "TL", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.topLeft) end)
+    self:button(s_talign, 30, 20, 30, "T", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.top) end)
+    self:button(s_talign, 60, 20, 30, "TR", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.topRight) end)
+    self:button(s_talign, 0, 40, 30, "ML", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.left) end)
+    self:button(s_talign, 30, 40, 30, "M", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.center) end)
+    self:button(s_talign, 60, 40, 30, "MR", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.right) end)
+    self:button(s_talign, 0, 60, 30, "BL", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.bottomLeft) end)
+    self:button(s_talign, 30, 60, 30, "B", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.bottom) end)
+    self:button(s_talign, 60, 60, 30, "BR", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.bottomRight) end)
 
     self:label(s_file, 0, 1, "Project: (none)", "lb_project")
     self:button(s_file, 250, 0, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"})
@@ -1042,7 +1060,7 @@ function Editor:update(dt)
         assert(self.selectedNodes:getSize() < 2, "Resizing of multiple Nodes is not supported. How did you even trigger that?")
         for i, node in ipairs(self.selectedNodes:getNodes()) do
             local movement = self:snapPositionToGrid(_MouseCPos) - self.nodeResizeOffset - self.nodeResizeOrigin
-            local size = node.widget:getPropBase("size") + movement * self.nodeResizeDirection
+            local size = self.nodeResizeOriginalSize + movement * self.nodeResizeDirection
             if _IsShiftPressed() then
                 -- Force a square size if Shift is held.
                 size = Vec2(math.max(size.x, size.y), math.max(size.x, size.y))
@@ -1413,6 +1431,7 @@ end
 function Editor:resize(w, h)
     self.UI:findChildByName("s_align"):setPos(Vec2(240, h - 310))
     self.UI:findChildByName("s_palign"):setPos(Vec2(360, h - 310))
+    self.UI:findChildByName("s_talign"):setPos(Vec2(480, h - 310))
     self.UI:findChildByName("s_properties"):setPos(Vec2(w - 400, 25))
     self.keyframeEditor:resize(w, h)
     self.canvasMgr:resize(w, h)

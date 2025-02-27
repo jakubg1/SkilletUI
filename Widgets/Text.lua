@@ -19,6 +19,8 @@ function Text:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Font", key = "font", type = "Font", defaultValue = _RESOURCE_MANAGER:getFont("standard")},
         {name = "Text", key = "text", type = "string", defaultValue = "Text"},
+        {name = "Size", key = "size", type = "Vector2", nullable = true},
+        {name = "Text Align", key = "textAlign", type = "align", defaultValue = _ALIGNMENTS.topLeft},
         {name = "Scale", key = "scale", type = "number", defaultValue = 1, minValue = 1, scrollStep = 1},
         {name = "Color", key = "color", type = "color", defaultValue = _COLORS.white},
         {name = "Hover Color", key = "hoverColor", type = "color", nullable = true},
@@ -80,29 +82,51 @@ end
 
 
 
+---Returns the top left corner of where the Text will be actually drawn. This includes adjustments for the widget's own text alignment.
+---@return Vector2
+function Text:getPos()
+    local pos = self.node:getGlobalPos()
+    local size = self:getSize()
+    local textSize = self:getFinalTextSize()
+    return pos + (size - textSize) * self:getProp("textAlign")
+end
+
 ---Returns the size of this Text.
 ---@return Vector2
 function Text:getSize()
-    local prop = self.properties:getValues()
-    local width = self:getWidthBeforeMaxWidth()
-    if prop.maxWidth then
-        width = math.min(width, prop.maxWidth)
+    if self.node.scaleSize then
+        return self.node.scaleSize
     end
-    return Vec2(width, prop.font:getHeight() * prop.scale)
+    local prop = self.properties:getValues()
+    if prop.size then
+        return prop.size
+    end
+    return self:getFinalTextSize()
 end
 
 ---Sets the size of this Text. But you actually cannot set it. Don't even try :)
 ---@param size Vector2 The new size of this Text.
 function Text:setSize(size)
-    error("Texts cannot be resized!")
+    self:setPropBase("size", size)
 end
 
----Returns the width of this Text, before the `maxWidth` property is taken into effect.
----@return number
-function Text:getWidthBeforeMaxWidth()
+---Returns the size of this Text which would be normally rendered before the actual widget size is taken into effect.
+---@return Vector2
+function Text:getTextSize()
     local prop = self.properties:getValues()
     local text = self:getText()
-    return (prop.font:getWidth(text) - 1) * prop.scale + self:getEffectiveCharacterSeparation() * (utf8.len(text) - 1) + prop.boldness - 1
+    return Vec2((prop.font:getWidth(text) - 1) * prop.scale + self:getEffectiveCharacterSeparation() * (utf8.len(text) - 1) + prop.boldness - 1, prop.font:getHeight() * prop.scale)
+end
+
+---Returns the size of this Text after taking the actual widget size into effect.
+---@return Vector2
+function Text:getFinalTextSize()
+    local prop = self.properties:getValues()
+    local size = self:getTextSize()
+    if prop.maxWidth then
+        size.x = math.min(size.x, prop.maxWidth)
+    end
+    return size
 end
 
 ---Returns the width scaling (squish) of this Text: 1 if it falls into the `maxWidth` property, less than 1 if not.
@@ -112,7 +136,7 @@ function Text:getWidthScale()
     if not maxWidth then
         return 1
     end
-    return math.min(maxWidth / self:getWidthBeforeMaxWidth(), 1)
+    return math.min(maxWidth / self:getTextSize().x, 1)
 end
 
 
@@ -170,7 +194,7 @@ end
 
 ---Draws the Text on the screen.
 function Text:draw()
-    local pos = self.node:getGlobalPos()
+    local pos = self:getPos()
     local widthScale = self:getWidthScale()
     local text = self:getText()
     local prop = self.properties:getValues()
