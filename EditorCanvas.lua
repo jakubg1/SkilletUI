@@ -52,20 +52,6 @@ function EditorCanvas:isHovered()
     return _Utils.isPointInsideBox(_MousePos, self.canvas.pos, self.canvas.size)
 end
 
----Returns the current position of the canvas area (top left corner).
----@return Vector2
-function EditorCanvas:getPos()
-    local actualFullscreen = self.fullscreen and not _EDITOR.enabled
-    return actualFullscreen and self.OFFSET_PRESENTATION or self.OFFSET_EDITOR
-end
-
----Returns the current size of the canvas area.
----@return Vector2
-function EditorCanvas:getSize()
-    local actualFullscreen = self.fullscreen and not _EDITOR.enabled
-    return actualFullscreen and self.SIZE_PRESENTATION or self.SIZE_EDITOR
-end
-
 ---Returns the layout position which is currently in the center of the canvas area.
 ---@return Vector2
 function EditorCanvas:getCenterPos()
@@ -75,21 +61,21 @@ end
 ---Returns the zoom factor of this Canvas to match its current size best.
 ---@return number
 function EditorCanvas:getFittingScale()
-    local scale = self:getSize() / self.canvas.resolution
+    local scale = self.canvas.size / self.canvas.resolution
     return math.min(scale.x, scale.y)
 end
 
 ---Returns the panning of this Canvas to match its current size best.
 ---@return Vector2
 function EditorCanvas:getFittingPan()
-    return ((self:getSize() - self.canvas.resolution * self:getFittingScale()) / 2) / -self:getFittingScale()
+    return ((self.canvas.size - self.canvas.resolution * self:getFittingScale()) / 2) / -self:getFittingScale()
 end
 
 ---Updates the canvas' settings to match the current manager state.
 function EditorCanvas:updateCanvas()
     local actualFullscreen = self.fullscreen and not _EDITOR.enabled
-	self.canvas:setPos(self:getPos())
-	self.canvas:setSize(self:getSize())
+	self.canvas:setPos(actualFullscreen and self.OFFSET_PRESENTATION or self.OFFSET_EDITOR)
+	self.canvas:setSize(actualFullscreen and self.SIZE_PRESENTATION or self.SIZE_EDITOR)
     self.canvas:setScale(actualFullscreen and self:getFittingScale() or self.scale)
     self.canvas:setPan(actualFullscreen and self:getFittingPan() or self.pan)
 end
