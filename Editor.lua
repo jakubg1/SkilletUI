@@ -70,7 +70,6 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Property modifier system: instead of always having just the base and current value, make it a base value and a list of any modifiers (current value could be cached and got but could not be set)
 --- - Timeline editing
 --- - Fix ctrl+drag in node tree
---- - Fix image thumbnails
 --- - Fix "Cannot nest command transactions!" when dragging a Node after it has been moved with arrow keys
 --- - Multiline text and inline formatting
 --- - Attaching sides of Nodes to other Nodes' sides with margin
@@ -430,16 +429,18 @@ end
 
 ---Adds the provided UI node as the currently selected node's sibling if exactly one node is selected.
 ---Otherwise, the node will be parented to the root node.
----The node will be positioned at the center of the screen.
+---The node will be positioned at the center of the screen and will be selected.
 ---@param node Node The node to be added.
-function Editor:addNodeCenter(node)
+function Editor:newNode(node)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
     local targetParent = target and target.parent or _PROJECT:getCurrentLayout()
     local nodeList = NodeList(node)
     self:startCommandTransaction()
     self:executeCommand(CommandNodeAdd(nodeList, targetParent))
-    self:executeCommand(CommandNodeSetProperty(nodeList, "pos", self.canvasMgr:getCenterPos()))
+    self:executeCommand(CommandNodeSetProperty(nodeList, "pos", (self.canvasMgr:getCenterPos() - node:getSize() / 2):floor()))
     self:commitCommandTransaction()
+    self:selectNode(node)
+    self:updateUI()
 end
 
 ---Copies the currently selected UI nodes to the internal clipboard.
@@ -933,7 +934,7 @@ end
 ---@param pathFilter string? If `type` == `"file"`: `"file"`, `"dir"` or `"all"` - show either files or directories or both respectively.
 function Editor:askForInput(input, inputType, extensions, warnWhenFileExists, basePath, pathFilter)
     self.activeInput = input
-    if inputType ~= "number" and inputType ~= "string" then
+    if inputType ~= "number" and inputType ~= "string" and inputType ~= "boolean" then
         local value = ""
         if type(input) ~= "string" then
             value = input.widget:getValue()
@@ -984,14 +985,14 @@ function Editor:load()
     local s_properties = self:node(self.UI, 1200, 25, "s_properties")
 
     self:label(s_new, 0, -20, "New Widget:")
-    self:button(s_new, 0, 0, 55, "Node", function() self:addNodeCenter(Node({})) end)
-    self:button(s_new, 55, 0, 55, "Box", function() self:addNodeCenter(Node({type = "box"})) end)
-    self:button(s_new, 110, 0, 55, "Sprite", function() self:addNodeCenter(Node({type = "sprite"})) end)
-    self:button(s_new, 165, 0, 55, "9Sprite", function() self:addNodeCenter(Node({type = "9sprite"})) end)
-    self:button(s_new, 0, 20, 55, "Text", function() self:addNodeCenter(Node({type = "text"})) end)
-    self:button(s_new, 55, 20, 55, "TitleDigit", function() self:addNodeCenter(Node({type = "@titleDigit"})) end)
-    self:button(s_new, 110, 20, 55, "Button", function() self:addNodeCenter(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite", widget = {image = "button", size = {64, 16}}}}})) end)
-    self:button(s_new, 165, 20, 55, "Test Btn", function() self:addNodeCenter(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end)
+    self:button(s_new, 0, 0, 55, "Node", function() self:newNode(Node({})) end)
+    self:button(s_new, 55, 0, 55, "Box", function() self:newNode(Node({type = "box"})) end)
+    self:button(s_new, 110, 0, 55, "Sprite", function() self:newNode(Node({type = "sprite"})) end)
+    self:button(s_new, 165, 0, 55, "9Sprite", function() self:newNode(Node({type = "9sprite"})) end)
+    self:button(s_new, 0, 20, 55, "Text", function() self:newNode(Node({type = "text"})) end)
+    self:button(s_new, 55, 20, 55, "TitleDigit", function() self:newNode(Node({type = "@titleDigit"})) end)
+    self:button(s_new, 110, 20, 55, "Button", function() self:newNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite", widget = {image = "button", size = {64, 16}}}}})) end)
+    self:button(s_new, 165, 20, 55, "Test Btn", function() self:newNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end)
 
     self:button(s_utility, 0, 0, 110, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"})
     self:button(s_utility, 110, 0, 110, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"})

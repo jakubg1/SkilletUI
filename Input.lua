@@ -496,7 +496,7 @@ function Input:draw()
 				love.graphics.setFont(item.font.font)
 				love.graphics.print(item.name, posX + 30, y)
 			elseif self.inputType == "Image" then
-				item.resource:draw(Vec2(posX + 31, y + 1))
+				item.resource:draw(Vec2(posX + 31, y + 1), (self.ITEM_LIST_ENTRY_HEIGHT - 2) / item.resource:getSize().y)
 				love.graphics.print(item.name, posX + 100, y)
 			elseif self.inputType == "NineImage" then
 				item.resource:draw(Vec2(posX + 31, y + 1), Vec2(58, self.ITEM_LIST_ENTRY_HEIGHT - 2))
