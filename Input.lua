@@ -483,7 +483,7 @@ function Input:draw()
 			local item = self.itemList[i + self.itemListOffset]
 			local y = posY + 75 + (i - 1) * self.ITEM_LIST_ENTRY_HEIGHT
 			love.graphics.setColor(0, 0, 0, 0)
-			if (self.inputType == "file" and item == self.inputText) or (self.inputType == "Font" and item.font == self.selectedResource) or item.resource == self.selectedResource then
+			if (self.inputType == "file" and item == self.inputText) or (self.inputType == "Font" and item.font == self.selectedResource) or ((self.inputType == "Image" or self.inputType == "NineImage") and item.resource == self.selectedResource) then
 				love.graphics.setColor(0, 1, 1, 0.5)
 			elseif hoveredEntry == i + self.itemListOffset then
 				love.graphics.setColor(0, 1, 1, 0.3)

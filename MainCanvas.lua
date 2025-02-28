@@ -11,8 +11,8 @@ function MainCanvas:new()
     self.pos = Vec2()
     self.size = _WINDOW_SIZE
     self.resolution = Vec2(320, 180)
-    self.zoomScale = 1
-    self.zoomPan = Vec2()
+    self.scale = 1
+    self.pan = Vec2()
     self.canvas = love.graphics.newCanvas(self.resolution.x, self.resolution.y)
     self.canvas:setFilter("linear", "nearest")
 end
@@ -40,32 +40,37 @@ end
 ---Sets the zoom factor of this Canvas. The zoom origin is in the top left corner.
 ---@param zoom number The new zoom factor.
 function MainCanvas:setZoom(zoom)
-    self.zoomScale = zoom
+    self.scale = zoom
 end
 
 ---Pans the zoomed in canvas to the specific position (relative to the top left position of the viewport).
 ---@param pan Vector2 The new pan value.
 function MainCanvas:setPan(pan)
-    self.zoomPan = pan
+    self.pan = pan
 end
 
 ---Returns the current zoom pan offset.
 ---@return Vector2
 function MainCanvas:getPan()
-    return self.zoomPan
+    return self.pan
+end
+
+---Sets the zoom factor of this Canvas so that the total scaling factor matches the provided value. The zoom origin is in the top left corner.
+---@param scale number The desired scale.
+function MainCanvas:setScale(scale)
+    self.scale = scale
 end
 
 ---Returns the total scaling of this Canvas, including the size/resolution and zoom.
 ---@return number
 function MainCanvas:getScale()
-    local scale = self.size / self.resolution * self.zoomScale
-    return math.min(scale.x, scale.y)
+    return self.scale
 end
 
 ---Returns the global position on which this Canvas will be drawn.
 ---@return Vector2
 function MainCanvas:getGlobalPos()
-    return self.pos - self.zoomPan * self:getScale()
+    return self.pos - self.pan * self:getScale()
 end
 
 ---Returns the global size with which this Canvas will be drawn.
@@ -78,14 +83,14 @@ end
 ---@param pos Vector2 The global screen position.
 ---@return Vector2
 function MainCanvas:posToPixel(pos)
-    return ((pos - self.pos) / self:getScale() + self.zoomPan):floor()
+    return ((pos - self.pos) / self:getScale() + self.pan):floor()
 end
 
 ---Converts the pixel on this canvas to its global screen position.
 ---@param pixel Vector2 The pixel positon on this canvas.
 ---@return Vector2
 function MainCanvas:pixelToPos(pixel)
-    return ((pixel - self.zoomPan) * self:getScale() + self.pos):floor()
+    return ((pixel - self.pan) * self:getScale() + self.pos):floor()
 end
 
 ---Transfers pixel and size from the canvas into the corresponding values on the screen.
@@ -112,7 +117,7 @@ function MainCanvas:draw()
     love.graphics.setCanvas()
     love.graphics.setScissor(self.pos.x, self.pos.y, self.size.x, self.size.y)
     local pos = self:getGlobalPos()
-    love.graphics.draw(self.canvas, pos.x, pos.y, 0, self:getScale())
+    love.graphics.draw(self.canvas, pos.x, pos.y, 0, self.scale)
     love.graphics.setScissor()
 end
 

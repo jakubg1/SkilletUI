@@ -20,7 +20,7 @@ function EditorCanvas:new(editor, canvas)
     self.SIZE_PRESENTATION = _WINDOW_SIZE
     self.OFFSET_PRESENTATION = Vec2()
 
-    self.zoom = 1
+    self.scale = 1
     self.pan = Vec2()
     self.fullscreen = false
     self.background = true
@@ -52,13 +52,46 @@ function EditorCanvas:isHovered()
     return _Utils.isPointInsideBox(_MousePos, self.canvas.pos, self.canvas.size)
 end
 
+---Returns the current position of the canvas area (top left corner).
+---@return Vector2
+function EditorCanvas:getPos()
+    local actualFullscreen = self.fullscreen and not _EDITOR.enabled
+    return actualFullscreen and self.OFFSET_PRESENTATION or self.OFFSET_EDITOR
+end
+
+---Returns the current size of the canvas area.
+---@return Vector2
+function EditorCanvas:getSize()
+    local actualFullscreen = self.fullscreen and not _EDITOR.enabled
+    return actualFullscreen and self.SIZE_PRESENTATION or self.SIZE_EDITOR
+end
+
+---Returns the layout position which is currently in the center of the canvas area.
+---@return Vector2
+function EditorCanvas:getCenterPos()
+    return self.canvas:posToPixel(self.canvas.pos + self.canvas.size / 2)
+end
+
+---Returns the zoom factor of this Canvas to match its current size best.
+---@return number
+function EditorCanvas:getFittingScale()
+    local scale = self:getSize() / self.canvas.resolution
+    return math.min(scale.x, scale.y)
+end
+
+---Returns the panning of this Canvas to match its current size best.
+---@return Vector2
+function EditorCanvas:getFittingPan()
+    return ((self:getSize() - self.canvas.resolution * self:getFittingScale()) / 2) / -self:getFittingScale()
+end
+
 ---Updates the canvas' settings to match the current manager state.
 function EditorCanvas:updateCanvas()
     local actualFullscreen = self.fullscreen and not _EDITOR.enabled
-	self.canvas:setPos(actualFullscreen and self.OFFSET_PRESENTATION or self.OFFSET_EDITOR)
-	self.canvas:setSize(actualFullscreen and self.SIZE_PRESENTATION or self.SIZE_EDITOR)
-    self.canvas:setZoom(actualFullscreen and 1 or self.zoom)
-    self.canvas:setPan(actualFullscreen and Vec2() or self.pan)
+	self.canvas:setPos(self:getPos())
+	self.canvas:setSize(self:getSize())
+    self.canvas:setScale(actualFullscreen and self:getFittingScale() or self.scale)
+    self.canvas:setPan(actualFullscreen and self:getFittingPan() or self.pan)
 end
 
 ---Increases or decreases the canvas zoom by the given factor.
@@ -66,9 +99,9 @@ end
 ---@param around Vector2? The position to zoom the canvas around. That position will remain at the exact same pixel.
 function EditorCanvas:zoomInOut(factor, around)
     around = around or Vec2()
-    local newZoom = math.min(math.max(self.zoom * factor, 0.125), 8)
-    local actualFactor = newZoom / self.zoom
-    self.zoom = newZoom
+    local newScale = math.min(math.max(self.scale * factor, 0.125), 8)
+    local actualFactor = newScale / self.scale
+    self.scale = newScale
 
     local startScreenSize = self.canvas.size / self.canvas:getScale()
     local startScreenSpace = (around - self.pan) / self.canvas.size * self.canvas:getScale()
@@ -105,8 +138,15 @@ end
 
 ---Resets the zoom scaling and panning.
 function EditorCanvas:resetZoom()
-    self.zoom = 1
+    self.scale = 1
     self.pan = Vec2()
+    self:updateCanvas()
+end
+
+---Sets the zoom scaling and panning to fit the entire canvas.
+function EditorCanvas:fitZoom()
+    self.scale = self:getFittingScale()
+    self.pan = self:getFittingPan()
     self:updateCanvas()
 end
 
@@ -151,7 +191,7 @@ function EditorCanvas:drawUnderCanvas()
     -- Status bar
     love.graphics.setColor(0, 0, 1, 0.5)
     love.graphics.rectangle("fill", self.canvas.pos.x, self.canvas.pos.y + self.canvas.size.y, self.canvas.size.x, 20)
-    self.editor:drawShadowedText(string.format("Zoom: %.1f%% | Scale: %sx | Pos: %s", self.zoom * 100, self.canvas:getScale(), _MouseCPos), self.canvas.pos.x + 5, self.canvas.pos.y + self.canvas.size.y + 1)
+    self.editor:drawShadowedText(string.format("Zoom: %.1f%% | Pos: %s", self.scale * 100, _MouseCPos), self.canvas.pos.x + 5, self.canvas.pos.y + self.canvas.size.y + 1)
 end
 
 ---Draws everything that lies on the canvas, such as the grid, selected and hovered node outlines, etc.

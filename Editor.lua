@@ -61,6 +61,8 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Grid and snapping to it
 --- - Canvas zooming and panning
 --- - Responsiveness for the editor UI
+--- - Resizable text
+--- - Make new widgets show up at the center of the current viewport instead of at (0, 0)
 ---
 --- To Do (arbitrary order):
 --- - Vector edit support for parameters
@@ -68,7 +70,8 @@ local CommandNodeMoveToBottom = require("EditorCommands.NodeMoveToBottom")
 --- - Property modifier system: instead of always having just the base and current value, make it a base value and a list of any modifiers (current value could be cached and got but could not be set)
 --- - Timeline editing
 --- - Fix ctrl+drag in node tree
---- - Resizable text (so that maxWidth can go)
+--- - Fix image thumbnails
+--- - Fix "Cannot nest command transactions!" when dragging a Node after it has been moved with arrow keys
 --- - Multiline text and inline formatting
 --- - Attaching sides of Nodes to other Nodes' sides with margin
 --- - Projects load all their layouts and all the layouts are listed
@@ -416,13 +419,27 @@ function Editor:addNode(node)
     self:executeCommand(CommandNodeAdd(NodeList(node), targetParent))
 end
 
----Adds the provided UI nodes as the currently selected node's sibling if exactly one node is selected.
+---Adds the provided UI nodes as the currently selected node's siblings if exactly one node is selected.
 ---Otherwise, the nodes will be parented to the root node.
 ---@param nodes NodeList The list of nodes to be added.
 function Editor:addNodes(nodes)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
     local targetParent = target and target.parent or _PROJECT:getCurrentLayout()
     self:executeCommand(CommandNodeAdd(nodes, targetParent))
+end
+
+---Adds the provided UI node as the currently selected node's sibling if exactly one node is selected.
+---Otherwise, the node will be parented to the root node.
+---The node will be positioned at the center of the screen.
+---@param node Node The node to be added.
+function Editor:addNodeCenter(node)
+    local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
+    local targetParent = target and target.parent or _PROJECT:getCurrentLayout()
+    local nodeList = NodeList(node)
+    self:startCommandTransaction()
+    self:executeCommand(CommandNodeAdd(nodeList, targetParent))
+    self:executeCommand(CommandNodeSetProperty(nodeList, "pos", self.canvasMgr:getCenterPos()))
+    self:commitCommandTransaction()
 end
 
 ---Copies the currently selected UI nodes to the internal clipboard.
@@ -956,24 +973,25 @@ end
 
 ---Initializes the UI for this Editor.
 function Editor:load()
-    self.UI = Node(_Utils.loadJson("editor_ui.json"))
+    self.UI = Node({name = "root"})
     local s_new = self:node(self.UI, 5, 45, "s_new")
     local s_utility = self:node(self.UI, 5, 600, "s_utility")
     local s_align = self:node(self.UI, 240, 590, "s_align")
     local s_palign = self:node(self.UI, 360, 590, "s_palign")
     local s_talign = self:node(self.UI, 480, 590, "s_talign")
+    local s_select = self:node(self.UI, 620, 590, "s_select")
     local s_file = self:node(self.UI, 5, 0, "s_file")
     local s_properties = self:node(self.UI, 1200, 25, "s_properties")
 
     self:label(s_new, 0, -20, "New Widget:")
-    self:button(s_new, 0, 0, 55, "Node", function() self:addNode(Node({})) end)
-    self:button(s_new, 55, 0, 55, "Box", function() self:addNode(Node({type = "box"})) end)
-    self:button(s_new, 110, 0, 55, "Sprite", function() self:addNode(Node({type = "sprite"})) end)
-    self:button(s_new, 165, 0, 55, "9Sprite", function() self:addNode(Node({type = "9sprite"})) end)
-    self:button(s_new, 0, 20, 55, "Text", function() self:addNode(Node({type = "text"})) end)
-    self:button(s_new, 55, 20, 55, "TitleDigit", function() self:addNode(Node({type = "@titleDigit"})) end)
-    self:button(s_new, 110, 20, 55, "Button", function() self:addNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite", widget = {image = "button", size = {64, 16}}}}})) end)
-    self:button(s_new, 165, 20, 55, "Test Btn", function() self:addNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end)
+    self:button(s_new, 0, 0, 55, "Node", function() self:addNodeCenter(Node({})) end)
+    self:button(s_new, 55, 0, 55, "Box", function() self:addNodeCenter(Node({type = "box"})) end)
+    self:button(s_new, 110, 0, 55, "Sprite", function() self:addNodeCenter(Node({type = "sprite"})) end)
+    self:button(s_new, 165, 0, 55, "9Sprite", function() self:addNodeCenter(Node({type = "9sprite"})) end)
+    self:button(s_new, 0, 20, 55, "Text", function() self:addNodeCenter(Node({type = "text"})) end)
+    self:button(s_new, 55, 20, 55, "TitleDigit", function() self:addNodeCenter(Node({type = "@titleDigit"})) end)
+    self:button(s_new, 110, 20, 55, "Button", function() self:addNodeCenter(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite", widget = {image = "button", size = {64, 16}}}}})) end)
+    self:button(s_new, 165, 20, 55, "Test Btn", function() self:addNodeCenter(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end)
 
     self:button(s_utility, 0, 0, 110, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"})
     self:button(s_utility, 110, 0, 110, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"})
@@ -1018,6 +1036,15 @@ function Editor:load()
     self:button(s_talign, 0, 60, 30, "BL", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.bottomLeft) end)
     self:button(s_talign, 30, 60, 30, "B", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.bottom) end)
     self:button(s_talign, 60, 60, 30, "BR", function() self:setSelectedNodeWidgetProperty("textAlign", _ALIGNMENTS.bottomRight) end)
+
+    local l1 = self:label(s_select, 0, 0, "Hovered:", "hovText")
+    local l2 = self:label(s_select, 0, 20, "Selected:", "selText")
+    local l3 = self:label(s_select, 0, 40, "Hovered:", "hovEvText")
+    local l4 = self:label(s_select, 0, 60, "Selected:", "selEvText")
+    l1.widget:setPropBase("color", _COLORS.yellow)
+    l2.widget:setPropBase("color", _COLORS.cyan)
+    l3.widget:setPropBase("color", _COLORS.yellow)
+    l4.widget:setPropBase("color", _COLORS.cyan)
 
     self:label(s_file, 0, 1, "Project: (none)", "lb_project")
     self:button(s_file, 250, 0, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"})
@@ -1407,7 +1434,7 @@ function Editor:keypressed(key)
     elseif self.enabled and key == "kp0" then
         self.canvasMgr:resetZoom()
     elseif self.enabled and key == "kp1" then
-        self.canvasMgr:naturalZoom(1, _MouseCPos)
+        self.canvasMgr:fitZoom()
     elseif not self.enabled and key == "`" then
         self.canvasMgr:toggleBackground()
     elseif not self.enabled and key == "f" then
@@ -1436,6 +1463,7 @@ function Editor:resize(w, h)
     self.UI:findChildByName("s_align"):setPos(Vec2(240, h - 310))
     self.UI:findChildByName("s_palign"):setPos(Vec2(360, h - 310))
     self.UI:findChildByName("s_talign"):setPos(Vec2(480, h - 310))
+    self.UI:findChildByName("s_select"):setPos(Vec2(620, h - 310))
     self.UI:findChildByName("s_properties"):setPos(Vec2(w - 400, 25))
     self.keyframeEditor:resize(w, h)
     self.canvasMgr:resize(w, h)
