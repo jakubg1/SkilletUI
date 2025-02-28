@@ -42,7 +42,7 @@ end
 function EditorCanvas:update(dt)
     if self.dragOrigin then
         local movement = _MousePos - self.dragOrigin
-        self:panTo(self.dragOriginalPan - movement / self.canvas:getScale())
+        self:panTo(self.dragOriginalPan - movement / self.canvas.scale)
     end
 end
 
@@ -89,8 +89,8 @@ function EditorCanvas:zoomInOut(factor, around)
     local actualFactor = newScale / self.scale
     self.scale = newScale
 
-    local startScreenSize = self.canvas.size / self.canvas:getScale()
-    local startScreenSpace = (around - self.pan) / self.canvas.size * self.canvas:getScale()
+    local startScreenSize = self.canvas.size / self.canvas.scale
+    local startScreenSpace = (around - self.pan) / self.canvas.size * self.canvas.scale
     local targetScreenSize = startScreenSize / actualFactor
     self.pan = self.pan + (startScreenSize - targetScreenSize) * startScreenSpace
     self:updateCanvas()
@@ -100,7 +100,7 @@ end
 ---@param scale integer The target pixel scale.
 ---@param around Vector2? The position to zoom the canvas around. That position will remain at the exact same pixel.
 function EditorCanvas:naturalZoom(scale, around)
-    self:zoomInOut(scale / self.canvas:getScale(), around)
+    self:zoomInOut(scale / self.canvas.scale, around)
 end
 
 ---Pans the canvas to the specific position.
@@ -112,7 +112,7 @@ end
 
 ---Starts the dragging (panning) of the canvas.
 function EditorCanvas:startDrag()
-    self.dragOriginalPan = self.canvas:getPan()
+    self.dragOriginalPan = self.canvas.pan
     self.dragOrigin = _MousePos
 end
 

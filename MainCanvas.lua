@@ -49,48 +49,36 @@ function MainCanvas:setPan(pan)
     self.pan = pan
 end
 
----Returns the current zoom pan offset.
----@return Vector2
-function MainCanvas:getPan()
-    return self.pan
-end
-
 ---Sets the zoom factor of this Canvas so that the total scaling factor matches the provided value. The zoom origin is in the top left corner.
 ---@param scale number The desired scale.
 function MainCanvas:setScale(scale)
     self.scale = scale
 end
 
----Returns the total scaling of this Canvas, including the size/resolution and zoom.
----@return number
-function MainCanvas:getScale()
-    return self.scale
-end
-
 ---Returns the global position on which this Canvas will be drawn.
 ---@return Vector2
 function MainCanvas:getGlobalPos()
-    return self.pos - self.pan * self:getScale()
+    return self.pos - self.pan * self.scale
 end
 
 ---Returns the global size with which this Canvas will be drawn.
 ---@return Vector2
 function MainCanvas:getGlobalSize()
-    return self.resolution * self:getScale()
+    return self.resolution * self.scale
 end
 
 ---Converts the global screen position to the position on this canvas.
 ---@param pos Vector2 The global screen position.
 ---@return Vector2
 function MainCanvas:posToPixel(pos)
-    return ((pos - self.pos) / self:getScale() + self.pan):floor()
+    return ((pos - self.pos) / self.scale + self.pan):floor()
 end
 
 ---Converts the pixel on this canvas to its global screen position.
 ---@param pixel Vector2 The pixel positon on this canvas.
 ---@return Vector2
 function MainCanvas:pixelToPos(pixel)
-    return ((pixel - self.pan) * self:getScale() + self.pos):floor()
+    return ((pixel - self.pan) * self.scale + self.pos):floor()
 end
 
 ---Transfers pixel and size from the canvas into the corresponding values on the screen.
