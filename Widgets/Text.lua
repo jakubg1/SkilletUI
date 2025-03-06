@@ -6,6 +6,7 @@ local Text = class:derive("Text")
 
 local utf8 = require("utf8")
 local Vec2 = require("Vector2")
+local Color = require("Color")
 local PropertyList = require("PropertyList")
 
 
@@ -19,6 +20,7 @@ function Text:new(node, data)
     self.PROPERTY_LIST = {
         {name = "Font", key = "font", type = "Font", defaultValue = _RESOURCE_MANAGER:getFont("standard")},
         {name = "Text", key = "text", type = "string", defaultValue = "Text"},
+        {name = "Formatted", key = "formatted", type = "boolean", defaultValue = false},
         {name = "Size", key = "size", type = "Vector2", nullable = true},
         {name = "Text Align", key = "textAlign", type = "align", defaultValue = _ALIGNMENTS.topLeft},
         {name = "Scale", key = "scale", type = "number", defaultValue = 1, minValue = 1, scrollStep = 1},
@@ -42,6 +44,10 @@ function Text:new(node, data)
         {name = "Max Width", key = "maxWidth", type = "number", nullable = true, minValue = 1, scrollStep = 10}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
+
+    self.characterData = nil
+    self.rawText = nil
+    self:generateCharacterData()
 end
 
 
@@ -60,6 +66,7 @@ end
 ---@param value any? The property value.
 function Text:setProp(key, value)
     self.properties:setValue(key, value)
+    self:generateCharacterData()
 end
 
 
@@ -78,6 +85,7 @@ end
 ---@param value any? The property value.
 function Text:setPropBase(key, value)
     self.properties:setBaseValue(key, value)
+    self:generateCharacterData()
 end
 
 
@@ -104,7 +112,7 @@ function Text:getSize()
     return self:getFinalTextSize()
 end
 
----Sets the size of this Text. But you actually cannot set it. Don't even try :)
+---Sets the size of this Text.
 ---@param size Vector2 The new size of this Text.
 function Text:setSize(size)
     self:setPropBase("size", size)
@@ -149,24 +157,27 @@ end
 
 
 
----Updates the Text. You need to do this to make sure the time-dependent effects are working correctly.
----@param dt number Time delta, in seconds.
-function Text:update(dt)
-    self.properties:update(dt)
-end
-
-
-
----Returns the actual text that is visible on this Widget. It can differ from the real text if the `typeInProgress` property is set.
+---Returns the actual raw text (but stripped from the formatting tags) that is visible on this Widget. It can differ from the real text if the `typeInProgress` or `inputCaret` properties are set.
 ---@return string
 function Text:getText()
     local prop = self.properties:getValues()
     local caret = (prop.inputCaret and _Time % 1 < 0.5) and "|" or ""
     if not prop.typeInProgress then
-        return prop.text .. caret
+        return self.rawText .. caret
     end
-    local totalCharsRendered = math.floor(_Utils.interpolateClamped(0, utf8.len(prop.text), prop.typeInProgress))
-    return prop.text:sub(0, utf8.offset(prop.text, totalCharsRendered + 1) - 1) .. caret
+    local totalCharsRendered = math.floor(_Utils.interpolateClamped(0, utf8.len(self.rawText), prop.typeInProgress))
+    return self.rawText:sub(0, utf8.offset(self.rawText, totalCharsRendered + 1) - 1) .. caret
+end
+
+---Returns the text (not the actual text, this function is unaffected by the `typeInProgress` property!) split into characters, with UTF-8 support.
+---@return table
+function Text:getTextCharacters()
+    local text = self:getProp("text")
+    local characters = {}
+    for i = 1, utf8.len(text) do
+        table.insert(characters, text:sub(utf8.offset(text, i), utf8.offset(text, i + 1) - 1))
+    end
+    return characters
 end
 
 
@@ -184,10 +195,133 @@ end
 ---@return boolean
 function Text:isSimpleRendered()
     local prop = self.properties:getValues()
+    -- Check if any of the properties which require changing the character drawing positions are not default.
     if prop.waveAmplitude or prop.gradientWaveColor or prop.characterSeparation ~= 0 or prop.boldness ~= 1 then
         return false
     end
+    -- Check if there are any formatting marks in the text.
+    if prop.formatted then
+        local characters = self:getTextCharacters()
+        local escape = false
+        local formattingOpen = false
+        for i, char in ipairs(characters) do
+            if not escape then
+                if char == "<" then
+                    -- An unescaped opening formatting mark found.
+                    formattingOpen = true
+                elseif char == ">" and formattingOpen then
+                    -- An unescaped closing formatting mark found. It's game over.
+                    return false
+                end
+            end
+            -- Handle escaped characters.
+            if not escape and char == "\\" then
+                escape = true
+            else
+                escape = false
+            end
+        end
+    end
     return true
+end
+
+---Generates character data for this Text, or removes it, if this Text can be drawn in the simple mode.
+function Text:generateCharacterData()
+    if self:isSimpleRendered() then
+        self.characterData = nil
+        self.rawText = self:getProp("text")
+        return
+    end
+
+    self.characterData = {}
+    self.rawText = ""
+
+    local widthScale = self:getWidthScale()
+    local prop = self.properties:getValues()
+    local sep = self:getEffectiveCharacterSeparation()
+
+    local characters = self:getTextCharacters()
+    local x = 0
+    local color = prop.color
+    local boldness = prop.boldness
+    local escape = false
+    local formattingContent = nil
+    for i, char in ipairs(characters) do
+        local draw = true
+
+        if prop.formatted then
+            -- Parse formatting characters.
+            if not escape then
+                if char == "<" then
+                    -- An unescaped opening formatting mark found. Start parsing the contents.
+                    formattingContent = ""
+                    draw = false
+                elseif formattingContent then
+                    if char == ">" then
+                        -- An unescaped closing formatting mark found. Stop parsing and apply the contents.
+                        if formattingContent:sub(1, 1) ~= "/" then
+                            -- Starting mark.
+                            if _COLORS[formattingContent] then
+                                color = _COLORS[formattingContent] -- Color name
+                            elseif formattingContent:len() == 7 and formattingContent:sub(1, 1) == "#" then
+                                color = Color(formattingContent:sub(2)) -- Color hex code
+                            elseif formattingContent == "b" then
+                                boldness = 2 -- Bold
+                            end
+                        else
+                            -- Ending mark.
+                            formattingContent = formattingContent:sub(2)
+                            if formattingContent == "" then
+                                -- Reset everything to default.
+                                color = prop.color
+                                boldness = prop.boldness
+                            elseif formattingContent == "#" then
+                                color = prop.color -- Reset color
+                            elseif formattingContent == "b" then
+                                boldness = prop.boldness -- Reset boldness
+                            end
+                        end
+                        formattingContent = nil
+                    else
+                        formattingContent = formattingContent .. char
+                    end
+                    draw = false
+                end
+            end
+            -- Handle escaped characters.
+            if not escape and char == "\\" and i < #characters then
+                escape = true
+                -- Don't draw the backslash if it escapes something.
+                draw = false
+            else
+                escape = false
+            end
+        end
+
+        -- Insert the character if eligible.
+        if draw then
+            local character = {
+                char = char,
+                x = math.floor(x + 0.5),
+                y = math.floor(0.5),
+                scaleX = prop.scale * widthScale,
+                scaleY = prop.scale,
+                color = color,
+                boldness = boldness
+            }
+            table.insert(self.characterData, character)
+            self.rawText = self.rawText .. char
+            x = x + (prop.font:getWidth(char) * prop.scale + boldness - 1) * widthScale
+        end
+    end
+end
+
+
+
+---Updates the Text. You need to do this to make sure the time-dependent effects are working correctly.
+---@param dt number Time delta, in seconds.
+function Text:update(dt)
+    self.properties:update(dt)
 end
 
 
@@ -200,54 +334,55 @@ function Text:draw()
     local prop = self.properties:getValues()
 
     love.graphics.setFont(prop.font.font)
-    local color = prop.color
+
+    local globalTextColor = prop.color
     if prop.hoverColor and self.node:isHovered() then
-        color = prop.hoverColor
+        globalTextColor = prop.hoverColor
     end
-    if self:isSimpleRendered() then
+
+    if self.characterData then
+        -- Character by character, testing
+        for i, char in ipairs(self.characterData) do
+            local animOffset = char.x - pos.x
+            local charY = char.y
+            if prop.waveFrequency and prop.waveAmplitude and prop.waveSpeed then
+                charY = charY + _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, animOffset, _Time) * prop.waveAmplitude
+            end
+            local charColor = char.color
+            if prop.hoverColor and self.node:isHovered() then
+                charColor = prop.hoverColor
+            end
+            if prop.gradientWaveFrequency and prop.gradientWaveColor then
+                local t
+                if prop.gradientWaveSpeed then
+                    t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, animOffset, _Time) + 1) / 2
+                else
+                    t = (_Utils.getWavePoint(1 / prop.gradientWaveFrequency, 1, 0, _Time) + 1) / 2
+                end
+                charColor = _Utils.interpolate(charColor, prop.gradientWaveColor, t)
+            end
+
+            if prop.shadowOffset then
+                for j = 1, char.boldness do
+                    local bx = j - 1
+                    love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
+                    love.graphics.print(char.char, pos.x + char.x + bx + prop.shadowOffset.x, pos.y + charY + prop.shadowOffset.y, 0, char.scaleX, char.scaleY)
+                end
+            end
+            for j = 1, char.boldness do
+                local bx = j - 1
+                love.graphics.setColor(charColor.r, charColor.g, charColor.b, prop.alpha)
+                love.graphics.print(char.char, pos.x + char.x + bx, pos.y + charY, 0, char.scaleX, char.scaleY)
+            end
+        end
+    else
         -- Optimize drawing if there are no effects which require drawing each character separately.
         if prop.shadowOffset then
             love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
             love.graphics.print(text, math.floor(pos.x + prop.shadowOffset.x + 0.5), math.floor(pos.y + prop.shadowOffset.y + 0.5), 0, prop.scale * widthScale, prop.scale)
         end
-        love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
+        love.graphics.setColor(globalTextColor.r, globalTextColor.g, globalTextColor.b, prop.alpha)
         love.graphics.print(text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, prop.scale * widthScale, prop.scale)
-    else
-        -- Draw everything character by character.
-        local x = 0
-        local sep = self:getEffectiveCharacterSeparation()
-        for i = 1, utf8.len(text) do
-            local chr = text:sub(utf8.offset(text, i), utf8.offset(text, i + 1) - 1)
-            local w = prop.font:getWidth(chr) * prop.scale
-            local y = 0
-            if prop.waveFrequency and prop.waveAmplitude and prop.waveSpeed then
-                y = _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, x, _Time) * prop.waveAmplitude
-            end
-            local charColor = color
-            if prop.gradientWaveFrequency and prop.gradientWaveColor then
-                local t
-                if prop.gradientWaveSpeed then
-                    t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, x, _Time) + 1) / 2
-                else
-                    t = (_Utils.getWavePoint(1 / prop.gradientWaveFrequency, 1, 0, _Time) + 1) / 2
-                end
-                charColor = _Utils.interpolate(color, prop.gradientWaveColor, t)
-            end
-
-            if prop.shadowOffset then
-                for j = 1, prop.boldness do
-                    local bx = j - 1
-                    love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-                    love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5 + prop.shadowOffset.x), math.floor(pos.y + y + 0.5 + prop.shadowOffset.y), 0, prop.scale * widthScale, prop.scale)
-                end
-            end
-            for j = 1, prop.boldness do
-                local bx = j - 1
-                love.graphics.setColor(charColor.r, charColor.g, charColor.b, prop.alpha)
-                love.graphics.print(chr, math.floor(pos.x + x + bx + 0.5), math.floor(pos.y + y + 0.5), 0, prop.scale * widthScale, prop.scale)
-            end
-            x = x + (w + sep) * widthScale
-        end
     end
 
     if prop.underline then
@@ -260,7 +395,7 @@ function Text:draw()
             love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
             love.graphics.line(math.floor(x1 + prop.shadowOffset.x), math.floor(y + prop.shadowOffset.y), math.floor(x2 + prop.shadowOffset.x), math.floor(y + prop.shadowOffset.y))
         end
-        love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
+        love.graphics.setColor(globalTextColor.r, globalTextColor.g, globalTextColor.b, prop.alpha)
         love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
     end
 
@@ -274,7 +409,17 @@ function Text:draw()
             love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
             love.graphics.line(math.floor(x1 + prop.shadowOffset.x), math.floor(y + prop.shadowOffset.y), math.floor(x2 + prop.shadowOffset.x), math.floor(y + prop.shadowOffset.y))
         end
-        love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
+        love.graphics.setColor(globalTextColor.r, globalTextColor.g, globalTextColor.b, prop.alpha)
+        love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
+    end
+
+    if not self.characterData then
+        local size = self:getSize()
+        local x1 = pos.x + 0.5
+        local x2 = pos.x + size.x + 0.5
+        local y = pos.y + 0.5
+        love.graphics.setLineWidth(prop.scale)
+        love.graphics.setColor(1, 0, 0.5, prop.alpha)
         love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
     end
 end

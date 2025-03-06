@@ -226,7 +226,7 @@ function EditorUITree:draw()
         if line.node.isController then
             color = _COLORS.orange
         elseif line.node:isControlled() then
-            color = _COLORS.lightOrange
+            color = _COLORS.beige
         end
         local bgColor = nil
         if self.editor:isNodeSelected(line.node) then

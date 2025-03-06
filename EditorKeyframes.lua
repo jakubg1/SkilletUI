@@ -246,7 +246,7 @@ function EditorKeyframes:draw()
         end
         if entry.size.x > 0 then
             -- Events that have duration are drawn as a filled box.
-            love.graphics.setColor(color.r, color.g, color.b, 0.5)
+            love.graphics.setColor(color.r, color.g, color.b, 0.8)
             love.graphics.rectangle("fill", entry.pos.x, entry.pos.y, entry.size.x, entry.size.y)
             love.graphics.setLineWidth(1)
             love.graphics.setColor(color.r, color.g, color.b)

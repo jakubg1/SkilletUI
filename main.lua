@@ -21,19 +21,30 @@ _MousePos = Vec2()
 _MouseCPos = Vec2()
 
 _DrawTime = 0
+
+-- credit: SoundsDotZip
 _COLORS = {
-	white = Color("fff"),
-	gray = Color("888"),
 	black = Color("000"),
-	blue = Color("00f"),
-	cyan = Color("0ff"),
-	green = Color("0f0"),
-	yellow = Color("ff0"),
-	red = Color("f00"),
-	orange = Color("f60"),
-	lightOrange = Color("fb8"),
-	purple = Color("60f"),
-	lightPurple = Color("b8f")
+	dark_gray = Color("333"),
+	gray = Color("777"),
+	light_gray = Color("bbb"),
+	white = Color("fff"),
+	light_blue = Color("5ce"), cyan = Color("5ce"),
+	blue = Color("37b"),
+	dark_blue = Color("236"),
+	dark_green = Color("154"),
+	green = Color("395"),
+	light_green = Color("7c5"), lime = Color("7c5"),
+	yellow = Color("ed5"),
+	orange = Color("e84"),
+	red = Color("c34"),
+	dark_red = Color("724"),
+	dark_purple = Color("526"),
+	purple = Color("949"),
+	pink = Color("e79"),
+	beige = Color("fb9"),
+	tan = Color("fb9"),
+	brown = Color("943")
 }
 _ALIGNMENTS = {
     topLeft = Vec2(0, 0),
@@ -144,6 +155,7 @@ function love.load()
 	_RESOURCE_MANAGER:init()
 	_LoadRuntime()
 	_EDITOR:load()
+	_EDITOR.canvasMgr:fitZoom()
 end
 
 function love.update(dt)
