@@ -1146,7 +1146,9 @@ end
 function Editor:draw()
     if not self.enabled then
         love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor").font)
-        self.keyframeEditor:draw()
+        if not self.canvasMgr.fullscreen then
+            self.keyframeEditor:draw()
+        end
         return
     end
     self.UI:findChildByName("hovText"):setText("")

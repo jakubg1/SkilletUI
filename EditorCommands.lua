@@ -202,6 +202,9 @@ function EditorCommands:draw()
 
     -- Draw the main text.
     self.editor:drawShadowedText(string.format("Command Buffer (len=%s, save=%s)", #self.commandHistory, self.saveMarkerPos), self.POS.x, self.POS.y)
+    if self.transactionMode then
+        self.editor:drawShadowedText("Transaction!", self.POS.x + 400, self.POS.y, _COLORS.yellow)
+    end
     local items = {}
     local lastName = nil
     for i, entry in ipairs(self.commandHistory) do
