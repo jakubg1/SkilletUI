@@ -34,7 +34,18 @@ function Project:new(path)
     self.properties = PropertyList(self.PROPERTY_LIST)
 
     local data = _Utils.loadJson(path .. "/settings.json")
+    assert(data, "Could not load project data from " .. path .. "/settings.json")
     self:deserialize(data)
+end
+
+--######################################--
+---------------- B A S I C ---------------
+--######################################--
+
+---Returns the current project's name. Currently, this is derived from its path.
+---@return string
+function Project:getName()
+    return _Utils.strSplit(self.path, "/")[2]
 end
 
 --##########################################--

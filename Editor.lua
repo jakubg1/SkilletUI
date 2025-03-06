@@ -1155,7 +1155,7 @@ function Editor:draw()
     self.UI:findChildByName("selText"):setText("")
     self.UI:findChildByName("hovEvText"):setText("")
     self.UI:findChildByName("selEvText"):setText("")
-    self.UI:findChildByName("lb_project"):setText(string.format("Project: %s", _PROJECT.path or "(none)"))
+    self.UI:findChildByName("lb_project"):setText(string.format("Project: %s", _PROJECT:getName() or "(none)"))
     self.UI:findChildByName("lb_layout"):setText(string.format("Layout: %s%s", _PROJECT:getLayoutName() or "(none)", _PROJECT:isLayoutModified() and "*" or ""))
 
     -- Hovered and selected node

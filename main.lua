@@ -75,6 +75,25 @@ end
 
 
 
+---Loads a runtime by loading the project and layout from the runtime.json file.
+---If that file does not exist, does nothing.
+function _LoadRuntime()
+	local runtime = _Utils.loadJson("runtime.json")
+	if not runtime then
+		return
+	end
+	_LoadProject(runtime.lastProject)
+	_PROJECT:loadLayout(runtime.lastLayout)
+end
+
+---Saves a runtime by saving the currently opened project and layout.
+function _SaveRuntime()
+	local runtime = {lastProject = _PROJECT:getName(), lastLayout = _PROJECT:getLayoutName()}
+	_Utils.saveJson("runtime.json", runtime)
+end
+
+
+
 ---Executed whenever a signal is fired by a Node.
 ---TODO: Move that somewhere else. UI Script, perhaps. Remember about sandboxing...
 ---TODO: Maybe signals should be more than simple strings. A command name, and then some parameters? Like "loadLayout", "welcome" would be hardwired.
@@ -123,12 +142,9 @@ end
 
 function love.load()
 	_RESOURCE_MANAGER:init()
-	_LoadProject("LuaSiedem")
-	_PROJECT:loadLayout("main.json")
+	_LoadRuntime()
 	_EDITOR:load()
 end
-
-
 
 function love.update(dt)
 	-- Global time
@@ -144,8 +160,6 @@ function love.update(dt)
 	_PROJECT:update(dt)
 	_EDITOR:update(dt)
 end
-
-
 
 function love.draw()
 	local t = love.timer.getTime()
@@ -165,16 +179,12 @@ function love.draw()
 	_DrawTime = _DrawTime * 0.95 + t2 * 0.05
 end
 
-
-
 function love.mousepressed(x, y, button, istouch, presses)
 	if not _EDITOR.enabled then
 		_PROJECT:mousepressed(x, y, button, istouch, presses)
 	end
 	_EDITOR:mousepressed(x, y, button, istouch, presses)
 end
-
-
 
 function love.mousereleased(x, y, button)
 	if not _EDITOR.enabled then
@@ -183,13 +193,9 @@ function love.mousereleased(x, y, button)
 	_EDITOR:mousereleased(x, y, button)
 end
 
-
-
 function love.wheelmoved(x, y)
 	_EDITOR:wheelmoved(x, y)
 end
-
-
 
 function love.keypressed(key)
 	if not _EDITOR.enabled then
@@ -198,15 +204,15 @@ function love.keypressed(key)
 	_EDITOR:keypressed(key)
 end
 
-
-
 function love.textinput(text)
 	_EDITOR:textinput(text)
 end
 
-
-
 function love.resize(w, h)
 	_WINDOW_SIZE = Vec2(w, h)
 	_EDITOR:resize(w, h)
+end
+
+function love.quit()
+	_SaveRuntime()
 end
