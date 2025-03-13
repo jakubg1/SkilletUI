@@ -45,12 +45,31 @@ function Text:new(node, data)
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 
+    -- Text Widgets store 3 different formats of text:
+    -- - Raw text (`text` property)
+    -- - Processed text (`text` with stripped formatting or as-is if formatting is disabled)
+    -- - Character data (a list of characters with formatting applied or `nil` if formatting is disabled)
+    -- - Escapes like `\n` and `\\` are always processed, `<...>` formatting marks are processed only if formatting is enabled.
+    --
+    -- Example:
+    --                      FORMATTING DISABLED                         FORMATTING ENABLED
+    --  RAW TEXT            PROCESSED TEXT      CHARACTER DATA          PROCESSED TEXT      CHARACTER DATA
+    --  Color               Color               nil                     Color               {...}
+    --  <blue>Color         <blue>Color         nil                     Color               {...}
+    --  One!\nTwo!          One!                nil                     One!                {...}
+    --                      Two!                                        Two!
+    --  <b>One!\n</>Two!    <b>One!             nil                     One!                {...}
+    --                      </>Two!                                     Two!
+    --
     self.characterData = nil
-    self.rawText = nil
+    self.processedText = nil
+    self.textSize = Vec2()
     self:generateCharacterData()
 end
 
-
+--################################################--
+---------------- P R O P E R T I E S ---------------
+--################################################--
 
 ---Returns the given property of this Text.
 ---@param key string The property key.
@@ -58,8 +77,6 @@ end
 function Text:getProp(key)
     return self.properties:getValue(key)
 end
-
-
 
 ---Sets the given property of this Text to a given value.
 ---@param key string The property key.
@@ -69,16 +86,12 @@ function Text:setProp(key, value)
     self:generateCharacterData()
 end
 
-
-
 ---Returns the given property base of this Text.
 ---@param key string The property key.
 ---@return any?
 function Text:getPropBase(key)
     return self.properties:getBaseValue(key)
 end
-
-
 
 ---Sets the given property base of this Text to a given value.
 ---@param key string The property key.
@@ -88,7 +101,15 @@ function Text:setPropBase(key, value)
     self:generateCharacterData()
 end
 
+---Returns the property list of this Text.
+---@return table
+function Text:getPropertyList()
+    return self.PROPERTY_LIST
+end
 
+--##############################################################--
+---------------- P O S I T I O N   A N D   S I Z E ---------------
+--##############################################################--
 
 ---Returns the top left corner of where the Text will be actually drawn. This includes adjustments for the widget's own text alignment.
 ---@return Vector2
@@ -118,23 +139,22 @@ function Text:setSize(size)
     self:setPropBase("size", size)
 end
 
----Returns the size of this Text which would be normally rendered before the actual widget size is taken into effect.
----@return Vector2
-function Text:getTextSize()
-    local prop = self.properties:getValues()
-    local text = self:getText()
-    return Vec2((prop.font:getWidth(text) - 1) * prop.scale + self:getEffectiveCharacterSeparation() * (utf8.len(text) - 1) + prop.boldness - 1, prop.font:getHeight() * prop.scale)
-end
-
 ---Returns the size of this Text after taking the actual widget size into effect.
 ---@return Vector2
 function Text:getFinalTextSize()
     local prop = self.properties:getValues()
-    local size = self:getTextSize()
+    local size = self.textSize:clone()
     if prop.maxWidth then
         size.x = math.min(size.x, prop.maxWidth)
     end
     return size
+end
+
+---Returns the effective character separation of this Text, as both the character separation but also boldness will push the characters apart.
+---@return integer
+function Text:getEffectiveCharacterSeparation()
+    local prop = self.properties:getValues()
+    return prop.boldness + prop.characterSeparation - 1
 end
 
 ---Returns the width scaling (squish) of this Text: 1 if it falls into the `maxWidth` property, less than 1 if not.
@@ -144,18 +164,12 @@ function Text:getWidthScale()
     if not maxWidth then
         return 1
     end
-    return math.min(maxWidth / self:getTextSize().x, 1)
+    return math.min(maxWidth / self.textSize.x, 1)
 end
 
-
-
----Returns the property list of this Text.
----@return table
-function Text:getPropertyList()
-    return self.PROPERTY_LIST
-end
-
-
+--##################################################################--
+---------------- T E X T   A N D   C H A R A C T E R S ---------------
+--##################################################################--
 
 ---Returns the actual raw text (but stripped from the formatting tags) that is visible on this Widget. It can differ from the real text if the `typeInProgress` or `inputCaret` properties are set.
 ---@return string
@@ -163,10 +177,10 @@ function Text:getText()
     local prop = self.properties:getValues()
     local caret = (prop.inputCaret and _Time % 1 < 0.5) and "|" or ""
     if not prop.typeInProgress then
-        return self.rawText .. caret
+        return self.processedText .. caret
     end
-    local totalCharsRendered = math.floor(_Utils.interpolateClamped(0, utf8.len(self.rawText), prop.typeInProgress))
-    return self.rawText:sub(0, utf8.offset(self.rawText, totalCharsRendered + 1) - 1) .. caret
+    local totalCharsRendered = math.floor(_Utils.interpolateClamped(0, utf8.len(self.processedText), prop.typeInProgress))
+    return self.processedText:sub(0, utf8.offset(self.processedText, totalCharsRendered + 1) - 1) .. caret
 end
 
 ---Returns the text (not the actual text, this function is unaffected by the `typeInProgress` property!) split into characters, with UTF-8 support.
@@ -179,17 +193,6 @@ function Text:getTextCharacters()
     end
     return characters
 end
-
-
-
----Returns the effective character separation of this Text, as both the character separation but also boldness will push the characters apart.
----@return integer
-function Text:getEffectiveCharacterSeparation()
-    local prop = self.properties:getValues()
-    return prop.boldness + prop.characterSeparation - 1
-end
-
-
 
 ---Returns `true` if the Text can be rendered as a whole batch, instead of having to be drawn character by character.
 ---@return boolean
@@ -226,19 +229,19 @@ function Text:isSimpleRendered()
 end
 
 ---Generates character data for this Text, or removes it, if this Text can be drawn in the simple mode.
+---Also updates the text size.
 function Text:generateCharacterData()
+    local prop = self.properties:getValues()
     if self:isSimpleRendered() then
         self.characterData = nil
-        self.rawText = self:getProp("text")
+        self.processedText = self:getProp("text")
+        local w = (prop.font:getWidth(self.processedText) - 1) * prop.scale + self:getEffectiveCharacterSeparation() * (utf8.len(self.processedText) - 1) + prop.boldness - 1
+        self.textSize = Vec2(math.max(w, 0), prop.font:getHeight() * prop.scale)
         return
     end
 
     self.characterData = {}
-    self.rawText = ""
-
-    local widthScale = self:getWidthScale()
-    local prop = self.properties:getValues()
-    local sep = self:getEffectiveCharacterSeparation()
+    self.processedText = ""
 
     local characters = self:getTextCharacters()
     local x = 0
@@ -304,27 +307,28 @@ function Text:generateCharacterData()
                 char = char,
                 x = math.floor(x + 0.5),
                 y = math.floor(0.5),
-                scaleX = prop.scale * widthScale,
+                scaleX = prop.scale,
                 scaleY = prop.scale,
                 color = color,
                 boldness = boldness
             }
             table.insert(self.characterData, character)
-            self.rawText = self.rawText .. char
-            x = x + (prop.font:getWidth(char) * prop.scale + boldness - 1) * widthScale
+            self.processedText = self.processedText .. char
+            x = x + prop.font:getWidth(char) * prop.scale + prop.characterSeparation + boldness - 1
         end
     end
+    self.textSize = Vec2(math.max(x - 1, 0), prop.font:getHeight() * prop.scale)
 end
 
-
+--##############################################--
+---------------- C A L L B A C K S ---------------
+--##############################################--
 
 ---Updates the Text. You need to do this to make sure the time-dependent effects are working correctly.
 ---@param dt number Time delta, in seconds.
 function Text:update(dt)
     self.properties:update(dt)
 end
-
-
 
 ---Draws the Text on the screen.
 function Text:draw()
@@ -341,7 +345,7 @@ function Text:draw()
     end
 
     if self.characterData then
-        -- Character by character, testing
+        -- Character by character
         for i, char in ipairs(self.characterData) do
             local animOffset = char.x - pos.x
             local charY = char.y
@@ -366,13 +370,13 @@ function Text:draw()
                 for j = 1, char.boldness do
                     local bx = j - 1
                     love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-                    love.graphics.print(char.char, pos.x + char.x + bx + prop.shadowOffset.x, pos.y + charY + prop.shadowOffset.y, 0, char.scaleX, char.scaleY)
+                    love.graphics.print(char.char, pos.x + char.x * widthScale + bx + prop.shadowOffset.x, pos.y + charY + prop.shadowOffset.y, 0, char.scaleX * widthScale, char.scaleY)
                 end
             end
             for j = 1, char.boldness do
                 local bx = j - 1
                 love.graphics.setColor(charColor.r, charColor.g, charColor.b, prop.alpha)
-                love.graphics.print(char.char, pos.x + char.x + bx, pos.y + charY, 0, char.scaleX, char.scaleY)
+                love.graphics.print(char.char, pos.x + char.x * widthScale + bx, pos.y + charY, 0, char.scaleX * widthScale, char.scaleY)
             end
         end
     else
@@ -424,14 +428,14 @@ function Text:draw()
     end
 end
 
-
+--######################################################--
+---------------- S E R I A L I Z A T I O N ---------------
+--######################################################--
 
 ---Returns the Text's data to be used for loading later.
 ---@return table
 function Text:serialize()
     return self.properties:serialize()
 end
-
-
 
 return Text
