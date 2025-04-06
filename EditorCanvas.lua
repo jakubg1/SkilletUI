@@ -175,7 +175,7 @@ function EditorCanvas:drawUnderCanvas()
     love.graphics.setScissor()
     ]]
     -- Status bar
-    love.graphics.setColor(0, 0, 1, 0.5)
+    _SetColor(_COLORS.e_blue, 0.5)
     love.graphics.rectangle("fill", self.canvas.pos.x, self.canvas.pos.y + self.canvas.size.y, self.canvas.size.x, 20)
     self.editor:drawShadowedText(string.format("Zoom: %.1f%% | Pos: %s", self.scale * 100, _MouseCPos), self.canvas.pos.x + 5, self.canvas.pos.y + self.canvas.size.y + 1)
 end

@@ -297,7 +297,7 @@ function EditorUITree:draw()
     end
 
     -- Border
-    love.graphics.setColor(0.5, 0.75, 1)
+    _SetColor(_COLORS.e_bblue)
     love.graphics.setLineWidth(1)
     love.graphics.rectangle("line", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
 

@@ -1,2 +1,4 @@
-test_layouts/*
+projects/*
+projects/**/*
+resources/*
 runtime.json

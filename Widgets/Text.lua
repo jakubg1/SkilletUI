@@ -417,6 +417,17 @@ function Text:draw()
         love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
     end
 
+    if _Debug then
+        self:drawDebug()
+    end
+end
+
+---Draws debug information associated with this Text on the screen:
+--- - When the text is drawn in the simple mode, a magenta line will be drawn above the text.
+function Text:drawDebug()
+    local pos = self:getPos()
+    local prop = self.properties:getValues()
+
     if not self.characterData then
         local size = self:getSize()
         local x1 = pos.x + 0.5

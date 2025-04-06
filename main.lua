@@ -42,9 +42,19 @@ _COLORS = {
 	dark_purple = Color("526"),
 	purple = Color("949"),
 	pink = Color("e79"),
-	beige = Color("fb9"),
-	tan = Color("fb9"),
-	brown = Color("943")
+	beige = Color("fb9"), tan = Color("fb9"),
+	brown = Color("943"),
+
+	e_blue = Color("00f"),
+	e_bblue = Color("8cf"),
+	e_cyan = Color("0ff"),
+	e_yellow = Color("ff0")
+}
+_COLOR_ORDER = {
+	"black", "dark_gray", "gray", "light_gray", "white",
+	"light_blue", "blue", "dark_blue", "dark_green", "green",
+	"light_green", "yellow", "orange", "red", "dark_red",
+	"dark_purple", "purple", "pink", "beige", "brown"
 }
 _ALIGNMENTS = {
     topLeft = Vec2(0, 0),
@@ -65,6 +75,8 @@ _RESOURCE_MANAGER = ResourceManager()
 ---@type Project?
 _PROJECT = nil
 _EDITOR = Editor()
+
+_Debug = false
 
 
 
@@ -151,6 +163,15 @@ end
 
 
 
+---Acts as `love.graphics.setColor()` but takes a Color instance as an argument.
+---@param color Color The color to be changed to.
+---@param alpha number? Transparency. 1 is default.
+function _SetColor(color, alpha)
+	love.graphics.setColor(color.r, color.g, color.b, alpha or 1)
+end
+
+
+
 function love.load()
 	_RESOURCE_MANAGER:init()
 	_LoadRuntime()
@@ -210,6 +231,9 @@ function love.wheelmoved(x, y)
 end
 
 function love.keypressed(key)
+	if key == "f12" then
+		_Debug = not _Debug
+	end
 	if not _EDITOR.enabled then
 		_PROJECT:keypressed(key)
 	end

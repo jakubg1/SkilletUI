@@ -1042,10 +1042,10 @@ function Editor:load()
     local l2 = self:label(s_select, 0, 20, "Selected:", "selText")
     local l3 = self:label(s_select, 0, 40, "Hovered:", "hovEvText")
     local l4 = self:label(s_select, 0, 60, "Selected:", "selEvText")
-    l1.widget:setPropBase("color", _COLORS.yellow)
-    l2.widget:setPropBase("color", _COLORS.cyan)
-    l3.widget:setPropBase("color", _COLORS.yellow)
-    l4.widget:setPropBase("color", _COLORS.cyan)
+    l1.widget:setPropBase("color", _COLORS.e_yellow)
+    l2.widget:setPropBase("color", _COLORS.e_cyan)
+    l3.widget:setPropBase("color", _COLORS.e_yellow)
+    l4.widget:setPropBase("color", _COLORS.e_cyan)
 
     self:label(s_file, 0, 1, "Project: (none)", "lb_project")
     self:button(s_file, 250, 0, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"})
@@ -1183,7 +1183,7 @@ function Editor:draw()
     end
 
     -- Before the UI itself will be drawn, make some nice background for the top bar.
-    love.graphics.setColor(0, 0, 1, 0.5)
+    _SetColor(_COLORS.e_blue, 0.5)
     love.graphics.rectangle("fill", 0, 0, _WINDOW_SIZE.x, 20)
     self.UI:draw()
 
@@ -1200,12 +1200,19 @@ function Editor:draw()
     self.commandMgr:draw()
 
     -- Status bar
-    love.graphics.setColor(0, 0, 1, 0.5)
+    _SetColor(_COLORS.e_blue, 0.5)
     love.graphics.rectangle("fill", 0, _WINDOW_SIZE.y - 20, _WINDOW_SIZE.x, 20)
     local text = string.format("Draw: %.1fms | Vecs/frame: %s", _DrawTime * 1000, _VEC2S_PER_FRAME)
     _VEC2S_PER_FRAME = 0
     --text = text .. "          [Tab] Presentation Mode   [Arrow Keys] Move Selected Nodes   [Ctrl + P] Show Internal UI Tree   [M] Parent Selected to Hovered"
     self:drawShadowedText(text, 5, _WINDOW_SIZE.y - 19)
+
+    -- Color palette on the status bar
+    for i, name in ipairs(_COLOR_ORDER) do
+        local x = _WINDOW_SIZE.x - #_COLOR_ORDER * 5 - 5
+        _SetColor(_COLORS[name])
+        love.graphics.rectangle("fill", x + i * 5, _WINDOW_SIZE.y - 20, 5, 20)
+    end
 
     -- Input box
     self.INPUT_DIALOG:draw()

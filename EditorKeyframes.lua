@@ -160,7 +160,7 @@ function EditorKeyframes:drawEntryBase(n, nodeOrName, isGhost)
     else
         self.editor:drawShadowedText(nodeOrName, self.POS.x + 5, y + 2, _COLORS.red, nil, isGhost and 0.5 or 1)
     end
-    love.graphics.setColor(0.3, 0.3, 0.3, isGhost and 0.4 or 0.8)
+    love.graphics.setColor(0.2, 0.2, 0.2, isGhost and 0.4 or 0.8)
     love.graphics.rectangle("fill", self.KEYFRAME_AREA_X, y, self.KEYFRAME_AREA_WIDTH, self.ITEM_HEIGHT)
     love.graphics.setLineWidth(1)
     love.graphics.setColor(0.2, 0.2, 0.2)
@@ -274,7 +274,7 @@ function EditorKeyframes:draw()
     end
 
     -- Border
-    love.graphics.setColor(0.5, 0.75, 1)
+    _SetColor(_COLORS.e_bblue)
     love.graphics.setLineWidth(1)
     love.graphics.rectangle("line", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
 end
