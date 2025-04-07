@@ -5,8 +5,8 @@ local class = require "com.class"
 local Timeline = class:derive("Timeline")
 
 -- Place your imports here
-local Vec2 = require("Vector2")
-local TimelineEvent = require("TimelineEvent")
+local Vec2 = require("src.Essentials.Vector2")
+local TimelineEvent = require("src.TimelineEvent")
 
 
 

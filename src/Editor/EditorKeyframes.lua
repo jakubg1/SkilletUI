@@ -5,7 +5,7 @@ local class = require "com.class"
 local EditorKeyframes = class:derive("EditorKeyframes")
 
 -- Place your imports here
-local Vec2 = require("Vector2")
+local Vec2 = require("src.Essentials.Vector2")
 
 
 

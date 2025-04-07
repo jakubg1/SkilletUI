@@ -4,7 +4,7 @@ local class = require "com.class"
 ---@overload fun():MainCanvas
 local MainCanvas = class:derive("MainCanvas")
 
-local Vec2 = require("Vector2")
+local Vec2 = require("src.Essentials.Vector2")
 
 ---Constructs a new Canvas. This Canvas is the project canvas and can have different sizes, positions and resolutions throughout its lifetime.
 function MainCanvas:new()

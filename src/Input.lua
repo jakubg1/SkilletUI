@@ -4,8 +4,8 @@ local class = require "com.class"
 local Input = class:derive("Input")
 
 local utf8 = require("utf8")
-local Vec2 = require("Vector2")
-local Color = require("Color")
+local Vec2 = require("src.Essentials.Vector2")
+local Color = require("src.Essentials.Color")
 
 
 

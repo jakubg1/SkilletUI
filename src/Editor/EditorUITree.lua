@@ -6,13 +6,13 @@ local EditorUITree = class:derive("EditorUITree")
 
 -- Place your imports here
 local utf8 = require("utf8")
-local Vec2 = require("Vector2")
-local NodeList = require("NodeList")
+local Vec2 = require("src.Essentials.Vector2")
+local NodeList = require("src.NodeList")
 
-local CommandNodeRename = require("EditorCommands.NodeRename")
-local CommandNodeSetParent = require("EditorCommands.NodeSetParent")
-local CommandNodeMoveToTop = require("EditorCommands.NodeMoveToTop")
-local CommandNodeMoveToIndex = require("EditorCommands.NodeMoveToIndex")
+local CommandNodeRename = require("src.Editor.Commands.NodeRename")
+local CommandNodeSetParent = require("src.Editor.Commands.NodeSetParent")
+local CommandNodeMoveToTop = require("src.Editor.Commands.NodeMoveToTop")
+local CommandNodeMoveToIndex = require("src.Editor.Commands.NodeMoveToIndex")
 
 
 

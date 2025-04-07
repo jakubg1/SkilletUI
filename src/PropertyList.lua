@@ -5,8 +5,8 @@ local class = require "com.class"
 local PropertyList = class:derive("PropertyList")
 
 -- Place your imports here
-local Vec2 = require("Vector2")
-local Color = require("Color")
+local Vec2 = require("src.Essentials.Vector2")
+local Color = require("src.Essentials.Color")
 
 
 

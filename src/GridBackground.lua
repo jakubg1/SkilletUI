@@ -4,8 +4,7 @@ local class = require "com.class"
 ---@overload fun():GridBackground
 local GridBackground = class:derive("GridBackground")
 
-local Vec2 = require("Vector2")
-local Color = require("Color")
+local Color = require("src.Essentials.Color")
 
 
 

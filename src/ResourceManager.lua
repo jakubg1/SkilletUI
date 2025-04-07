@@ -5,9 +5,9 @@ local class = require "com.class"
 local ResourceManager = class:derive("ResourceManager")
 
 -- Place your imports here
-local Font = require("Font")
-local Image = require("Image")
-local NineImage = require("NineImage")
+local Font = require("src.Font")
+local Image = require("src.Image")
+local NineImage = require("src.NineImage")
 
 ---Constructs the Resource Manager. It holds data.
 ---This is a faux Resource Manager which has a similar API to what is there in OpenSMCE.

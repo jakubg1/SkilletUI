@@ -5,10 +5,10 @@ local class = require "com.class"
 local Project = class:derive("Project")
 
 -- Place your imports here
-local Vec2 = require("Vector2")
-local PropertyList = require("PropertyList")
-local Node = require("Node")
-local Timeline = require("Timeline")
+local Vec2 = require("src.Essentials.Vector2")
+local PropertyList = require("src.PropertyList")
+local Node = require("src.Node")
+local Timeline = require("src.Timeline")
 
 ---Constructs a new Project.
 ---Projects contain some settings and the currently loaded UI layout loaded to it.

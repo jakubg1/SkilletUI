@@ -4,16 +4,16 @@ local class = require "com.class"
 ---@overload fun(data, parent):Node
 local Node = class:derive("Node")
 
-local Vec2 = require("Vector2")
-local PropertyList = require("PropertyList")
-local Box = require("Widgets.Box")
-local Button = require("Widgets.Button")
-local Canvas = require("Widgets.Canvas")
-local InputText = require("Widgets.InputText")
-local NineSprite = require("Widgets.NineSprite")
-local Sprite = require("Widgets.Sprite")
-local Text = require("Widgets.Text")
-local TitleDigit = require("Widgets.TitleDigit")
+local Vec2 = require("src.Essentials.Vector2")
+local PropertyList = require("src.PropertyList")
+local Box = require("src.Widgets.Box")
+local Button = require("src.Widgets.Button")
+local Canvas = require("src.Widgets.Canvas")
+local InputText = require("src.Widgets.InputText")
+local NineSprite = require("src.Widgets.NineSprite")
+local Sprite = require("src.Widgets.Sprite")
+local Text = require("src.Widgets.Text")
+local TitleDigit = require("src.Widgets.TitleDigit")
 
 
 

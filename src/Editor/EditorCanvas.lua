@@ -5,7 +5,7 @@ local class = require "com.class"
 local EditorCanvas = class:derive("EditorCanvas")
 
 -- Place your imports here
-local Vec2 = require("Vector2")
+local Vec2 = require("src.Essentials.Vector2")
 
 ---Constructs a new Editor Canvas Manager.
 ---It is responsible for zooming, panning, cropping the canvas, drawing on top of it, drawing proper background, scroll bars and all that stuff.

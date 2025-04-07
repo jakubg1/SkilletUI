@@ -4,8 +4,8 @@ local class = require "com.class"
 ---@overload fun(node, data):Canvas
 local Canvas = class:derive("Canvas")
 
-local Vec2 = require("Vector2")
-local PropertyList = require("PropertyList")
+local Vec2 = require("src.Essentials.Vector2")
+local PropertyList = require("src.PropertyList")
 
 
 

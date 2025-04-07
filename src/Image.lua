@@ -4,7 +4,7 @@ local class = require "com.class"
 ---@overload fun(path):Image
 local Image = class:derive("Image")
 
-local Vec2 = require("Vector2")
+local Vec2 = require("src.Essentials.Vector2")
 
 ---Creates a new Image.
 ---@param path string The path to the image to be used for this Image.

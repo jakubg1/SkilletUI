@@ -4,7 +4,7 @@ local class = require "com.class"
 ---@overload fun():TransitionTest
 local TransitionTest = class:derive("TransitionTest")
 
-local Vec2 = require("Vector2")
+local Vec2 = require("src.Essentials.Vector2")
 
 
 

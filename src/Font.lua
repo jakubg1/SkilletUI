@@ -11,6 +11,7 @@ local Font = class:derive("Font")
 function Font:new(path)
     self.path = path
     local data = _Utils.loadJson(path)
+    assert(data, "Failed to load font data from " .. path)
 
     if data.type == "builtin" then
         if data.size then
