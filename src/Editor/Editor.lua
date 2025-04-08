@@ -8,6 +8,7 @@ local Vec2 = require("src.Essentials.Vector2")
 local Node = require("src.Node")
 local NodeList = require("src.NodeList")
 local Input = require("src.Input")
+local EditorLayoutList = require("src.Editor.EditorLayoutList")
 local EditorUITree = require("src.Editor.EditorUITree")
 local EditorKeyframes = require("src.Editor.EditorKeyframes")
 local EditorCommands = require("src.Editor.EditorCommands")
@@ -111,6 +112,7 @@ function Editor:new()
     self.nodeMultiSelectOrigin = nil
     self.nodeMultiSelectSize = nil -- This size can be negative, be careful when drawing!
 
+    self.layoutList = EditorLayoutList(self)
     self.uiTree = EditorUITree(self)
     self.keyframeEditor = EditorKeyframes(self)
     self.commandMgr = EditorCommands(self)
@@ -204,6 +206,10 @@ function Editor:getHoveredNode()
     --if self.selectedNode and (self.selectedNode:isHovered() or self.selectedNode:getHoveredResizeHandleID()) then
     --    return self.selectedNode
     --end
+    -- If we didn't hover any editor UI and we're outside of the canvas window, stop here.
+    if not self.canvasMgr:isHovered() then
+        return nil
+    end
     -- Finally, look if any node is directly hovered.
     local currentLayout = _PROJECT:getCurrentLayout()
     if currentLayout then
@@ -413,6 +419,35 @@ end
 ---Deselects all previously selected nodes.
 function Editor:deselectAllNodes()
     self.selectedNodes:clear()
+end
+
+---"Clicks" the provided node.
+--- - If the Shift key is NOT held, the provided node will be selected and all other nodes will be unselected.
+--- - If the Shift key IS held, the provided node will be selected without deselecting other nodes, or it will be deselected if it has been already selected.
+--- - If the Ctrl key is held, all selected nodes will be duplicated and a command transaction will start. TODO: Change this behavior. It's very buggy.
+---
+---The nodes can be dragged after calling this function.
+---@param node Node The node to be clicked.
+function Editor:clickNode(node)
+    if _IsShiftPressed() then
+        -- Deselect a node with Shift if it has been already hovered.
+        self:toggleNodeSelection(node)
+    else
+        -- Selecting with Shift adds new nodes cumulatively, i.e. multi-selection.
+        -- TODO: Sometimes you should be exempt from this, i.e. imagine you've selected
+        -- three nodes and now you want to drag them.
+        -- You should be able to do this without having to keep Shift pressed.
+        self:deselectAllNodes()
+        self:selectNode(node)
+    end
+    if _IsCtrlPressed() then
+        self:startCommandTransaction()
+        self:duplicateSelectedNode()
+    end
+    if not self.isNodeHoverIndirect and self.selectedNodes:getSize() > 0 then
+        -- Start dragging the actual node on the screen.
+        self:startDraggingSelectedNode()
+    end
 end
 
 ---Adds the provided UI node as the currently selected node's sibling if exactly one node is selected.
@@ -981,8 +1016,8 @@ end
 ---Initializes the UI for this Editor.
 function Editor:load()
     self.UI = Node({name = "root"})
-    local s_new = self:node(self.UI, 5, 45, "s_new")
-    local s_utility = self:node(self.UI, 5, 600, "s_utility")
+    local s_new = self:node(self.UI, 5, 305, "s_new")
+    local s_utility = self:node(self.UI, 5, 760, "s_utility")
     local s_align = self:node(self.UI, 240, 590, "s_align")
     local s_palign = self:node(self.UI, 360, 590, "s_palign")
     local s_talign = self:node(self.UI, 480, 590, "s_talign")
@@ -1114,6 +1149,7 @@ function Editor:update(dt)
         self.nodeMultiSelectSize = _MouseCPos - self.nodeMultiSelectOrigin
     end
 
+    self.layoutList:update(dt)
     self.uiTree:update(dt)
     self.keyframeEditor:update(dt)
     self.canvasMgr:update(dt)
@@ -1196,12 +1232,12 @@ function Editor:draw()
     -- Other UI that will be hardcoded for now.
     love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor").font)
 
+    -- Layout list
+    self.layoutList:draw()
     -- UI tree
     self.uiTree:draw()
-
-    -- Keyframe editor (here for now)
+    -- Keyframe editor
     self.keyframeEditor:draw()
-
     -- Command buffer
     self.commandMgr:draw()
 
@@ -1315,6 +1351,9 @@ function Editor:mousepressed(x, y, button, istouch, presses)
     if self.UI:mousepressed(x, y, button, istouch, presses) then
         return
     end
+    if self.layoutList:mousepressed(x, y, button, istouch, presses) then
+        return
+    end
     if self.uiTree:mousepressed(x, y, button, istouch, presses) then
         return
     end
@@ -1332,31 +1371,10 @@ function Editor:mousepressed(x, y, button, istouch, presses)
             end
         end
         if not startedResizing then
-            if not _IsShiftPressed() then
-                -- Selecting with Shift adds new nodes cumulatively, i.e. multi-selection.
-                -- TODO: Sometimes you should be exempt from this, i.e. imagine you've selected
-                -- three nodes and now you want to drag them.
-                -- You should be able to do this without having to keep Shift pressed.
-                self:deselectAllNodes()
-            end
             if self.hoveredNode then
-                if _IsShiftPressed() then
-                    -- Deselect a node with Shift if it has been already hovered.
-                    self:toggleNodeSelection(self.hoveredNode)
-                else
-                    self:selectNode(self.hoveredNode)
-                end
-                if _IsCtrlPressed() then
-                    self:startCommandTransaction()
-                    self:duplicateSelectedNode()
-                end
-                if self.selectedNodes:getSize() > 0 then
-                    if not self.isNodeHoverIndirect then
-                        -- Start dragging the actual node on the screen.
-                        self:startDraggingSelectedNode()
-                    end
-                end
+                self:clickNode(self.hoveredNode)
             else
+                self:deselectAllNodes()
                 -- If no node is hovered, start the multi-selection mode.
                 self.nodeMultiSelectOrigin = _MouseCPos
                 self.nodeMultiSelectSize = Vec2()
@@ -1405,6 +1423,7 @@ end
 function Editor:wheelmoved(x, y)
     self.UI:wheelmoved(x, y)
     self.INPUT_DIALOG:wheelmoved(x, y)
+    self.layoutList:wheelmoved(x, y)
     self.uiTree:wheelmoved(x, y)
     self.keyframeEditor:wheelmoved(x, y)
     self.canvasMgr:wheelmoved(x, y)
@@ -1418,6 +1437,9 @@ function Editor:keypressed(key)
     love.keyboard.setKeyRepeat(key == "backspace" or key == "up" or key == "down" or key == "left" or key == "right")
     self.UI:keypressed(key)
     if self.INPUT_DIALOG:keypressed(key) then
+        return
+    end
+    if self.layoutList:keypressed(key) then
         return
     end
     if self.uiTree:keypressed(key) then
@@ -1465,6 +1487,7 @@ end
 function Editor:textinput(text)
     self.UI:textinput(text)
     self.INPUT_DIALOG:textinput(text)
+    self.layoutList:textinput(text)
     self.uiTree:textinput(text)
 end
 

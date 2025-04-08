@@ -1,33 +1,24 @@
 local class = require "com.class"
 
----@class EditorUITree
----@overload fun(editor):EditorUITree
-local EditorUITree = class:derive("EditorUITree")
+---@class EditorLayoutList
+---@overload fun(editor):EditorLayoutList
+local EditorLayoutList = class:derive("EditorLayoutList")
 
 -- Place your imports here
-local utf8 = require("utf8")
 local Vec2 = require("src.Essentials.Vector2")
-local NodeList = require("src.NodeList")
 
-local CommandNodeRename = require("src.Editor.Commands.NodeRename")
-local CommandNodeSetParent = require("src.Editor.Commands.NodeSetParent")
-local CommandNodeMoveToTop = require("src.Editor.Commands.NodeMoveToTop")
-local CommandNodeMoveToIndex = require("src.Editor.Commands.NodeMoveToIndex")
-
-
-
----Constructs a new Editor UI Tree.
----@param editor Editor The UI editor this UI tree belongs to.
-function EditorUITree:new(editor)
+---Constructs a new Editor Layout List.
+---@param editor Editor The UI editor this layout list belongs to.
+function EditorLayoutList:new(editor)
     self.editor = editor
 
-    self.POS = Vec2(5, 350)
-    self.SIZE = Vec2(220, 400)
+    self.POS = Vec2(5, 25)
+    self.SIZE = Vec2(220, 250)
     self.ITEM_HEIGHT = 20
     self.ITEM_INDENT = 20
     self.ITEM_MARGIN = 5
 
-    self.uiTreeInfo = {}
+    self.items = {}
     self.showInternalUI = false
 
     self.scrollOffset = 0
@@ -37,9 +28,9 @@ function EditorUITree:new(editor)
     self.dragOrigin = nil
     self.dragSnap = false
 
-    -- Stores the node that if clicked the second time will actually be name edited.
-    -- This is because you could click elsewhere the second time and still activate that node's input box,
-    -- even if that particular node was clicked just once.
+    -- Stores the layout that if clicked the second time will actually be name edited.
+    -- This is because you could click elsewhere the second time and still activate that layout's input box,
+    -- even if that particular layout was clicked just once.
     self.nameEditLastClickedNode = nil
     self.nameEditNode = nil
     self.nameEditValue = nil
@@ -48,13 +39,13 @@ end
 
 
 ---Returns UI tree information.
----This function should only be called internally. If you want to get the current UI tree info, fetch the `self.uiTreeInfo` field instead.
+---This function should only be called internally. If you want to get the current UI tree info, fetch the `self.items` field instead.
 ---@param node Node? The UI node of which the tree should be added to the list.
 ---@param tab table? The table, used internally.
 ---@param indent integer? The starting indentation.
 ---@param ignoreCollapses boolean? If set to `true`, the result will contain nodes that should be invisible in the UI tree. This is required by `NodeList:sortByTreeOrder()` and at some point will be removed.
 ---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
-function EditorUITree:getUITreeInfo(node, tab, indent, ignoreCollapses)
+function EditorLayoutList:getUITreeInfo(node, tab, indent, ignoreCollapses)
     node = node or _PROJECT:getCurrentLayout()
     if not node then
         -- Currently no layout is open.
@@ -76,7 +67,7 @@ end
 ---Returns the Y coordinate of the n-th entry in the tree (starting from 1) on the screen. Does not take the position of the tree itself!
 ---@param n integer The item index.
 ---@return number
-function EditorUITree:getItemY(n)
+function EditorLayoutList:getItemY(n)
     return self.ITEM_HEIGHT * (n - 1) - self.scrollOffset
 end
 
@@ -84,7 +75,7 @@ end
 
 ---Returns `true` if the mouse cursor is inside of the Editor UI Tree area, `false` otherwise.
 ---@return boolean
-function EditorUITree:isHovered()
+function EditorLayoutList:isHovered()
     return _Utils.isPointInsideBox(_MousePos, self.POS, self.SIZE)
 end
 
@@ -92,13 +83,13 @@ end
 
 ---Returns the hovered UI node in the tree, if one exists.
 ---@return Node?
-function EditorUITree:getHoveredNode()
+function EditorLayoutList:getHoveredNode()
     if not self:isHovered() then
         return nil
     end
     self.hoverTop = false
     self.hoverBottom = false
-    for i, entry in ipairs(self.uiTreeInfo) do
+    for i, entry in ipairs(self.items) do
         local y = self:getItemY(i)
         if _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, y), Vec2(self.SIZE.x, self.ITEM_HEIGHT)) then
             self.editor.isNodeHoverIndirect = true
@@ -115,166 +106,68 @@ end
 
 
 
----Starts dragging the selected node in the node tree.
-function EditorUITree:startDraggingSelectedNodeInNodeTree()
-    -- TODO: Be able to drag multiple nodes in the tree.
-    if self.editor.selectedNodes:getSize() ~= 1 then
-        return
-    end
-    self.dragOrigin = _MousePos
-    self.dragSnap = true
-end
-
-
-
----Finishes dragging the selected node in the node tree and pushes a command so that the movement can be undone.
-function EditorUITree:finishDraggingSelectedNodeInNodeTree()
-    if self.editor.selectedNodes:getSize() ~= 1 or not self.dragOrigin then
-        return
-    end
-    if not self.editor.hoveredNode then
-        -- We've dropped the node on a nothing burger. Don't do anything.
-        self:cancelDraggingSelectedNodeInNodeTree()
-        return
-    end
-    if self.dragSnap then
-        -- We didn't break the snap (mouse not moved enough to initiate the movement process), so reset everything as if nothing has ever happened.
-        self:cancelDraggingSelectedNodeInNodeTree()
-        return
-    end
-    self.editor:startCommandTransaction()
-    if self.hoverTop then
-        -- We've dropped the node above the hovered node.
-        -- First, make sure that our parent is correct.
-        if self.editor.selectedNodes:getNode(1).parent ~= self.editor.hoveredNode.parent then
-            self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNodes, self.editor.hoveredNode.parent))
-        end
-        -- Now, reorder it so that the selected node is before the hovered node.
-        local index = self.editor.hoveredNode:getSelfIndex()
-        if index > self.editor.selectedNodes:getNode(1):getSelfIndex() then
-            index = index - 1
-        end
-        self.editor:executeCommand(CommandNodeMoveToIndex(self.editor.selectedNodes, index))
-    elseif self.hoverBottom then
-        -- We've dropped the node below the hovered node.
-        if self.editor.hoveredNode:hasChildren() then
-            -- If we've done this on a node that has children, the selected node should become its first child.
-            self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNodes, self.editor.hoveredNode))
-            self.editor:executeCommand(CommandNodeMoveToTop(self.editor.selectedNodes))
-        else
-            -- Otherwise, move on similarly to the top case.
-            -- First, make sure that our parent is correct.
-            if self.editor.selectedNodes:getNode(1).parent ~= self.editor.hoveredNode.parent then
-                self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNodes, self.editor.hoveredNode.parent))
-            end
-            -- Now, reorder it so that the selected node is after the hovered node.
-            local index = self.editor.hoveredNode:getSelfIndex() + 1
-            if index > self.editor.selectedNodes:getNode(1):getSelfIndex() then
-                index = index - 1
-            end
-            self.editor:executeCommand(CommandNodeMoveToIndex(self.editor.selectedNodes, index))
-        end
-    else
-        -- We've dropped the node inside of another node: attach it as a parent.
-        self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNodes, self.editor.hoveredNode))
-    end
-    self.editor:commitCommandTransaction()
-    self.dragOrigin = nil
-    self.dragSnap = false
-end
-
-
-
----Cancels the drag of the selected node in the node tree.
-function EditorUITree:cancelDraggingSelectedNodeInNodeTree()
-    self.dragOrigin = nil
-    self.dragSnap = false
-end
-
-
-
----Updates the Editor UI Tree.
+---Updates the Editor Layout List.
 ---@param dt number Time delta in seconds.
-function EditorUITree:update(dt)
-    -- Update the tree information.
-    self.uiTreeInfo = self:getUITreeInfo(self.showInternalUI and self.editor.UI or nil)
-
-    -- Handle the node dragging in the node tree.
-    if self.editor.selectedNodes:getSize() == 1 and self.dragOrigin then
-        local movement = _MousePos - self.dragOrigin
-        if self.dragSnap then
-            if movement:len() > 5 then
-                self.dragSnap = false
-            end
-        end
+function EditorLayoutList:update(dt)
+    -- Update the list information.
+    self.items = {}
+    local names = _PROJECT:getLayoutList()
+    for i, name in ipairs(names) do
+        table.insert(self.items, {name = name, indent = 0})
     end
 
     -- Calculate the maximum scroll offset.
-    self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #self.uiTreeInfo - self.SIZE.y, 0)
+    self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #self.items - self.SIZE.y, 0)
     -- Scroll back if we've scrolled too far.
     self.scrollOffset = math.min(self.scrollOffset, self.maxScrollOffset)
 end
 
 
 
----Draws the Editor UI tree.
-function EditorUITree:draw()
+---Draws the Editor Layout List.
+function EditorLayoutList:draw()
     -- Background
     love.graphics.setColor(0, 0, 0, 0.3)
     love.graphics.rectangle("fill", self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
 
     -- Node tree
     love.graphics.setScissor(self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
-    for i, line in ipairs(self.uiTreeInfo) do
-        local x = self.POS.x + self.ITEM_INDENT * line.indent
+    for i, item in ipairs(self.items) do
+        local x = self.POS.x + self.ITEM_INDENT * item.indent
         local y = self.POS.y + self:getItemY(i)
-        local color = _COLORS.white
-        if line.node.isController then
-            color = _COLORS.orange
-        elseif line.node:isControlled() then
-            color = _COLORS.beige
-        end
         local bgColor = nil
-        if self.editor:isNodeSelected(line.node) then
+        if self.editor:isNodeSelected(item.node) then
             bgColor = _COLORS.cyan
-        elseif line.node == self.editor.hoveredNode and (not self.dragOrigin or not (self.hoverTop or self.hoverBottom)) then
+        elseif self.editor.hoveredNode == "" and (not self.dragOrigin or not (self.hoverTop or self.hoverBottom)) then
             -- The additional condition above makes it extra clear what are you doing when arranging the nodes around in the tree.
             bgColor = _COLORS.yellow
         end
-        local alpha = 1
-        if not line.node:getProp("visible") then
-            alpha = 0.5
-        elseif not line.node:isVisible() then
-            alpha = 0.75
-        end
-        local image = line.node:getIcon()
+        -- Background
         if bgColor then
             love.graphics.setColor(bgColor.r, bgColor.g, bgColor.b, 0.5)
             love.graphics.rectangle("fill", self.POS.x, y, self.SIZE.x, self.ITEM_HEIGHT)
         end
+        -- Foreground (icon, text)
         love.graphics.setColor(1, 1, 1)
-        image:draw(Vec2(x, y))
-        if line.node:isLocked() then
-            _RESOURCE_MANAGER:getImage("widget_locked"):draw(Vec2(self.POS.x + self.SIZE.x - 25, y))
-        end
-        if line.node == self.nameEditNode then
+        _RESOURCE_MANAGER:getImage("widget_box"):draw(Vec2(x, y))
+        if self.nameEditNode == "" then
             love.graphics.setColor(0.9, 0.9, 0.9)
             love.graphics.rectangle("fill", x + 23, y + 1, self.SIZE.x - x - 20, self.ITEM_HEIGHT - 2)
             love.graphics.setColor(0.2, 0.2, 1)
             love.graphics.rectangle("line", x + 23, y + 1, self.SIZE.x - x - 20, self.ITEM_HEIGHT - 2)
-            self.editor:drawShadowedText(self.nameEditValue, x + 25, y + 2, _COLORS.black, nil, alpha, true)
+            self.editor:drawShadowedText(self.nameEditValue, x + 25, y + 2, _COLORS.black, nil, 1, true)
         else
-            self.editor:drawShadowedText(line.node:getName() .. (line.node:isCollapsed() and " ..." or ""), x + 25, y + 2, color, nil, alpha)
+            self.editor:drawShadowedText(item.name, x + 25, y + 2, _COLORS.white, nil)
         end
         -- If dragged over, additional signs will be shown.
-        if self.dragOrigin and not self.dragSnap and not self.editor:isNodeSelected(line.node) and line.node == self.editor.hoveredNode then
+        if self.dragOrigin and not self.dragSnap and not self.editor:isNodeSelected(item.node) and item.node == self.editor.hoveredNode then
             if self.hoverTop then
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.setLineWidth(2)
                 love.graphics.line(x, y, self.POS.x + self.SIZE.x, y)
             elseif self.hoverBottom then
-                -- Indent the line if this node has children.
-                if line.node:hasChildren() then
+                -- Indent the item if this node has children.
+                if item.node:hasChildren() then
                     x = x + self.ITEM_INDENT
                 end
                 love.graphics.setColor(1, 1, 1)
@@ -287,7 +180,7 @@ function EditorUITree:draw()
             end
         end
     end
-    if #self.uiTreeInfo == 0 then
+    if #self.items == 0 then
         self.editor:drawShadowedText("When you load a layout,\nits tree will show up here.", self.POS.x + 5, self.POS.y + 2)
     end
     love.graphics.setScissor()
@@ -326,7 +219,7 @@ end
 ---@param istouch boolean Whether the press is coming from a touch input.
 ---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
 ---@return boolean
-function EditorUITree:mousepressed(x, y, button, istouch, presses)
+function EditorLayoutList:mousepressed(x, y, button, istouch, presses)
     local hoveredNode = self:getHoveredNode()
     if button == 1 then
         if not hoveredNode then
@@ -377,7 +270,7 @@ end
 ---Executed whenever a mouse wheel has been scrolled.
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
-function EditorUITree:wheelmoved(x, y)
+function EditorLayoutList:wheelmoved(x, y)
     if self:isHovered() then
         self.scrollOffset = math.min(math.max(self.scrollOffset - y * self.ITEM_HEIGHT * 3, 0), self.maxScrollOffset)
     end
@@ -389,7 +282,7 @@ end
 ---Returns `true` if the input is consumed.
 ---@param key string The key code.
 ---@return boolean
-function EditorUITree:keypressed(key)
+function EditorLayoutList:keypressed(key)
     if key == "f3" then
         self.showInternalUI = not self.showInternalUI
         return true
@@ -428,7 +321,7 @@ end
 
 ---Executed whenever a certain character has been typed on the keyboard.
 ---@param text string The character.
-function EditorUITree:textinput(text)
+function EditorLayoutList:textinput(text)
     if not self.nameEditNode then
         return
     end
@@ -437,4 +330,4 @@ end
 
 
 
-return EditorUITree
+return EditorLayoutList

@@ -55,7 +55,8 @@ end
 
 ---Erases the current UI layout and replaces it with an empty one.
 function Project:newLayout()
-    self.ui = Node({name = "root", canvasInputMode = true})
+    local size = self:getProperty("nativeResolution")
+    self.ui = Node({name = "root", type = "box", widget = {size = {size.x, size.y}}, canvasInputMode = true})
     self.currentLayout = nil
     self.layoutModified = false
 end
@@ -88,7 +89,13 @@ function Project:getLayoutDirectory()
     return self.path .. "/layouts"
 end
 
----Returns the current layout name, or `nil` if no layout is loaded.
+---Returns all layout names in this project. The names include the `.json` extension.
+---@return table
+function Project:getLayoutList()
+    return _Utils.getDirListing(self:getLayoutDirectory(), "file", ".json", false)
+end
+
+---Returns the current layout name, or `nil` if no layout is loaded. The name includes the `.json` extension.
 ---@return string?
 function Project:getLayoutName()
     return self.currentLayout

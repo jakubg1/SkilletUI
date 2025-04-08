@@ -6,7 +6,7 @@ local MainCanvas = require("src.MainCanvas")
 local TransitionTest = require("src.TransitionTest")
 local ResourceManager = require("src.ResourceManager")
 local Project = require("src.Project")
-local Editor = require("src.Editor.Main")
+local Editor = require("src.Editor.Editor")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 love.graphics.setLineStyle("rough")
