@@ -23,7 +23,6 @@ function EditorCanvas:new(editor, canvas)
     self.scale = 1
     self.pan = Vec2()
     self.fullscreen = false
-    self.background = true
 
     self.dragOriginalPan = nil
     self.dragOrigin = nil
@@ -147,11 +146,6 @@ end
 function EditorCanvas:toggleFullscreen()
     self.fullscreen = not self.fullscreen
     self:updateCanvas()
-end
-
----Toggles whether the hardcoded animated background should be displayed in the background of the canvas.
-function EditorCanvas:toggleBackground()
-    self.background = not self.background
 end
 
 --##########################################--

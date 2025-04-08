@@ -29,6 +29,7 @@ function Project:new(path)
     self.PROPERTY_LIST = {
         {name = "Native Resolution", key = "nativeResolution", type = "Vector2", defaultValue = Vec2(320, 180)},
         {name = "Grid Size", key = "gridSize", type = "Vector2", nullable = true},
+        {name = "Snap to Grid", key = "gridSnap", type = "boolean", defaultValue = true},
         {name = "Grid Visible", key = "gridVisible", type = "boolean", defaultValue = false}
     }
     self.properties = PropertyList(self.PROPERTY_LIST)
@@ -176,6 +177,12 @@ function Project:getGridSize()
         return nil
     end
     return gridSize
+end
+
+---Returns whether the Snap to Grid is enabled for this Project.
+---@return boolean
+function Project:isSnapToGridEnabled()
+    return self:getProperty("gridSnap")
 end
 
 ---Returns whether the grid is visible.

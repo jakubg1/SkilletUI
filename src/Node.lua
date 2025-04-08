@@ -9,6 +9,7 @@ local PropertyList = require("src.PropertyList")
 local Box = require("src.Widgets.Box")
 local Button = require("src.Widgets.Button")
 local Canvas = require("src.Widgets.Canvas")
+local GridBackground = require("src.Widgets.GridBackground")
 local InputText = require("src.Widgets.InputText")
 local NineSprite = require("src.Widgets.NineSprite")
 local Sprite = require("src.Widgets.Sprite")
@@ -24,15 +25,16 @@ function Node:new(data, parent)
     self.parent = parent
 
     self.WIDGET_TYPES = {
-        none =              {constructor = nil,         defaultName = "Node",       icon = "widget_none"},
-        box =               {constructor = Box,         defaultName = "Box",        icon = "widget_box"},
-        button =            {constructor = Button,      defaultName = "Button",     icon = "widget_button"},
-        canvas =            {constructor = Canvas,      defaultName = "Canvas",     icon = "widget_canvas"},
-        input_text =        {constructor = InputText,   defaultName = "InputText",  icon = "widget_none"},
-        ["9sprite"] =       {constructor = NineSprite,  defaultName = "NineSprite", icon = "widget_ninesprite"},
-        sprite =            {constructor = Sprite,      defaultName = "Sprite",     icon = "widget_sprite"},
-        text =              {constructor = Text,        defaultName = "Text",       icon = "widget_text"},
-        ["@titleDigit"] =   {constructor = TitleDigit,  defaultName = "TitleDigit", icon = "widget_titledigit"}
+        none =                  {constructor = nil,             defaultName = "Node",           icon = "widget_none"},
+        box =                   {constructor = Box,             defaultName = "Box",            icon = "widget_box"},
+        button =                {constructor = Button,          defaultName = "Button",         icon = "widget_button"},
+        canvas =                {constructor = Canvas,          defaultName = "Canvas",         icon = "widget_canvas"},
+        input_text =            {constructor = InputText,       defaultName = "InputText",      icon = "widget_none"},
+        ["9sprite"] =           {constructor = NineSprite,      defaultName = "NineSprite",     icon = "widget_ninesprite"},
+        sprite =                {constructor = Sprite,          defaultName = "Sprite",         icon = "widget_sprite"},
+        text =                  {constructor = Text,            defaultName = "Text",           icon = "widget_text"},
+        ["@titleDigit"] =       {constructor = TitleDigit,      defaultName = "TitleDigit",     icon = "widget_titledigit"},
+        ["@gridBackground"] =   {constructor = GridBackground,  defaultName = "GridBackground", icon = "widget_titledigit"}
     }
     self.type = "none"
 

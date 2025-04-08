@@ -140,6 +140,9 @@ end
 ---@param pos Vector2 The input position.
 ---@return Vector2
 function Editor:snapPositionToGrid(pos)
+    if not _PROJECT:isSnapToGridEnabled() then
+        return pos
+    end
     local gridSize = _PROJECT:getGridSize()
     if not gridSize then
         return pos
@@ -155,6 +158,9 @@ end
 ---@param size Vector2 The box size.
 ---@return Vector2
 function Editor:snapBoxToGrid(pos, size)
+    if not _PROJECT:isSnapToGridEnabled() then
+        return pos
+    end
     local gridSize = _PROJECT:getGridSize()
     if not gridSize then
         return pos
@@ -1425,13 +1431,13 @@ function Editor:keypressed(key)
         else
             _PROJECT:playTimeline("test")
         end
-    elseif key == "up" then
+    elseif self.enabled and key == "up" then
         self:moveSelectedNode(Vec2(0, _IsShiftPressed() and -10 or -1))
-    elseif key == "down" then
+    elseif self.enabled and key == "down" then
         self:moveSelectedNode(Vec2(0, _IsShiftPressed() and 10 or 1))
-    elseif key == "left" then
+    elseif self.enabled and key == "left" then
         self:moveSelectedNode(Vec2(_IsShiftPressed() and -10 or -1, 0))
-    elseif key == "right" then
+    elseif self.enabled and key == "right" then
         self:moveSelectedNode(Vec2(_IsShiftPressed() and 10 or 1, 0))
     elseif key == "p" and _IsCtrlPressed() then
         self:printInternalUITreeInfo()
@@ -1445,11 +1451,9 @@ function Editor:keypressed(key)
         self.canvasMgr:resetZoom()
     elseif self.enabled and key == "kp1" then
         self.canvasMgr:fitZoom()
-    elseif not self.enabled and key == "`" then
-        self.canvasMgr:toggleBackground()
     elseif not self.enabled and key == "f" then
         self.canvasMgr:toggleFullscreen()
-    elseif key == "m" then
+    elseif self.enabled and key == "m" then
         self:parentSelectedNodeToHoveredNode()
     end
 end

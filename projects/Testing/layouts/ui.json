@@ -1,24 +1,23 @@
 {
 	"canvasInputMode": true,
-	"name": "root",
 	"children": [
 		{
-			"pos": [
-				80,
-				80
+			"align": [
+				0.5,
+				0.5
 			],
 			"children": [
 				{
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "text",
 					"parentAlign": [
 						0.5,
 						0.5
 					],
 					"type": "text",
-					"name": "text",
-					"align": [
-						0.5,
-						0.5
-					],
 					"widget": {
 						"shadowOffset": [
 							1,
@@ -28,24 +27,24 @@
 					}
 				},
 				{
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "sprite",
 					"parentAlign": [
 						0.5,
 						0.5
 					],
 					"type": "9sprite",
-					"name": "sprite",
-					"align": [
-						0.5,
-						0.5
-					],
 					"widget": {
 						"clickImage": "button_click",
+						"hoverImage": "button_hover",
+						"image": "button",
 						"shadowOffset": [
 							1,
 							1
 						],
-						"image": "button",
-						"hoverImage": "button_hover",
 						"size": [
 							100,
 							14
@@ -53,26 +52,30 @@
 					}
 				}
 			],
-			"type": "button",
 			"name": "btn0",
+			"pos": [
+				80,
+				80
+			],
+			"type": "button"
+		},
+		{
 			"align": [
 				0.5,
 				0.5
-			]
-		},
-		{
+			],
 			"children": [
 				{
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "#",
 					"parentAlign": [
 						0.5,
 						0.5
 					],
 					"type": "text",
-					"name": "#",
-					"align": [
-						0.5,
-						0.5
-					],
 					"widget": {
 						"shadowOffset": [
 							1,
@@ -82,25 +85,21 @@
 					}
 				}
 			],
+			"name": "btn1",
 			"pos": [
 				160,
 				80
 			],
-			"align": [
-				0.5,
-				0.5
-			],
-			"type": "9sprite",
-			"name": "btn1",
 			"signalOnClick": "transition",
+			"type": "9sprite",
 			"widget": {
 				"clickImage": "button_click",
+				"hoverImage": "button_hover",
+				"image": "button",
 				"shadowOffset": [
 					1,
 					1
 				],
-				"image": "button",
-				"hoverImage": "button_hover",
 				"size": [
 					100,
 					14
@@ -108,22 +107,22 @@
 			}
 		},
 		{
-			"pos": [
-				160,
-				100
+			"align": [
+				0.5,
+				0.5
 			],
 			"children": [
 				{
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "#",
 					"parentAlign": [
 						0.5,
 						0.5
 					],
 					"type": "text",
-					"name": "#",
-					"align": [
-						0.5,
-						0.5
-					],
 					"widget": {
 						"shadowOffset": [
 							1,
@@ -133,20 +132,20 @@
 					}
 				}
 			],
-			"type": "9sprite",
 			"name": "btn2",
-			"align": [
-				0.5,
-				0.5
+			"pos": [
+				160,
+				100
 			],
+			"type": "9sprite",
 			"widget": {
 				"clickImage": "button_click",
+				"hoverImage": "button_hover",
+				"image": "button",
 				"shadowOffset": [
 					1,
 					1
 				],
-				"image": "button",
-				"hoverImage": "button_hover",
 				"size": [
 					100,
 					14
@@ -154,22 +153,22 @@
 			}
 		},
 		{
-			"pos": [
-				160,
-				120
+			"align": [
+				0.5,
+				0.5
 			],
 			"children": [
 				{
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "#",
 					"parentAlign": [
 						0.5,
 						0.5
 					],
 					"type": "text",
-					"name": "#",
-					"align": [
-						0.5,
-						0.5
-					],
 					"widget": {
 						"shadowOffset": [
 							1,
@@ -179,20 +178,20 @@
 					}
 				}
 			],
-			"type": "9sprite",
 			"name": "btn3",
-			"align": [
-				0.5,
-				0.5
+			"pos": [
+				160,
+				120
 			],
+			"type": "9sprite",
 			"widget": {
 				"clickImage": "button_click",
+				"hoverImage": "button_hover",
+				"image": "button",
 				"shadowOffset": [
 					1,
 					1
 				],
-				"image": "button",
-				"hoverImage": "button_hover",
 				"size": [
 					100,
 					14
@@ -200,90 +199,90 @@
 			}
 		},
 		{
-			"type": "text",
 			"name": "text",
 			"pos": [
 				220,
 				160
 			],
+			"type": "text",
 			"widget": {
-				"text": "Let's write some code!",
-				"waveSpeed": 60,
 				"shadowOffset": [
 					1,
 					1
 				],
+				"text": "Let's write some code!",
+				"waveAmplitude": 5,
 				"waveFrequency": 80,
-				"waveAmplitude": 5
+				"waveSpeed": 60
 			}
 		},
 		{
+			"align": [
+				0.5,
+				0.5
+			],
+			"name": "title",
 			"pos": [
 				160,
 				35
 			],
 			"type": "text",
-			"name": "title",
-			"align": [
-				0.5,
-				0.5
-			],
 			"widget": {
-				"gradientWaveSpeed": 100,
-				"text": "Chain Blast",
 				"color": "#4cff4c",
+				"gradientWaveColor": "#199919",
+				"gradientWaveFrequency": 200,
+				"gradientWaveSpeed": 100,
+				"scale": 4,
 				"shadowOffset": [
 					2,
 					2
 				],
-				"gradientWaveColor": "#199919",
-				"scale": 4,
-				"gradientWaveFrequency": 200
+				"text": "Chain Blast"
 			}
 		},
 		{
+			"align": [
+				0.5,
+				0.5
+			],
+			"name": "titleDigit",
 			"pos": [
 				162,
 				35
 			],
 			"type": "@titleDigit",
-			"name": "titleDigit",
-			"align": [
-				0.5,
-				0.5
-			],
 			"widget": []
 		},
 		{
-			"type": "box",
 			"name": "Box",
+			"type": "box",
 			"widget": {
+				"alpha": 0.3,
+				"borderColor": "#e6a018",
+				"color": "#e7ac14",
 				"size": [
 					320,
 					180
-				],
-				"borderColor": "#e6a018",
-				"color": "#e7ac14",
-				"alpha": 0.3
+				]
 			}
 		},
 		{
-			"pos": [
-				160,
-				180
+			"align": [
+				0.5,
+				1
 			],
 			"children": [
 				{
+					"align": [
+						0.5,
+						0
+					],
+					"name": "box",
 					"parentAlign": [
 						0.5,
 						0
 					],
 					"type": "box",
-					"name": "box",
-					"align": [
-						0.5,
-						0
-					],
 					"widget": {
 						"color": "#199919",
 						"size": [
@@ -293,20 +292,26 @@
 					}
 				}
 			],
-			"type": "box",
 			"name": "box",
-			"align": [
-				0.5,
-				1
+			"pos": [
+				160,
+				180
 			],
+			"type": "box",
 			"widget": {
+				"alpha": 0.4,
+				"color": "#199919",
 				"size": [
 					320,
 					30
-				],
-				"color": "#199919",
-				"alpha": 0.4
+				]
 			}
+		},
+		{
+			"name": "gridBackground",
+			"type": "@gridBackground",
+			"widget": []
 		}
-	]
+	],
+	"name": "root"
 }

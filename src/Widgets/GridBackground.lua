@@ -1,14 +1,25 @@
 local class = require "com.class"
 
 ---@class GridBackground
----@overload fun():GridBackground
+---@overload fun(node, data):GridBackground
 local GridBackground = class:derive("GridBackground")
 
+-- Place your imports here
+local Vec2 = require("src.Essentials.Vector2")
 local Color = require("src.Essentials.Color")
+local PropertyList = require("src.PropertyList")
 
 
 
-function GridBackground:new()
+---A hardcoded background which was supposed to be in the title screen.
+---@param node Node The Node that this background is attached to.
+---@param data table? The data to be used for this Grid Background.
+function GridBackground:new(node, data)
+    self.node = node
+
+    self.PROPERTY_LIST = {}
+    self.properties = PropertyList(self.PROPERTY_LIST, data)
+
     self.TILE_SIZE = 12
     self.GRID_SIZE = 1
     self.WIDTH = 320
@@ -40,6 +51,47 @@ end
 
 
 
+---Returns the given property of this GridBackground.
+---@param key string The property key.
+---@return any?
+function GridBackground:getProp(key)
+    return self.properties:getValue(key)
+end
+
+
+
+---Sets the given property of this GridBackground to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function GridBackground:setProp(key, value)
+    self.properties:setValue(key, value)
+end
+
+
+
+---Returns the given property base of this GridBackground.
+---@param key string The property key.
+---@return any?
+function GridBackground:getPropBase(key)
+    return self.properties:getBaseValue(key)
+end
+
+
+
+---Sets the given property base of this GridBackground to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function GridBackground:setPropBase(key, value)
+    self.properties:setBaseValue(key, value)
+end
+
+
+
+---Transforms a point to match the current background position and rotation.
+---@param x number The X coordinate of the point to be transformed.
+---@param y number The Y coordinate of the point to be transformed.
+---@return number
+---@return number
 function GridBackground:transformPoint(x, y)
 	x, y = x + self.moveX * self.TILE_SIZE, y + self.moveY * self.TILE_SIZE
 	x, y = x * math.cos(self.rot) - y * math.sin(self.rot), x * math.sin(self.rot) + y * math.cos(self.rot)
@@ -48,6 +100,11 @@ end
 
 
 
+---Draws a single transformed rectangle on the screen.
+---@param x number The X coordinate of the rectangle center before transformation.
+---@param y number The Y coordinate of the rectangle center before transformation.
+---@param w number The width of the rectangle in pixels.
+---@param h number The height of the rectangle in pixels.
 function GridBackground:drawRect(x, y, w, h)
 	local x1, y1 = self:transformPoint(x - w / 2, y - h / 2)
 	local x2, y2 = self:transformPoint(x + w / 2, y - h / 2)
@@ -58,6 +115,10 @@ end
 
 
 
+---Draws a single background cell on the screen.
+---This includes both the cell and the grid. This function also calculates the colors and sizes.
+---@param x number The X coordinate of the cell.
+---@param y number The Y coordinate of the cell.
 function GridBackground:drawCell(x, y)
 	local v = love.math.noise(self.BASE_X + x * 0.06 + self.time * 0.4, self.BASE_Y + y * 0.13 + self.time * 0.4)
 	local c = math.min(math.max(love.math.noise(self.BASE_COLOR_X + x * 0.04 - self.time * 0.2, self.BASE_COLOR_Y + y * 0.04 + self.time * 0.2) * 1.4 - 0.2, 0), 1)
@@ -75,7 +136,27 @@ end
 
 
 
+---Returns the size of this Grid Background.
+---@return Vector2
+function GridBackground:getSize()
+    return Vec2(self.WIDTH, self.HEIGHT)
+end
+
+
+
+---Sets the size of this GridBackground. But you actually cannot set it. Don't even try :)
+---@param size Vector2 The new size of this GridBackground.
+function GridBackground:setSize(size)
+    error("GridBackgrounds cannot be resized!")
+end
+
+
+
+---Updates the Grid Background.
+---@param dt number Time delta, in seconds.
 function GridBackground:update(dt)
+    self.properties:update(dt)
+
 	self.time = self.time + dt
 	self.speedMoveRot = self.speedMoveRot * 0.6 + ((love.math.noise(self.MOVE_ROT_BASE + self.time * 0.05) - 0.5) * 0.015) * 0.4
 	self.speedRot = self.speedRot * 0.6 + ((love.math.noise(self.ROT_BASE + self.time * 0.035) - 0.5) * 0.005) * 0.4
@@ -87,6 +168,7 @@ end
 
 
 
+---Draws the Grid Background.
 function GridBackground:draw()
     love.graphics.setColor(0.05, 0.05, 0.15)
     love.graphics.rectangle("fill", 0, 0, self.WIDTH, self.HEIGHT)
@@ -97,6 +179,14 @@ function GridBackground:draw()
 			self:drawCell(x, y)
 		end
 	end
+end
+
+
+
+---Returns the GridBackground's data to be used for loading later.
+---@return table
+function GridBackground:serialize()
+    return self.properties:serialize()
 end
 
 

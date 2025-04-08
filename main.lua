@@ -3,7 +3,6 @@ _Utils = require("com.utils")
 local Vec2 = require("src.Essentials.Vector2")
 local Color = require("src.Essentials.Color")
 local MainCanvas = require("src.MainCanvas")
-local GridBackground = require("src.GridBackground")
 local TransitionTest = require("src.TransitionTest")
 local ResourceManager = require("src.ResourceManager")
 local Project = require("src.Project")
@@ -19,6 +18,7 @@ _WINDOW_SIZE = Vec2(1600, 900)
 _Time = 0
 _MousePos = Vec2()
 _MouseCPos = Vec2()
+_Debug = false
 
 _DrawTime = 0
 
@@ -69,14 +69,12 @@ _ALIGNMENTS = {
 }
 
 _CANVAS = MainCanvas()
-_BACKGROUND = GridBackground()
 _TRANSITION = TransitionTest()
 _RESOURCE_MANAGER = ResourceManager()
 ---@type Project?
 _PROJECT = nil
+--_EDITOR = nil
 _EDITOR = Editor()
-
-_Debug = false
 
 
 
@@ -175,8 +173,10 @@ end
 function love.load()
 	_RESOURCE_MANAGER:init()
 	_LoadRuntime()
-	_EDITOR:load()
-	_EDITOR.canvasMgr:fitZoom()
+	if _EDITOR then
+		_EDITOR:load()
+		_EDITOR.canvasMgr:fitZoom()
+	end
 end
 
 function love.update(dt)
@@ -188,65 +188,79 @@ function love.update(dt)
 	_MouseCPos = _CANVAS:posToPixel(_MousePos)
 
 	-- Main update
-	_BACKGROUND:update(dt)
 	_TRANSITION:update(dt)
 	_PROJECT:update(dt)
-	_EDITOR:update(dt)
+	if _EDITOR then
+		_EDITOR:update(dt)
+	end
 end
 
 function love.draw()
 	local t = love.timer.getTime()
-	_EDITOR:drawUnderCanvas()
+	if _EDITOR then
+		_EDITOR:drawUnderCanvas()
+	end
 	_CANVAS:activate()
 	-- Start of main drawing routine
-	if not _EDITOR.enabled and _EDITOR.canvasMgr.background then
-		_BACKGROUND:draw()
-	end
 	_PROJECT:draw()
 	_TRANSITION:draw()
 	-- End of main drawing routine
 	_CANVAS:draw()
-	_EDITOR:drawUIPass()
-	_EDITOR:draw()
+	if _EDITOR then
+		_EDITOR:drawUIPass()
+		_EDITOR:draw()
+	end
 	local t2 = love.timer.getTime() - t
 	_DrawTime = _DrawTime * 0.95 + t2 * 0.05
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-	if not _EDITOR.enabled then
+	if not _EDITOR or not _EDITOR.enabled then
 		_PROJECT:mousepressed(x, y, button, istouch, presses)
 	end
-	_EDITOR:mousepressed(x, y, button, istouch, presses)
+	if _EDITOR then
+		_EDITOR:mousepressed(x, y, button, istouch, presses)
+	end
 end
 
 function love.mousereleased(x, y, button)
-	if not _EDITOR.enabled then
+	if not _EDITOR or not _EDITOR.enabled then
 		_PROJECT:mousereleased(x, y, button)
 	end
-	_EDITOR:mousereleased(x, y, button)
+	if _EDITOR then
+		_EDITOR:mousereleased(x, y, button)
+	end
 end
 
 function love.wheelmoved(x, y)
-	_EDITOR:wheelmoved(x, y)
+	if _EDITOR then
+		_EDITOR:wheelmoved(x, y)
+	end
 end
 
 function love.keypressed(key)
 	if key == "f12" then
 		_Debug = not _Debug
 	end
-	if not _EDITOR.enabled then
+	if not _EDITOR or not _EDITOR.enabled then
 		_PROJECT:keypressed(key)
 	end
-	_EDITOR:keypressed(key)
+	if _EDITOR then
+		_EDITOR:keypressed(key)
+	end
 end
 
 function love.textinput(text)
-	_EDITOR:textinput(text)
+	if _EDITOR then
+		_EDITOR:textinput(text)
+	end
 end
 
 function love.resize(w, h)
 	_WINDOW_SIZE = Vec2(w, h)
-	_EDITOR:resize(w, h)
+	if _EDITOR then
+		_EDITOR:resize(w, h)
+	end
 end
 
 function love.quit()
