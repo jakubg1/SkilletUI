@@ -266,8 +266,8 @@ function Text:generateCharacterData()
                             -- Starting mark.
                             if _COLORS[formattingContent] then
                                 color = _COLORS[formattingContent] -- Color name
-                            elseif formattingContent:len() == 7 and formattingContent:sub(1, 1) == "#" then
-                                color = Color(formattingContent:sub(2)) -- Color hex code
+                            elseif (formattingContent:len() == 4 or formattingContent:len() == 7) and formattingContent:sub(1, 1) == "#" then
+                                color = Color(formattingContent:sub(2)) -- Color hex code (#rgb or #rrggbb)
                             elseif formattingContent == "b" then
                                 boldness = 2 -- Bold
                             end

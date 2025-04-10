@@ -81,9 +81,11 @@ end
 
 
 
----Returns the hovered UI node in the tree, if one exists.
----@return Node?
-function EditorLayoutList:getHoveredNode()
+---Returns the index of the hovered item in the list.
+---If none of the items are hovered, returns `nil`.
+---Additionally, this function updates the `self.hoverTop` and `self.hoverBottom` fields.
+---@return integer?
+function EditorLayoutList:getHoveredItemID()
     if not self:isHovered() then
         return nil
     end
@@ -99,7 +101,7 @@ function EditorLayoutList:getHoveredNode()
             elseif _Utils.isPointInsideBox(_MousePos, self.POS + Vec2(0, y + self.ITEM_HEIGHT - self.ITEM_MARGIN), Vec2(self.SIZE.x, self.ITEM_MARGIN)) then
                 self.hoverBottom = true
             end
-            return entry.node
+            return i
         end
     end
 end
@@ -132,13 +134,14 @@ function EditorLayoutList:draw()
 
     -- Node tree
     love.graphics.setScissor(self.POS.x, self.POS.y, self.SIZE.x, self.SIZE.y)
+    local hoveredItemID = self:getHoveredItemID()
     for i, item in ipairs(self.items) do
         local x = self.POS.x + self.ITEM_INDENT * item.indent
         local y = self.POS.y + self:getItemY(i)
         local bgColor = nil
-        if self.editor:isNodeSelected(item.node) then
+        if _PROJECT:getLayoutName() == item.name then
             bgColor = _COLORS.cyan
-        elseif self.editor.hoveredNode == "" and (not self.dragOrigin or not (self.hoverTop or self.hoverBottom)) then
+        elseif hoveredItemID == i and (not self.dragOrigin or not (self.hoverTop or self.hoverBottom)) then
             -- The additional condition above makes it extra clear what are you doing when arranging the nodes around in the tree.
             bgColor = _COLORS.yellow
         end
@@ -160,7 +163,7 @@ function EditorLayoutList:draw()
             self.editor:drawShadowedText(item.name, x + 25, y + 2, _COLORS.white, nil)
         end
         -- If dragged over, additional signs will be shown.
-        if self.dragOrigin and not self.dragSnap and not self.editor:isNodeSelected(item.node) and item.node == self.editor.hoveredNode then
+        if self.dragOrigin and not self.dragSnap and not self.editor:isNodeSelected(item.node) and hoveredItemID == i then
             if self.hoverTop then
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.setLineWidth(2)
@@ -220,9 +223,9 @@ end
 ---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
 ---@return boolean
 function EditorLayoutList:mousepressed(x, y, button, istouch, presses)
-    local hoveredNode = self:getHoveredNode()
+    local hoveredItemID = self:getHoveredItemID()
     if button == 1 then
-        if not hoveredNode then
+        if not hoveredItemID then
             self.nameEditNode = nil
             self.nameEditValue = nil
         end
@@ -232,33 +235,25 @@ function EditorLayoutList:mousepressed(x, y, button, istouch, presses)
                 self.nameEditNode = nil
                 self.nameEditValue = nil
             end
-            self.nameEditLastClickedNode = hoveredNode
-            if hoveredNode then
-                self.editor:clickNode(hoveredNode)
-                self:startDraggingSelectedNodeInNodeTree()
+            self.nameEditLastClickedNode = hoveredItemID
+            if hoveredItemID then
+                local layoutName = self.items[hoveredItemID].name
+                _PROJECT:loadLayout(layoutName)
+                --self:startDraggingSelectedNodeInNodeTree()
                 return true
             end
         else
             -- Subsequent clicks (double click)
-            if hoveredNode then
-                if hoveredNode == self.nameEditLastClickedNode then
+            if hoveredItemID then
+                if hoveredItemID == self.nameEditLastClickedNode then
                     -- We've clicked this actual Node the second time. Enable the name edit box.
-                    self.nameEditNode = hoveredNode
-                    self.nameEditValue = hoveredNode:getName()
+                    self.nameEditNode = hoveredItemID
+                    --self.nameEditValue = hoveredItemID:getName()
                     return true
                 else
                     -- We've clicked a different Node. If that one will be clicked the second time now, its name could be edited.
-                    self.nameEditLastClickedNode = hoveredNode
+                    self.nameEditLastClickedNode = hoveredItemID
                 end
-            end
-        end
-    elseif button == 2 then
-        if hoveredNode then
-            if hoveredNode:hasChildren() then
-                hoveredNode:toggleCollapse()
-            else
-                -- Nodes with no children shouldn't ever be able to be collapsed.
-                hoveredNode:setCollapsed(false)
             end
         end
     end

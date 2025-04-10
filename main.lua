@@ -91,7 +91,7 @@ end
 ---Loads a project from the `projects/<name>` folder.
 ---@param name string The project name.
 function _LoadProject(name)
-	_PROJECT = Project("projects/" .. name)
+	_PROJECT = Project(name)
 end
 
 
@@ -121,35 +121,35 @@ end
 ---@param name string The signal name.
 function _OnSignal(name)
 	if name == "main" then
-		_PROJECT:loadLayout("welcome.json")
+		_PROJECT:loadLayout("welcome")
 	elseif name == "page1" then
-		_PROJECT:loadLayout("todo.json")
+		_PROJECT:loadLayout("todo")
 	elseif name == "page2" then
-		_PROJECT:loadLayout("todo2.json")
+		_PROJECT:loadLayout("todo2")
 	elseif name == "page3" then
-		_PROJECT:loadLayout("todo3.json")
+		_PROJECT:loadLayout("todo3")
 	elseif name == "page4" then
-		_PROJECT:loadLayout("todo4.json")
+		_PROJECT:loadLayout("todo4")
 	elseif name == "dive1" then
-		_PROJECT:loadLayout("dive1.json")
+		_PROJECT:loadLayout("dive1")
 	elseif name == "dive2" then
-		_PROJECT:loadLayout("dive2.json")
+		_PROJECT:loadLayout("dive2")
 	elseif name == "dive3" then
-		_PROJECT:loadLayout("dive3.json")
+		_PROJECT:loadLayout("dive3")
 	elseif name == "dive4" then
-		_PROJECT:loadLayout("dive4.json")
+		_PROJECT:loadLayout("dive4")
 	elseif name == "dive5" then
-		_PROJECT:loadLayout("dive5.json")
+		_PROJECT:loadLayout("dive5")
 	elseif name == "dive6" then
-		_PROJECT:loadLayout("dive6.json")
+		_PROJECT:loadLayout("dive6")
 	elseif name == "dive7" then
-		_PROJECT:loadLayout("dive7.json")
+		_PROJECT:loadLayout("dive7")
 	elseif name == "dive8" then
-		_PROJECT:loadLayout("dive8.json")
+		_PROJECT:loadLayout("dive8")
 	elseif name == "dive9" then
-		_PROJECT:loadLayout("dive9.json")
+		_PROJECT:loadLayout("dive9")
 	elseif name == "dive10" then
-		_PROJECT:loadLayout("dive10.json")
+		_PROJECT:loadLayout("dive10")
 	elseif name == "transition" then
 		if _TRANSITION.state then
 			_TRANSITION:hide()

@@ -991,9 +991,11 @@ end
 function Editor:onInputReceived(result)
     if type(self.activeInput) == "string" then
         if self.activeInput == "save" then
-            self:saveScene(result)
+            -- Strip the `.json` extension.
+            self:saveScene(result:sub(1, result:len() - 5))
         elseif self.activeInput == "load" then
-            self:loadScene(result)
+            -- Strip the `.json` extension.
+            self:loadScene(result:sub(1, result:len() - 5))
         elseif self.activeInput == "loadProject" then
             self:loadProject(result)
         end

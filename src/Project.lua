@@ -1,25 +1,23 @@
 local class = require "com.class"
 
 ---@class Project
----@overload fun(path: string?):Project
+---@overload fun(name: string?):Project
 local Project = class:derive("Project")
 
 -- Place your imports here
 local Vec2 = require("src.Essentials.Vector2")
 local PropertyList = require("src.PropertyList")
-local Node = require("src.Node")
+local ProjectLayout = require("src.ProjectLayout")
 local Timeline = require("src.Timeline")
 
 ---Constructs a new Project.
 ---Projects contain some settings and the currently loaded UI layout loaded to it.
 ---They also store a list of Timelines.
----@param path string? The path to the project folder. If not specified, an empty project will be created.
-function Project:new(path)
-    self.path = path
+---@param name string The name of the project (and its folder in the `projects/` directory). If the specified directory doesn't exist, a new empty project will be created.
+function Project:new(name)
+    self.name = name
 
-    self.ui = nil
     self.currentLayout = nil
-    self.layoutModified = false
 
     self.timelines = {
         test = Timeline()
@@ -34,8 +32,8 @@ function Project:new(path)
     }
     self.properties = PropertyList(self.PROPERTY_LIST)
 
-    local data = _Utils.loadJson(path .. "/settings.json")
-    assert(data, "Could not load project data from " .. path .. "/settings.json")
+    local path = assert(self:getSettingsPath())
+    local data = assert(_Utils.loadJson(path), "Could not load project data from " .. path)
     self:deserialize(data)
 end
 
@@ -46,7 +44,30 @@ end
 ---Returns the current project's name. Currently, this is derived from its path.
 ---@return string
 function Project:getName()
-    return _Utils.strSplit(self.path, "/")[2]
+    return self.name
+end
+
+--################################################--
+---------------- F I L E S Y S T E M ---------------
+--################################################--
+
+---Returns the complete path to this Project's directory, starting from the root program directory.
+---The returned path contains a trailing `/` character.
+---@return string
+function Project:getPath()
+    return "projects/" .. self.name .. "/"
+end
+
+---Returns the complete path to this Project's `settings.json` file, starting from the root program directory.
+---@return string
+function Project:getSettingsPath()
+    return self:getPath() .. "settings.json"
+end
+
+---Returns this project's directory where layouts are stored. The returned path contains a trailing `/` character.
+---@return string
+function Project:getLayoutDirectory()
+    return self:getPath() .. "layouts/"
 end
 
 --##########################################--
@@ -55,62 +76,64 @@ end
 
 ---Erases the current UI layout and replaces it with an empty one.
 function Project:newLayout()
-    local size = self:getProperty("nativeResolution")
-    self.ui = Node({name = "root", type = "box", widget = {size = {size.x, size.y}}, canvasInputMode = true})
-    self.currentLayout = nil
-    self.layoutModified = false
+    self.currentLayout = ProjectLayout(self)
 end
 
 ---Loads a UI layout from this Project.
----@param name string The name of this layout, including `.json`.
+---@param name string The name of this layout, excluding `.json`.
 function Project:loadLayout(name)
-    self.ui = Node(_Utils.loadJson(self:getLayoutDirectory() .. "/" .. name))
-    self.currentLayout = name
-    self.layoutModified = false
+    self.currentLayout = ProjectLayout(self, name)
 end
 
 ---Saves the current UI layout.
----@param name string The name of this layout, including `.json`.
+---@param name string The name of this layout, excluding `.json`.
 function Project:saveLayout(name)
-    _Utils.saveJson(self:getLayoutDirectory() .. "/" .. name, self.ui:serialize())
-    self.currentLayout = name
-    self.layoutModified = false
+    self.currentLayout:save(name)
 end
 
----Returns the current UI layout.
+---Returns the root node of the current layout, or `nil` if no layout is loaded.
 ---@return Node?
 function Project:getCurrentLayout()
-    return self.ui
+    if not self.currentLayout then
+        return nil
+    end
+    return self.currentLayout:getUI()
 end
 
----Returns this project's directory where layouts are stored.
----@return string
-function Project:getLayoutDirectory()
-    return self.path .. "/layouts"
-end
-
----Returns all layout names in this project. The names include the `.json` extension.
+---Returns the names of all layouts in this project, sorted alphabetically.
 ---@return table
 function Project:getLayoutList()
-    return _Utils.getDirListing(self:getLayoutDirectory(), "file", ".json", false)
+    local names = _Utils.getDirListing(self:getLayoutDirectory(), "file", ".json", false)
+    for i, name in ipairs(names) do
+        -- Strip the `.json` extension.
+        names[i] = name:sub(1, name:len() - 5)
+    end
+    table.sort(names)
+    return names
 end
 
----Returns the current layout name, or `nil` if no layout is loaded. The name includes the `.json` extension.
+---Returns the current layout name, or `nil` if no layout is loaded.
 ---@return string?
 function Project:getLayoutName()
-    return self.currentLayout
+    if not self.currentLayout then
+        return nil
+    end
+    return self.currentLayout:getName()
 end
 
 ---Marks the current layout as modified or not modified.
----@param layoutModified boolean Whether the layout should be marked as modified (`true`) or not (`false`).
-function Project:setLayoutModified(layoutModified)
-    self.layoutModified = layoutModified
+---@param modified boolean Whether the layout should be marked as modified (`true`) or not (`false`).
+function Project:setLayoutModified(modified)
+    self.currentLayout:setModified(modified)
 end
 
----Returns whether this layout is modified (unsaved).
----@return boolean
+---Returns whether the current layout is modified (unsaved), or `nil` if no layout is loaded.
+---@return boolean?
 function Project:isLayoutModified()
-    return self.layoutModified
+    if not self.currentLayout then
+        return nil
+    end
+    return self.currentLayout:isModified()
 end
 
 --##############################################--
@@ -127,8 +150,8 @@ end
 ---@param name string The name of the Timeline to be stopped.
 function Project:stopTimeline(name)
     self.timelines[name]:stop()
-    if self.ui then
-        self.ui:resetProperties()
+    if self.currentLayout then
+        self.currentLayout:getUI():resetProperties()
     end
 end
 
@@ -198,15 +221,15 @@ function Project:isGridVisible()
     return self:getProperty("gridVisible")
 end
 
---######################################--
----------------- O T H E R ---------------
---######################################--
+--##############################################--
+---------------- C A L L B A C K S ---------------
+--##############################################--
 
 ---Updates the Project's components: layout and all timelines.
 ---@param dt number Time delta, in seconds.
 function Project:update(dt)
-    if self.ui then
-        self.ui:update(dt)
+    if self.currentLayout then
+        self.currentLayout:update(dt)
     end
     for name, timeline in pairs(self.timelines) do
         timeline:update(dt)
@@ -215,8 +238,8 @@ end
 
 ---Draws the Project's UI on the screen.
 function Project:draw()
-    if self.ui then
-        self.ui:draw()
+    if self.currentLayout then
+        self.currentLayout:draw()
     end
 end
 
@@ -227,8 +250,8 @@ end
 ---@param istouch boolean Whether the press is coming from a touch input.
 ---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
 function Project:mousepressed(x, y, button, istouch, presses)
-    if self.ui then
-        self.ui:mousepressed(x, y, button, istouch, presses)
+    if self.currentLayout then
+        self.currentLayout:mousepressed(x, y, button, istouch, presses)
     end
 end
 
@@ -237,16 +260,16 @@ end
 ---@param y integer The Y coordinate.
 ---@param button integer The button that has been released.
 function Project:mousereleased(x, y, button)
-    if self.ui then
-        self.ui:mousereleased(x, y, button)
+    if self.currentLayout then
+        self.currentLayout:mousereleased(x, y, button)
     end
 end
 
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string The key code.
 function Project:keypressed(key)
-    if self.ui then
-        self.ui:keypressed(key)
+    if self.currentLayout then
+        self.currentLayout:keypressed(key)
     end
 end
 
