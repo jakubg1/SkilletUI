@@ -40,10 +40,22 @@ function ProjectLayout:getName()
     return self.name
 end
 
+---Changes the name of this Layout.
+---@param name string The new name for this Layout.
+function ProjectLayout:setName(name)
+    self.name = name
+end
+
 ---Returns the root UI node of this Layout.
 ---@return Node
 function ProjectLayout:getUI()
     return self.ui
+end
+
+---Returns whether this layout is modified.
+---@return boolean
+function ProjectLayout:isModified()
+    return self.modified
 end
 
 ---Marks this layout as modified or not modified.
@@ -52,10 +64,10 @@ function ProjectLayout:setModified(modified)
     self.modified = modified
 end
 
----Returns whether this layout is modified.
----@return boolean
-function ProjectLayout:isModified()
-    return self.modified
+---Returns the name of this Layout, or `"(unnamed)"` if unnamed, and with a modified indicator `*` if this layout is modified.
+---@return string
+function ProjectLayout:getDisplayName()
+    return (self.name or "(unnamed)") .. (self.modified and "*" or "")
 end
 
 --################################################--

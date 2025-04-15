@@ -192,7 +192,7 @@ function EditorKeyframes:draw()
         love.graphics.setScissor(self.POS.x, self.POS.y + self.HEADER_HEIGHT, self.SIZE.x, self.SIZE.y - self.HEADER_HEIGHT)
         local displayGhostNode = true
         for i, name in ipairs(timeline.nodeNames) do
-            local layout = _PROJECT:getCurrentLayout()
+            local layout = _PROJECT:getCurrentLayoutUI()
             local node = layout and layout:findChildByName(name)
             local hovered = node and self.editor.hoveredNode == node
             local selected = node and self.editor:isNodeSelected(node)

@@ -17,6 +17,7 @@ local Timeline = require("src.Timeline")
 function Project:new(name)
     self.name = name
 
+    self.layouts = {}
     self.currentLayout = nil
 
     self.timelines = {
@@ -35,6 +36,7 @@ function Project:new(name)
     local path = assert(self:getSettingsPath())
     local data = assert(_Utils.loadJson(path), "Could not load project data from " .. path)
     self:deserialize(data)
+    self:loadLayouts()
 end
 
 --######################################--
@@ -70,6 +72,22 @@ function Project:getLayoutDirectory()
     return self:getPath() .. "layouts/"
 end
 
+---Returns the names of all layouts in this project, sorted alphabetically.
+---The names do not have the `.json` extension.
+---
+---This function sources names directly from the project directory.
+---Use `:getLayoutList()` instead!
+---@return table
+function Project:getLayoutFileList()
+    local names = _Utils.getDirListing(self:getLayoutDirectory(), "file", ".json", false)
+    for i, name in ipairs(names) do
+        -- Strip the `.json` extension.
+        names[i] = name:sub(1, name:len() - 5)
+    end
+    table.sort(names)
+    return names
+end
+
 --##########################################--
 ---------------- L A Y O U T S ---------------
 --##########################################--
@@ -79,10 +97,18 @@ function Project:newLayout()
     self.currentLayout = ProjectLayout(self)
 end
 
----Loads a UI layout from this Project.
----@param name string The name of this layout, excluding `.json`.
-function Project:loadLayout(name)
-    self.currentLayout = ProjectLayout(self, name)
+---Loads all layouts from this Project's directory.
+function Project:loadLayouts()
+    local names = self:getLayoutFileList()
+    for i, name in ipairs(names) do
+        self.layouts[name] = ProjectLayout(self, name)
+    end
+end
+
+---Sets a layout as the current layout.
+---@param name string The name of the layout, excluding `.json`.
+function Project:openLayout(name)
+    self.currentLayout = self.layouts[name]
 end
 
 ---Saves the current UI layout.
@@ -91,9 +117,22 @@ function Project:saveLayout(name)
     self.currentLayout:save(name)
 end
 
+---Returns a layout of given name.
+---If the layout does not exist, returns `nil`.
+---@return ProjectLayout?
+function Project:getLayout(name)
+    return self.layouts[name]
+end
+
+---Returns the current layout, or `nil` if no layout is loaded.
+---@return ProjectLayout?
+function Project:getCurrentLayout()
+    return self.currentLayout
+end
+
 ---Returns the root node of the current layout, or `nil` if no layout is loaded.
 ---@return Node?
-function Project:getCurrentLayout()
+function Project:getCurrentLayoutUI()
     if not self.currentLayout then
         return nil
     end
@@ -102,14 +141,8 @@ end
 
 ---Returns the names of all layouts in this project, sorted alphabetically.
 ---@return table
-function Project:getLayoutList()
-    local names = _Utils.getDirListing(self:getLayoutDirectory(), "file", ".json", false)
-    for i, name in ipairs(names) do
-        -- Strip the `.json` extension.
-        names[i] = name:sub(1, name:len() - 5)
-    end
-    table.sort(names)
-    return names
+function Project:getLayoutNameList()
+    return _Utils.tableGetSortedKeys(self.layouts)
 end
 
 ---Returns the current layout name, or `nil` if no layout is loaded.
@@ -121,10 +154,16 @@ function Project:getLayoutName()
     return self.currentLayout:getName()
 end
 
----Marks the current layout as modified or not modified.
----@param modified boolean Whether the layout should be marked as modified (`true`) or not (`false`).
-function Project:setLayoutModified(modified)
-    self.currentLayout:setModified(modified)
+---Sets the current layout name.
+---Returns `false` if the name is illegal or another layout already has this name.
+---@param name string The new name for the current layout.
+function Project:setLayoutName(name)
+    if name == "" or self.layouts[name] then
+        return false
+    end
+    self.layouts[self.currentLayout:getName()] = nil
+    self.currentLayout:setName(name)
+    self.layouts[name] = self.currentLayout
 end
 
 ---Returns whether the current layout is modified (unsaved), or `nil` if no layout is loaded.
@@ -134,6 +173,12 @@ function Project:isLayoutModified()
         return nil
     end
     return self.currentLayout:isModified()
+end
+
+---Marks the current layout as modified or not modified.
+---@param modified boolean Whether the layout should be marked as modified (`true`) or not (`false`).
+function Project:setLayoutModified(modified)
+    self.currentLayout:setModified(modified)
 end
 
 --##############################################--

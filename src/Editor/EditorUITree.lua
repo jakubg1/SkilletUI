@@ -55,7 +55,7 @@ end
 ---@param ignoreCollapses boolean? If set to `true`, the result will contain nodes that should be invisible in the UI tree. This is required by `NodeList:sortByTreeOrder()` and at some point will be removed.
 ---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
 function EditorUITree:getUITreeInfo(node, tab, indent, ignoreCollapses)
-    node = node or _PROJECT:getCurrentLayout()
+    node = node or _PROJECT:getCurrentLayoutUI()
     if not node then
         -- Currently no layout is open.
         return {}
@@ -189,6 +189,34 @@ end
 function EditorUITree:cancelDraggingSelectedNodeInNodeTree()
     self.dragOrigin = nil
     self.dragSnap = false
+end
+
+
+
+---Starts the name edit mode for the provided Node.
+---@param node Node The Node for which the name edit box should show up.
+function EditorUITree:startNameEdit(node)
+    self.nameEditNode = node
+    self.nameEditValue = node:getName()
+end
+
+---Ends the name edit mode with saving the new node name.
+function EditorUITree:submitNameEdit()
+    if not self.nameEditNode then
+        return
+    end
+    self.editor:executeCommand(CommandNodeRename(NodeList(self.nameEditNode), self.nameEditValue))
+    self.nameEditNode = nil
+    self.nameEditValue = nil
+end
+
+---Ends the name edit mode without saving the new node name.
+function EditorUITree:cancelNameEdit()
+    if not self.nameEditNode then
+        return
+    end
+    self.nameEditNode = nil
+    self.nameEditValue = nil
 end
 
 
@@ -330,15 +358,11 @@ function EditorUITree:mousepressed(x, y, button, istouch, presses)
     local hoveredNode = self:getHoveredNode()
     if button == 1 then
         if not hoveredNode then
-            self.nameEditNode = nil
-            self.nameEditValue = nil
+            self:cancelNameEdit()
         end
         if presses == 1 then
             -- Single click
-            if self.nameEditNode then
-                self.nameEditNode = nil
-                self.nameEditValue = nil
-            end
+            self:cancelNameEdit()
             self.nameEditLastClickedNode = hoveredNode
             if hoveredNode then
                 self.editor:clickNode(hoveredNode)
@@ -347,16 +371,18 @@ function EditorUITree:mousepressed(x, y, button, istouch, presses)
             end
         else
             -- Subsequent clicks (double click)
-            if hoveredNode then
-                if hoveredNode == self.nameEditLastClickedNode then
-                    -- We've clicked this actual Node the second time. Enable the name edit box.
-                    self.nameEditNode = hoveredNode
-                    self.nameEditValue = hoveredNode:getName()
+            if hoveredNode == self.nameEditLastClickedNode then
+                if hoveredNode then
+                    -- We've clicked the same Node twice. Enable the name edit box.
+                    self:startNameEdit(hoveredNode)
                     return true
-                else
-                    -- We've clicked a different Node. If that one will be clicked the second time now, its name could be edited.
-                    self.nameEditLastClickedNode = hoveredNode
                 end
+            else
+                -- We've clicked a different Node. If that one will be clicked the second time now, its name could be edited.
+                -- This could be the third click after double clikcing a different node. End name edit mode.
+                self:cancelNameEdit()
+                self.nameEditLastClickedNode = hoveredNode
+                return true
             end
         end
     elseif button == 2 then
@@ -407,14 +433,10 @@ function EditorUITree:keypressed(key)
         return true
     elseif key == "return" then
         -- Submit the current edit value in the name edit field.
-        self.editor:executeCommand(CommandNodeRename(NodeList(self.nameEditNode), self.nameEditValue))
-        self.nameEditNode = nil
-        self.nameEditValue = nil
+        self:submitNameEdit()
         return true
     elseif key == "escape" then
-        -- Reject the current edit value in the name edit field.
-        self.nameEditNode = nil
-        self.nameEditValue = nil
+        self:cancelNameEdit()
         return true
     end
 	if self.nameEditNode then

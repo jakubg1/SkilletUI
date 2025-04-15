@@ -39,6 +39,7 @@ end
 ---@param path string The path to the file.
 ---@return table?
 function utils.loadJson(path)
+	print("Loading JSON data from " .. path .. "...")
 	local contents = utils.loadFile(path)
 	if not contents then
 		return nil
@@ -261,6 +262,20 @@ function utils.getKeyInTable(t, v)
 			return i
 		end
 	end
+end
+
+
+
+---Returns a list of all keys in table `t`, sorted alphabetically.
+---@param t table The table from which the keys will be sourced.
+---@return table
+function utils.tableGetSortedKeys(t)
+	local keys = {}
+	for k, v in pairs(t) do
+		table.insert(keys, k)
+	end
+	table.sort(keys)
+	return keys
 end
 
 

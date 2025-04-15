@@ -104,7 +104,7 @@ function _LoadRuntime()
 		return
 	end
 	_LoadProject(runtime.lastProject)
-	_PROJECT:loadLayout(runtime.lastLayout)
+	_PROJECT:openLayout(runtime.lastLayout)
 end
 
 ---Saves a runtime by saving the currently opened project and layout.
@@ -121,35 +121,35 @@ end
 ---@param name string The signal name.
 function _OnSignal(name)
 	if name == "main" then
-		_PROJECT:loadLayout("welcome")
+		_PROJECT:openLayout("welcome")
 	elseif name == "page1" then
-		_PROJECT:loadLayout("todo")
+		_PROJECT:openLayout("todo")
 	elseif name == "page2" then
-		_PROJECT:loadLayout("todo2")
+		_PROJECT:openLayout("todo2")
 	elseif name == "page3" then
-		_PROJECT:loadLayout("todo3")
+		_PROJECT:openLayout("todo3")
 	elseif name == "page4" then
-		_PROJECT:loadLayout("todo4")
+		_PROJECT:openLayout("todo4")
 	elseif name == "dive1" then
-		_PROJECT:loadLayout("dive1")
+		_PROJECT:openLayout("dive1")
 	elseif name == "dive2" then
-		_PROJECT:loadLayout("dive2")
+		_PROJECT:openLayout("dive2")
 	elseif name == "dive3" then
-		_PROJECT:loadLayout("dive3")
+		_PROJECT:openLayout("dive3")
 	elseif name == "dive4" then
-		_PROJECT:loadLayout("dive4")
+		_PROJECT:openLayout("dive4")
 	elseif name == "dive5" then
-		_PROJECT:loadLayout("dive5")
+		_PROJECT:openLayout("dive5")
 	elseif name == "dive6" then
-		_PROJECT:loadLayout("dive6")
+		_PROJECT:openLayout("dive6")
 	elseif name == "dive7" then
-		_PROJECT:loadLayout("dive7")
+		_PROJECT:openLayout("dive7")
 	elseif name == "dive8" then
-		_PROJECT:loadLayout("dive8")
+		_PROJECT:openLayout("dive8")
 	elseif name == "dive9" then
-		_PROJECT:loadLayout("dive9")
+		_PROJECT:openLayout("dive9")
 	elseif name == "dive10" then
-		_PROJECT:loadLayout("dive10")
+		_PROJECT:openLayout("dive10")
 	elseif name == "transition" then
 		if _TRANSITION.state then
 			_TRANSITION:hide()

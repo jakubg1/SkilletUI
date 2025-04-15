@@ -5,6 +5,7 @@ local class = require "com.class"
 local EditorLayoutList = class:derive("EditorLayoutList")
 
 -- Place your imports here
+local utf8 = require("utf8")
 local Vec2 = require("src.Essentials.Vector2")
 
 ---Constructs a new Editor Layout List.
@@ -12,8 +13,8 @@ local Vec2 = require("src.Essentials.Vector2")
 function EditorLayoutList:new(editor)
     self.editor = editor
 
-    self.POS = Vec2(5, 25)
-    self.SIZE = Vec2(220, 250)
+    self.POS = Vec2(5, 70)
+    self.SIZE = Vec2(220, 200)
     self.ITEM_HEIGHT = 20
     self.ITEM_INDENT = 20
     self.ITEM_MARGIN = 5
@@ -32,7 +33,7 @@ function EditorLayoutList:new(editor)
     -- This is because you could click elsewhere the second time and still activate that layout's input box,
     -- even if that particular layout was clicked just once.
     self.nameEditLastClickedNode = nil
-    self.nameEditNode = nil
+    self.nameEditLayout = nil
     self.nameEditValue = nil
 end
 
@@ -46,7 +47,7 @@ end
 ---@param ignoreCollapses boolean? If set to `true`, the result will contain nodes that should be invisible in the UI tree. This is required by `NodeList:sortByTreeOrder()` and at some point will be removed.
 ---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
 function EditorLayoutList:getUITreeInfo(node, tab, indent, ignoreCollapses)
-    node = node or _PROJECT:getCurrentLayout()
+    node = node or _PROJECT:getCurrentLayoutUI()
     if not node then
         -- Currently no layout is open.
         return {}
@@ -108,14 +109,60 @@ end
 
 
 
+---Selects the n-th listed layout and loads its corresponding UI, resets the name edit mode and changes the potential name edit node.
+---@param index integer? The ID of the layout in the list to be loaded.
+function EditorLayoutList:clickItem(index)
+    if self.nameEditLayout then
+        self.nameEditLayout = nil
+        self.nameEditValue = nil
+    end
+    self.nameEditLastClickedNode = index
+    if index then
+        local layout = self.items[index].layout
+        _PROJECT:openLayout(layout:getName())
+    end
+end
+
+
+
+---Starts the name edit mode for the provided Layout.
+---@param layout ProjectLayout The Layout for which the name edit box should show up.
+function EditorLayoutList:startNameEdit(layout)
+    self.nameEditLayout = layout
+    self.nameEditValue = layout:getName()
+end
+
+---Ends the name edit mode with saving the new node name.
+function EditorLayoutList:submitNameEdit()
+    if not self.nameEditLayout then
+        return
+    end
+    -- TODO: Layout rename should be an undoable Command.
+    _PROJECT:setLayoutName(self.nameEditValue)
+    self.nameEditLayout = nil
+    self.nameEditValue = nil
+end
+
+---Ends the name edit mode without saving the new node name.
+function EditorLayoutList:cancelNameEdit()
+    if not self.nameEditLayout then
+        return
+    end
+    self.nameEditLayout = nil
+    self.nameEditValue = nil
+end
+
+
+
 ---Updates the Editor Layout List.
 ---@param dt number Time delta in seconds.
 function EditorLayoutList:update(dt)
     -- Update the list information.
     self.items = {}
-    local names = _PROJECT:getLayoutList()
+    local names = _PROJECT:getLayoutNameList()
     for i, name in ipairs(names) do
-        table.insert(self.items, {name = name, indent = 0})
+        local layout = assert(_PROJECT:getLayout(name))
+        table.insert(self.items, {layout = layout, indent = 0})
     end
 
     -- Calculate the maximum scroll offset.
@@ -139,7 +186,7 @@ function EditorLayoutList:draw()
         local x = self.POS.x + self.ITEM_INDENT * item.indent
         local y = self.POS.y + self:getItemY(i)
         local bgColor = nil
-        if _PROJECT:getLayoutName() == item.name then
+        if item.layout == _PROJECT:getCurrentLayout() then
             bgColor = _COLORS.cyan
         elseif hoveredItemID == i and (not self.dragOrigin or not (self.hoverTop or self.hoverBottom)) then
             -- The additional condition above makes it extra clear what are you doing when arranging the nodes around in the tree.
@@ -153,14 +200,14 @@ function EditorLayoutList:draw()
         -- Foreground (icon, text)
         love.graphics.setColor(1, 1, 1)
         _RESOURCE_MANAGER:getImage("widget_box"):draw(Vec2(x, y))
-        if self.nameEditNode == "" then
+        if self.nameEditLayout and item.layout == self.nameEditLayout then
             love.graphics.setColor(0.9, 0.9, 0.9)
             love.graphics.rectangle("fill", x + 23, y + 1, self.SIZE.x - x - 20, self.ITEM_HEIGHT - 2)
             love.graphics.setColor(0.2, 0.2, 1)
             love.graphics.rectangle("line", x + 23, y + 1, self.SIZE.x - x - 20, self.ITEM_HEIGHT - 2)
             self.editor:drawShadowedText(self.nameEditValue, x + 25, y + 2, _COLORS.black, nil, 1, true)
         else
-            self.editor:drawShadowedText(item.name, x + 25, y + 2, _COLORS.white, nil)
+            self.editor:drawShadowedText(item.layout:getDisplayName(), x + 25, y + 2, _COLORS.white, nil)
         end
         -- If dragged over, additional signs will be shown.
         if self.dragOrigin and not self.dragSnap and not self.editor:isNodeSelected(item.node) and hoveredItemID == i then
@@ -184,7 +231,7 @@ function EditorLayoutList:draw()
         end
     end
     if #self.items == 0 then
-        self.editor:drawShadowedText("When you load a layout,\nits tree will show up here.", self.POS.x + 5, self.POS.y + 2)
+        self.editor:drawShadowedText("This project currently has\nno layouts.\n\nAdd a new layout by...", self.POS.x + 5, self.POS.y + 2)
     end
     love.graphics.setScissor()
 
@@ -226,34 +273,25 @@ function EditorLayoutList:mousepressed(x, y, button, istouch, presses)
     local hoveredItemID = self:getHoveredItemID()
     if button == 1 then
         if not hoveredItemID then
-            self.nameEditNode = nil
-            self.nameEditValue = nil
+            self:cancelNameEdit()
         end
         if presses == 1 then
             -- Single click
-            if self.nameEditNode then
-                self.nameEditNode = nil
-                self.nameEditValue = nil
-            end
-            self.nameEditLastClickedNode = hoveredItemID
+            self:clickItem(hoveredItemID)
             if hoveredItemID then
-                local layoutName = self.items[hoveredItemID].name
-                _PROJECT:loadLayout(layoutName)
-                --self:startDraggingSelectedNodeInNodeTree()
                 return true
             end
         else
             -- Subsequent clicks (double click)
-            if hoveredItemID then
-                if hoveredItemID == self.nameEditLastClickedNode then
+            if hoveredItemID == self.nameEditLastClickedNode then
+                if hoveredItemID then
                     -- We've clicked this actual Node the second time. Enable the name edit box.
-                    self.nameEditNode = hoveredItemID
-                    --self.nameEditValue = hoveredItemID:getName()
+                    self:startNameEdit(assert(_PROJECT:getCurrentLayout()))
                     return true
-                else
-                    -- We've clicked a different Node. If that one will be clicked the second time now, its name could be edited.
-                    self.nameEditLastClickedNode = hoveredItemID
                 end
+            else
+                -- We've clicked a different Node. If that one will be clicked the second time now, its name could be edited.
+                self:clickItem(hoveredItemID)
             end
         end
     end
@@ -283,7 +321,7 @@ function EditorLayoutList:keypressed(key)
         return true
     end
     -- Anything below applies only if the name edit mode is enabled.
-    if not self.nameEditNode then
+    if not self.nameEditLayout then
         return false
     end
 	if key == "backspace" then
@@ -295,17 +333,14 @@ function EditorLayoutList:keypressed(key)
         return true
     elseif key == "return" then
         -- Submit the current edit value in the name edit field.
-        self.editor:executeCommand(CommandNodeRename(NodeList(self.nameEditNode), self.nameEditValue))
-        self.nameEditNode = nil
-        self.nameEditValue = nil
+        self:submitNameEdit()
         return true
     elseif key == "escape" then
         -- Reject the current edit value in the name edit field.
-        self.nameEditNode = nil
-        self.nameEditValue = nil
+        self:cancelNameEdit()
         return true
     end
-	if self.nameEditNode then
+	if self.nameEditLayout then
 		-- Do not let anything else catch the keyboard input if the name edition box is currently active.
 		return true
 	end
@@ -317,7 +352,7 @@ end
 ---Executed whenever a certain character has been typed on the keyboard.
 ---@param text string The character.
 function EditorLayoutList:textinput(text)
-    if not self.nameEditNode then
+    if not self.nameEditLayout then
         return
     end
 	self.nameEditValue = self.nameEditValue .. text

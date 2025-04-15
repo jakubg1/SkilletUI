@@ -211,7 +211,7 @@ function Editor:getHoveredNode()
         return nil
     end
     -- Finally, look if any node is directly hovered.
-    local currentLayout = _PROJECT:getCurrentLayout()
+    local currentLayout = _PROJECT:getCurrentLayoutUI()
     if currentLayout then
         return currentLayout:findChildByPixelDepthFirst(_MouseCPos, true, true, true)
     end
@@ -270,7 +270,7 @@ end
 ---@param node Node The node to be looked for.
 ---@return boolean
 function Editor:doesNodeExistSomewhere(node)
-    local currentLayout = _PROJECT:getCurrentLayout()
+    local currentLayout = _PROJECT:getCurrentLayoutUI()
     if currentLayout and (currentLayout == node or currentLayout:findChild(node) ~= nil) then
         return true
     end
@@ -455,7 +455,7 @@ end
 ---@param node Node The node to be added.
 function Editor:addNode(node)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
-    local targetParent = target and target.parent or _PROJECT:getCurrentLayout()
+    local targetParent = target and target.parent or _PROJECT:getCurrentLayoutUI()
     self:executeCommand(CommandNodeAdd(NodeList(node), targetParent))
 end
 
@@ -464,7 +464,7 @@ end
 ---@param nodes NodeList The list of nodes to be added.
 function Editor:addNodes(nodes)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
-    local targetParent = target and target.parent or _PROJECT:getCurrentLayout()
+    local targetParent = target and target.parent or _PROJECT:getCurrentLayoutUI()
     self:executeCommand(CommandNodeAdd(nodes, targetParent))
 end
 
@@ -474,7 +474,7 @@ end
 ---@param node Node The node to be added.
 function Editor:newNode(node)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
-    local targetParent = target and target.parent or _PROJECT:getCurrentLayout()
+    local targetParent = target and target.parent or _PROJECT:getCurrentLayoutUI()
     local nodeList = NodeList(node)
     self:startCommandTransaction()
     self:executeCommand(CommandNodeAdd(nodeList, targetParent))
@@ -702,7 +702,7 @@ end
 function Editor:executeCommand(command, groupID)
     local result = self.commandMgr:executeCommand(command, groupID)
     if result then
-        -- Mark the scene as unsaved.
+        -- Mark the layout as unsaved.
         _PROJECT:setLayoutModified(true)
         -- Make sure to refresh UIs.
         -- If the commands are grouped, UIs are not updated so that we don't pull our text input
@@ -775,34 +775,34 @@ end
 
 
 
----Creates a new blank scene.
-function Editor:newScene()
+---Creates a new blank layout in the current project.
+function Editor:newLayout()
     _PROJECT:newLayout()
     self:deselectAllNodes()
     self.commandMgr:clearStacks()
 end
 
----Loads a new scene from the specified file.
+---Opens a layout of the specified name.
 ---@param name string The name of the layout.
-function Editor:loadScene(name)
-    _PROJECT:loadLayout(name)
+function Editor:loadLayout(name)
+    _PROJECT:openLayout(name)
     self:deselectAllNodes()
     self.commandMgr:clearStacks()
 end
 
----Saves the current scene to a file as a different name.
+---Saves the current layout with a different name.
 ---@param name string The name of the layout.
-function Editor:saveScene(name)
+function Editor:saveLayout(name)
     _PROJECT:saveLayout(name)
     self.commandMgr:setSaveMarker()
 end
 
----Saves the current scene.
----If the current scene is a new scene, displays a file picker instead.
-function Editor:trySaveCurrentScene()
+---Saves the current layout.
+---If the current layout is a new layout, displays a file picker instead.
+function Editor:trySaveCurrentLayout()
     local name = _PROJECT:getLayoutName()
     if name then
-        self:saveScene(name)
+        self:saveLayout(name)
     else
         self:askForInput("save", "file", {".json"}, true, _PROJECT:getLayoutDirectory())
     end
@@ -992,10 +992,10 @@ function Editor:onInputReceived(result)
     if type(self.activeInput) == "string" then
         if self.activeInput == "save" then
             -- Strip the `.json` extension.
-            self:saveScene(result:sub(1, result:len() - 5))
+            self:saveLayout(result:sub(1, result:len() - 5))
         elseif self.activeInput == "load" then
             -- Strip the `.json` extension.
-            self:loadScene(result:sub(1, result:len() - 5))
+            self:loadLayout(result:sub(1, result:len() - 5))
         elseif self.activeInput == "loadProject" then
             self:loadProject(result)
         end
@@ -1018,7 +1018,8 @@ end
 ---Initializes the UI for this Editor.
 function Editor:load()
     self.UI = Node({name = "root"})
-    local s_new = self:node(self.UI, 5, 305, "s_new")
+    local s_layout = self:node(self.UI, 5, 25, "s_layout")
+    local s_widget = self:node(self.UI, 5, 285, "s_widget")
     local s_utility = self:node(self.UI, 5, 760, "s_utility")
     local s_align = self:node(self.UI, 240, 590, "s_align")
     local s_palign = self:node(self.UI, 360, 590, "s_palign")
@@ -1027,15 +1028,19 @@ function Editor:load()
     local s_file = self:node(self.UI, 5, 0, "s_file")
     local s_properties = self:node(self.UI, 1200, 25, "s_properties")
 
-    self:label(s_new, 0, -20, "New Widget:")
-    self:button(s_new, 0, 0, 55, "Node", function() self:newNode(Node({})) end)
-    self:button(s_new, 55, 0, 55, "Box", function() self:newNode(Node({type = "box"})) end)
-    self:button(s_new, 110, 0, 55, "Sprite", function() self:newNode(Node({type = "sprite"})) end)
-    self:button(s_new, 165, 0, 55, "9Sprite", function() self:newNode(Node({type = "9sprite"})) end)
-    self:button(s_new, 0, 20, 55, "Text", function() self:newNode(Node({type = "text"})) end)
-    self:button(s_new, 55, 20, 55, "TitleDigit", function() self:newNode(Node({type = "@titleDigit"})) end)
-    self:button(s_new, 110, 20, 55, "Button", function() self:newNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite", widget = {image = "button", size = {64, 16}}}}})) end)
-    self:button(s_new, 165, 20, 55, "Test Btn", function() self:newNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end)
+    self:label(s_layout, 0, 0, "Layout List:")
+    self:button(s_layout, 0, 20, 110, "New", function() self:newLayout() end, {ctrl = true, key = "n"})
+    self:button(s_layout, 110, 20, 110, "Save", function() self:trySaveCurrentLayout() end, {ctrl = true, key = "s"})
+
+    self:label(s_widget, 0, 0, "New Widget:")
+    self:button(s_widget, 0, 20, 55, "Node", function() self:newNode(Node({})) end)
+    self:button(s_widget, 55, 20, 55, "Box", function() self:newNode(Node({type = "box"})) end)
+    self:button(s_widget, 110, 20, 55, "Sprite", function() self:newNode(Node({type = "sprite"})) end)
+    self:button(s_widget, 165, 20, 55, "9Sprite", function() self:newNode(Node({type = "9sprite"})) end)
+    self:button(s_widget, 0, 40, 55, "Text", function() self:newNode(Node({type = "text"})) end)
+    self:button(s_widget, 55, 40, 55, "TitleDigit", function() self:newNode(Node({type = "@titleDigit"})) end)
+    self:button(s_widget, 110, 40, 55, "Button", function() self:newNode(Node({type = "button", children = {{name = "text", type = "text", align = "center", parentAlign = "center"}, {name = "sprite", type = "9sprite", widget = {image = "button", size = {64, 16}}}}})) end)
+    self:button(s_widget, 165, 40, 55, "Test Btn", function() self:newNode(Node(_Utils.loadJson("layouts/snippet_test2.json"))) end)
 
     self:button(s_utility, 0, 0, 110, "Delete [Del]", function() self:deleteSelectedNode() end, {key = "delete"})
     self:button(s_utility, 110, 0, 110, "Duplicate [Ctrl+D]", function() self:duplicateSelectedNode() end, {ctrl = true, key = "d"})
@@ -1090,12 +1095,10 @@ function Editor:load()
     l3.widget:setPropBase("color", _COLORS.e_yellow)
     l4.widget:setPropBase("color", _COLORS.e_cyan)
 
-    self:label(s_file, 0, 1, "Project: (none)", "lb_project")
+    self:label(s_file, 0, 1, "Project: (unnamed)", "lb_project")
     self:button(s_file, 250, 0, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"})
-    self:label(s_file, 360, 1, "Layout: (none)", "lb_layout")
-    self:button(s_file, 560, 0, 60, "New", function() self:newScene() end, {ctrl = true, key = "n"})
+    self:label(s_file, 360, 1, "Layout: (unnamed)", "lb_layout")
     self:button(s_file, 620, 0, 60, "Load", function() self:askForInput("load", "file", {".json"}, false, _PROJECT:getLayoutDirectory()) end, {ctrl = true, key = "l"})
-    self:button(s_file, 680, 0, 60, "Save", function() self:trySaveCurrentScene() end, {ctrl = true, key = "s"})
     self:button(s_file, 740, 0, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true, _PROJECT:getLayoutDirectory()) end, {ctrl = true, shift = true, key = "s"})
 
     self:updateUI()
@@ -1199,8 +1202,13 @@ function Editor:draw()
     self.UI:findChildByName("selText"):setText("")
     self.UI:findChildByName("hovEvText"):setText("")
     self.UI:findChildByName("selEvText"):setText("")
-    self.UI:findChildByName("lb_project"):setText(string.format("Project: %s", _PROJECT:getName() or "(none)"))
-    self.UI:findChildByName("lb_layout"):setText(string.format("Layout: %s%s", _PROJECT:getLayoutName() or "(none)", _PROJECT:isLayoutModified() and "*" or ""))
+    local projectText = string.format("Project: %s", _PROJECT:getName() or "(unnamed)")
+    self.UI:findChildByName("lb_project"):setText(projectText)
+    local layoutText = "No layout loaded"
+    if _PROJECT:getCurrentLayout() then
+        layoutText = string.format("Layout: %s", _PROJECT:getCurrentLayout():getDisplayName())
+    end
+    self.UI:findChildByName("lb_layout"):setText(layoutText)
 
     -- Hovered and selected node
     if self.hoveredNode then
