@@ -808,6 +808,21 @@ function Editor:trySaveCurrentLayout()
     end
 end
 
+---Deletes the current layout.
+function Editor:deleteCurrentLayout()
+    _PROJECT:deleteCurrentLayout()
+end
+
+---Duplicates the current layout.
+function Editor:duplicateCurrentLayout()
+    _PROJECT:duplicateCurrentLayout()
+end
+
+---Saves the current project.
+function Editor:saveProject()
+    _PROJECT:save()
+end
+
 
 
 ---Convenience function which creates an empty editor node.
@@ -1018,6 +1033,7 @@ end
 ---Initializes the UI for this Editor.
 function Editor:load()
     self.UI = Node({name = "root"})
+    local s_file = self:node(self.UI, 5, 0, "s_file")
     local s_layout = self:node(self.UI, 5, 25, "s_layout")
     local s_widget = self:node(self.UI, 5, 285, "s_widget")
     local s_utility = self:node(self.UI, 5, 760, "s_utility")
@@ -1025,12 +1041,19 @@ function Editor:load()
     local s_palign = self:node(self.UI, 360, 590, "s_palign")
     local s_talign = self:node(self.UI, 480, 590, "s_talign")
     local s_select = self:node(self.UI, 620, 590, "s_select")
-    local s_file = self:node(self.UI, 5, 0, "s_file")
     local s_properties = self:node(self.UI, 1200, 25, "s_properties")
 
+    self:label(s_file, 0, 1, "Project: (unnamed)", "lb_project")
+    self:button(s_file, 250, 0, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"})
+    self:button(s_file, 310, 0, 60, "Save", function() self:saveProject() end, {ctrl = true, key = "s"})
+    self:label(s_file, 420, 1, "Layout: (unnamed)", "lb_layout")
+    self:button(s_file, 620, 0, 60, "Load", function() self:askForInput("load", "file", {".json"}, false, _PROJECT:getLayoutDirectory()) end, {ctrl = true, key = "l"})
+    self:button(s_file, 740, 0, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true, _PROJECT:getLayoutDirectory()) end, {ctrl = true, shift = true, key = "s"})
+
     self:label(s_layout, 0, 0, "Layout List:")
-    self:button(s_layout, 0, 20, 110, "New", function() self:newLayout() end, {ctrl = true, key = "n"})
-    self:button(s_layout, 110, 20, 110, "Save", function() self:trySaveCurrentLayout() end, {ctrl = true, key = "s"})
+    self:button(s_layout, 0, 20, 55, "New", function() self:newLayout() end, {ctrl = true, key = "n"})
+    self:button(s_layout, 110, 20, 55, "Duplicate", function() self:duplicateCurrentLayout() end, {ctrl = true, shift = true, key = "d"})
+    self:button(s_layout, 165, 20, 55, "Delete", function() self:deleteCurrentLayout() end, {ctrl = true, key = "delete"})
 
     self:label(s_widget, 0, 0, "New Widget:")
     self:button(s_widget, 0, 20, 55, "Node", function() self:newNode(Node({})) end)
@@ -1094,12 +1117,6 @@ function Editor:load()
     l2.widget:setPropBase("color", _COLORS.e_cyan)
     l3.widget:setPropBase("color", _COLORS.e_yellow)
     l4.widget:setPropBase("color", _COLORS.e_cyan)
-
-    self:label(s_file, 0, 1, "Project: (unnamed)", "lb_project")
-    self:button(s_file, 250, 0, 60, "Load", function() self:askForInput("loadProject", "file", nil, false, "projects/", "dir") end, {ctrl = true, key = "l"})
-    self:label(s_file, 360, 1, "Layout: (unnamed)", "lb_layout")
-    self:button(s_file, 620, 0, 60, "Load", function() self:askForInput("load", "file", {".json"}, false, _PROJECT:getLayoutDirectory()) end, {ctrl = true, key = "l"})
-    self:button(s_file, 740, 0, 60, "Save As", function() self:askForInput("save", "file", {".json"}, true, _PROJECT:getLayoutDirectory()) end, {ctrl = true, shift = true, key = "s"})
 
     self:updateUI()
 end

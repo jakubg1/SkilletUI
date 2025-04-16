@@ -171,7 +171,8 @@ end
 ---------------- T E X T   A N D   C H A R A C T E R S ---------------
 --##################################################################--
 
----Returns the actual raw text (but stripped from the formatting tags) that is visible on this Widget. It can differ from the real text if the `typeInProgress` or `inputCaret` properties are set.
+---Returns the actual raw text (but stripped from the formatting tags) that is visible on this Widget.
+---It can differ from the real text if the `typeInProgress` or `inputCaret` properties are set.
 ---@return string
 function Text:getText()
     local prop = self.properties:getValues()
@@ -232,11 +233,12 @@ end
 ---Also updates the text size.
 function Text:generateCharacterData()
     local prop = self.properties:getValues()
+    local lineHeight = prop.font:getHeight() * prop.scale
     if self:isSimpleRendered() then
         self.characterData = nil
         self.processedText = self:getProp("text")
         local w = (prop.font:getWidth(self.processedText) - 1) * prop.scale + self:getEffectiveCharacterSeparation() * (utf8.len(self.processedText) - 1) + prop.boldness - 1
-        self.textSize = Vec2(math.max(w, 0), prop.font:getHeight() * prop.scale)
+        self.textSize = Vec2(math.max(w, 0), lineHeight)
         return
     end
 
@@ -244,9 +246,10 @@ function Text:generateCharacterData()
     self.processedText = ""
 
     local characters = self:getTextCharacters()
-    local x = 0
+    local x, y = 0, 0
     local color = prop.color
     local boldness = prop.boldness
+    -- Formatting variables
     local escape = false
     local formattingContent = nil
     for i, char in ipairs(characters) do
@@ -306,7 +309,7 @@ function Text:generateCharacterData()
             local character = {
                 char = char,
                 x = math.floor(x + 0.5),
-                y = math.floor(0.5),
+                y = math.floor(y + 0.5) + (_Debug and math.random(-1, 1) or 0),
                 scaleX = prop.scale,
                 scaleY = prop.scale,
                 color = color,
@@ -317,7 +320,7 @@ function Text:generateCharacterData()
             x = x + prop.font:getWidth(char) * prop.scale + prop.characterSeparation + boldness - 1
         end
     end
-    self.textSize = Vec2(math.max(x - 1, 0), prop.font:getHeight() * prop.scale)
+    self.textSize = Vec2(math.max(x - 1, 0), lineHeight)
 end
 
 --##############################################--

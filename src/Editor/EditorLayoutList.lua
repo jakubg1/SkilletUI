@@ -138,7 +138,7 @@ function EditorLayoutList:submitNameEdit()
         return
     end
     -- TODO: Layout rename should be an undoable Command.
-    _PROJECT:setLayoutName(self.nameEditValue)
+    _PROJECT:renameCurrentLayout(self.nameEditValue)
     self.nameEditLayout = nil
     self.nameEditValue = nil
 end

@@ -12,7 +12,7 @@ local Node = require("src.Node")
 ---Any Layout can have any number of timelines.
 ---Layouts are stored in the `layouts/<name>.json` file inside the project directory. That file also includes all the layout's timelines.
 ---@param project Project The Project this layout belongs to.
----@param name string? The name of the layout. This is also its file name. If not specified, a new empty layout will be created.
+---@param name string? The name of the layout. This is also its file name. If not specified, a new empty layout will be created and a name will be assigned: `layout`, `layout#2`, etc.
 function ProjectLayout:new(project, name)
     self.project = project
     self.name = name
@@ -24,6 +24,8 @@ function ProjectLayout:new(project, name)
         local data = assert(_Utils.loadJson(path), "Could not load layout data from " .. path)
         self:deserialize(data)
     else
+        -- Set up the root node and name.
+        self.name = self.project:generateUniqueLayoutName("layout")
         local size = self.project:getNativeResolution()
         self.ui = Node({name = "root", type = "box", widget = {size = {size.x, size.y}}, canvasInputMode = true})
     end
@@ -34,13 +36,19 @@ end
 --############################################################--
 
 ---Returns the name of this Layout.
----If this Layout is an unsaved new layout, returns `nil`.
----@return string?
+---@return string
 function ProjectLayout:getName()
     return self.name
 end
 
+---Returns the name of this Layout with a modified indicator `*` if this layout is modified.
+---@return string
+function ProjectLayout:getDisplayName()
+    return self.name .. (self.modified and "*" or "")
+end
+
 ---Changes the name of this Layout.
+---This function does NOT change the Project's associations. Please use `Project:renameCurrentLayout()` instead!
 ---@param name string The new name for this Layout.
 function ProjectLayout:setName(name)
     self.name = name
@@ -64,10 +72,15 @@ function ProjectLayout:setModified(modified)
     self.modified = modified
 end
 
----Returns the name of this Layout, or `"(unnamed)"` if unnamed, and with a modified indicator `*` if this layout is modified.
----@return string
-function ProjectLayout:getDisplayName()
-    return (self.name or "(unnamed)") .. (self.modified and "*" or "")
+---Makes a copy of this ProjectLayout and returns it.
+---The Project generates a new name for this Layout, but does not add it to its list.
+---@return ProjectLayout
+function ProjectLayout:copy()
+    local copy = ProjectLayout(self.project)
+    local data = self:serialize()
+    copy:deserialize(data)
+    copy:setName(self.project:generateUniqueLayoutName(self.name))
+    return copy
 end
 
 --################################################--
@@ -75,12 +88,8 @@ end
 --################################################--
 
 ---Returns the complete file path to this Layout, starting from the root program directory.
----If this Layout is an unsaved new layout, returns `nil`.
----@return string?
+---@return string
 function ProjectLayout:getPath()
-    if not self.name then
-        return
-    end
     return self.project:getLayoutDirectory() .. self.name .. ".json"
 end
 
@@ -90,8 +99,7 @@ function ProjectLayout:save(name)
     if name then
         self.name = name
     end
-    assert(self.name, "You must provide the `name` parameter for `ProjectLayout:save()` when saving an unnamed layout!")
-    _Utils.saveJson(assert(self:getPath()), self:serialize())
+    _Utils.saveJson(self:getPath(), self:serialize())
     self.modified = false
 end
 

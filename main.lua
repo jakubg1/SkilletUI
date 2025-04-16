@@ -104,7 +104,9 @@ function _LoadRuntime()
 		return
 	end
 	_LoadProject(runtime.lastProject)
-	_PROJECT:openLayout(runtime.lastLayout)
+	if _PROJECT:hasLayout(runtime.lastLayout) then
+		_PROJECT:openLayout(runtime.lastLayout)
+	end
 end
 
 ---Saves a runtime by saving the currently opened project and layout.
