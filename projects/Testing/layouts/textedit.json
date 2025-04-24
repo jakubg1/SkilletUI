@@ -1,0 +1,218 @@
+{
+	"canvasInputMode": true,
+	"children": [
+		{
+			"align": [
+				0.5,
+				0
+			],
+			"name": "title",
+			"parentAlign": [
+				0.5,
+				0
+			],
+			"pos": [
+				0,
+				10
+			],
+			"type": "text",
+			"widget": {
+				"scale": 2,
+				"shadowOffset": [
+					2,
+					2
+				],
+				"text": "Set Text"
+			}
+		},
+		{
+			"children": [
+				{
+					"name": "inputText",
+					"pos": [
+						4,
+						4
+					],
+					"type": "text",
+					"widget": {
+						"inputCaret": true,
+						"scale": 2,
+						"size": [
+							552,
+							132
+						],
+						"text": "You will be able to type in this <red>box</>!"
+					}
+				}
+			],
+			"name": "inputBg",
+			"pos": [
+				20,
+				40
+			],
+			"type": "9sprite",
+			"widget": {
+				"image": "ed_input_hover",
+				"scale": 2,
+				"size": [
+					560,
+					140
+				]
+			}
+		},
+		{
+			"align": [
+				0.5,
+				0
+			],
+			"name": "title2",
+			"parentAlign": [
+				0.5,
+				0
+			],
+			"pos": [
+				0,
+				190
+			],
+			"type": "text",
+			"widget": {
+				"scale": 2,
+				"shadowOffset": [
+					2,
+					2
+				],
+				"text": "Preview"
+			}
+		},
+		{
+			"children": [
+				{
+					"name": "previewText",
+					"pos": [
+						4,
+						4
+					],
+					"type": "text",
+					"widget": {
+						"formatted": true,
+						"scale": 2,
+						"size": [
+							552,
+							132
+						],
+						"text": "You will be able to type in this <red>box</>!"
+					}
+				}
+			],
+			"name": "previewBg",
+			"pos": [
+				20,
+				220
+			],
+			"type": "9sprite",
+			"widget": {
+				"image": "ed_input_hover",
+				"scale": 2,
+				"size": [
+					560,
+					140
+				]
+			}
+		},
+		{
+			"children": [
+				{
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "text",
+					"parentAlign": [
+						0.5,
+						0.5
+					],
+					"type": "text",
+					"widget": {
+						"color": "#000000",
+						"scale": 2,
+						"text": "Confirm"
+					}
+				}
+			],
+			"name": "buttonConfirm",
+			"pos": [
+				360,
+				364
+			],
+			"type": "9sprite",
+			"widget": {
+				"clickImage": "ed_button_click",
+				"scale": 2,
+				"size": [
+					100,
+					24
+				]
+			}
+		},
+		{
+			"children": [
+				{
+					"align": [
+						0.5,
+						0.5
+					],
+					"name": "text",
+					"parentAlign": [
+						0.5,
+						0.5
+					],
+					"type": "text",
+					"widget": {
+						"color": "#000000",
+						"scale": 2,
+						"text": "Cancel"
+					}
+				}
+			],
+			"name": "buttonCancel",
+			"pos": [
+				480,
+				364
+			],
+			"type": "9sprite",
+			"widget": {
+				"clickImage": "ed_button_click",
+				"scale": 2,
+				"size": [
+					100,
+					24
+				]
+			}
+		},
+		{
+			"locked": true,
+			"name": "background",
+			"type": "9sprite",
+			"widget": {
+				"image": "button",
+				"scale": 4,
+				"size": [
+					600,
+					400
+				],
+				"shadowOffset": [
+					4,
+					4
+				]
+			}
+		}
+	],
+	"name": "root",
+	"type": "box",
+	"widget": {
+		"size": [
+			600,
+			400
+		]
+	}
+}

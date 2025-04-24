@@ -48,7 +48,9 @@ _COLORS = {
 	e_blue = Color("00f"),
 	e_bblue = Color("8cf"),
 	e_cyan = Color("0ff"),
-	e_yellow = Color("ff0")
+	e_yellow = Color("ff0"),
+	e_red = Color("f00"),
+	e_green = Color("0f0")
 }
 _COLOR_ORDER = {
 	"black", "dark_gray", "gray", "light_gray", "white",

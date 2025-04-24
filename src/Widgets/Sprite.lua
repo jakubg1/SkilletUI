@@ -20,7 +20,7 @@ function Sprite:new(node, data)
         {name = "Hover Image", key = "hoverImage", type = "Image", nullable = true},
         {name = "Click Image", key = "clickImage", type = "Image", nullable = true},
         {name = "Disabled Image", key = "disabledImage", type = "Image", nullable = true},
-        {name = "Scale", key = "scale", type = "number", defaultValue = 1},
+        {name = "Scale", key = "scale", type = "number", defaultValue = 1, minValue = 1, scrollStep = 1},
         {name = "Alpha", key = "alpha", type = "number", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true},
         {name = "Shadow Alpha", key = "shadowAlpha", type = "number", defaultValue = 0.5, minValue = 0, maxValue = 1, scrollStep = 0.1}

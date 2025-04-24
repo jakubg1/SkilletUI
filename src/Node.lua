@@ -20,7 +20,7 @@ local TitleDigit = require("src.Widgets.TitleDigit")
 
 ---Creates a new UI Node.
 ---@param data table The node data.
----@param parent Node? The parent node.
+---@param parent Node? The parent node. Warning! This does NOT add this Node to its parent! You need to call `:addChild()` on the parent for that.
 function Node:new(data, parent)
     self.parent = parent
 
@@ -440,8 +440,29 @@ end
 
 
 ---Returns whether this Node is hovered.
+---Invisible Nodes cannot be hovered.
 function Node:isHovered()
+    if not self:isVisible() then
+        return
+    end
     return self:hasPixel(self:isCanvasInputModeEnabled() and _MouseCPos or _MousePos)
+end
+
+---Returns whether any of this Node's children are hovered.
+---@return boolean
+function Node:isChildHovered()
+    for i, child in ipairs(self.children) do
+        if child:isHoveredWithChildren() then
+            return true
+        end
+    end
+    return false
+end
+
+---Returns whether this Node or any of its children is hovered.
+---@return boolean
+function Node:isHoveredWithChildren()
+    return self:isHovered() or self:isChildHovered()
 end
 
 
@@ -557,21 +578,6 @@ function Node:setColor(color)
     if self.type == "text" or self.type == "box" then
         self.widget:setProp("color", color)
     end
-end
-
-
-
----Returns whether this Node or any of its children is hovered.
-function Node:isHoveredWithChildren()
-    if self:isHovered() then
-        return true
-    end
-    for i, child in ipairs(self.children) do
-        if child:isHoveredWithChildren() then
-            return true
-        end
-    end
-    return false
 end
 
 

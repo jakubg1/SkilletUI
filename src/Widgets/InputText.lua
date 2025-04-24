@@ -270,7 +270,7 @@ function InputText:updateUI()
             if self.type == "color" and self.value.r * 0.2 + self.value.g + self.value.b * 0.1 > 0.7 and self.value.r + self.value.b > self.value.g / 2 then
                 color = _COLORS.black
             elseif self.type == "boolean" then
-                color = self.value and _COLORS.green or _COLORS.red
+                color = self.value and _COLORS.e_green or _COLORS.e_red
             end
         end
         if self.node.disabled then
@@ -356,9 +356,12 @@ function InputText:mousepressed(x, y, button, istouch, presses)
         if self.type == "boolean" then
             -- If this is a boolean field, just immediately flip the value instead.
             self:setValue(not self.value)
-        elseif self.type == "string" or self.type == "number" then
+        elseif self.type == "number" or (self.type == "string" and not _Debug) then
             -- TODO: Colors, Shortcuts etc. use the legacy input method. Do something with this in 100,000 years.
             self:startEditing()
+        elseif self.type == "string" then
+            -- TODO: WHAT ARE YOU DOING?!?!?!
+            _EDITOR:textInputAsk()
         end
         return true
     elseif self.editText then

@@ -82,6 +82,7 @@ local CommandNodeMoveToBottom = require("src.Editor.Commands.NodeMoveToBottom")
 function Editor:new()
     self.UI = nil
     self.INPUT_DIALOG = Input()
+    self.TEXT_INPUT_UI = nil
 
     self.NODE_RESIZE_DIRECTIONS = {
         Vec2(-1, -1),
@@ -343,9 +344,9 @@ function Editor:generateProjectPropertyUI()
         return
     end
     -- Make a new property list UI.
-    local propertiesUI = self:node(self.UI:findChildByName("s_properties"), 0, 0, "properties")
+    local propertiesUI = self:node(assert(self.UI:findChildByName("s_properties")), 0, 0, "properties")
     local listWrapperUI = self:node(propertiesUI, 0, 0)
-    local listUI = self:generatePropertyListUI(listWrapperUI, _PROJECT, _PROJECT:getPropertyList(), "Project Properties", "project")
+    local listUI = self:generatePropertyListUI(listWrapperUI, _PROJECT.properties, _PROJECT:getPropertyList(), "Project Properties", "project")
 end
 
 
@@ -363,7 +364,7 @@ function Editor:generateNodePropertyUI(node)
     end
     -- Make a new property list UI.
     local widget = node.widget
-    local propertiesUI = self:node(self.UI:findChildByName("s_properties"), 0, 0, "properties")
+    local propertiesUI = self:node(assert(self.UI:findChildByName("s_properties")), 0, 0, "properties")
     local propertyWidgetInfoUI = self:label(propertiesUI, 0, -24, "")
     if widget then
         if not widget.getPropertyList then
@@ -373,10 +374,10 @@ function Editor:generateNodePropertyUI(node)
         propertyWidgetInfoUI.widget:setProp("text", "This Node does not have a widget.")
     end
     local widgetListWrapperUI = self:node(propertiesUI, 0, 0)
-    local widgetListUI = self:generatePropertyListUI(widgetListWrapperUI, node, node:getPropertyList(), "Node Properties", "node", node:isControlled())
+    local widgetListUI = self:generatePropertyListUI(widgetListWrapperUI, node.properties, node:getPropertyList(), "Node Properties", "node", node:isControlled())
     if widget and widget.getPropertyList then
         local nodeListWrapperUI = self:node(propertiesUI, 0, 240)
-        local nodeListUI = self:generatePropertyListUI(nodeListWrapperUI, widget, widget:getPropertyList(), "Widget Properties", "widget")
+        local nodeListUI = self:generatePropertyListUI(nodeListWrapperUI, widget.properties, widget:getPropertyList(), "Widget Properties", "widget")
     end
 end
 
@@ -384,13 +385,13 @@ end
 
 ---Generates a property list UI and returns a Node with a header, the properties and their labels.
 ---@param parent Node The parent Node to attach the generated UI to.
----@param widgetOrNode Node|Widget* The Node or Widget to get the values from.
----@param properties table The property list to be generated from.
+---@param propertyList PropertyList The Property List which contains the property values.
+---@param properties table The property list manifest to be generated from.
 ---@param header string The header text for this list.
 ---@param affectedType "node"|"widget"|"project" What to change when the input box value is submitted.
 ---@param controlled boolean? If set, the properties marked as `disabledIfControlled` will be disabled.
 ---@return Node
-function Editor:generatePropertyListUI(parent, widgetOrNode, properties, header, affectedType, controlled)
+function Editor:generatePropertyListUI(parent, propertyList, properties, header, affectedType, controlled)
     controlled = controlled or false
     local listUI = Node({name = "proplist"})
     local y = 0
@@ -400,7 +401,7 @@ function Editor:generatePropertyListUI(parent, widgetOrNode, properties, header,
     propertyHeaderUI.widget:setProp("boldness", 2)
     y = y + 20
     for i, property in ipairs(properties) do
-        local inputValue = widgetOrNode.properties:getBaseValue(property.key)
+        local inputValue = propertyList:getBaseValue(property.key)
         local propertyUI = Node({name = "input", pos = {10, y}})
         y = y + 20
         local propertyText = self:label(propertyUI, 0, 1, property.name, nil, 145)
@@ -1094,17 +1095,34 @@ end
 
 
 
+---Brings up the text editor window.
+function Editor:textInputAsk()
+    self.TEXT_INPUT_UI:setVisible(true)
+end
+
+---Closes the text editor window and saves the changed text to the currently selected node.
+function Editor:textInputConfirm()
+    self.TEXT_INPUT_UI:setVisible(false)
+end
+
+---Closes the text editor window without saving the changes.
+function Editor:textInputCancel()
+    self.TEXT_INPUT_UI:setVisible(false)
+end
+
+
+
 ---Returns whether an editor button (or any editor UI) is hovered.
 ---@return boolean
 function Editor:isUIHovered()
-    return self.UI:isHoveredWithChildren() or self.INPUT_DIALOG:isHovered()
+    return self.UI:isChildHovered() or self.INPUT_DIALOG:isHovered()
 end
 
 
 
 ---Initializes the UI for this Editor.
 function Editor:load()
-    self.UI = Node({name = "root"})
+    self.UI = Node({name = "root", type = "box", widget = {size = {_WINDOW_SIZE.x, _WINDOW_SIZE.y}}})
     local s_file = self:node(self.UI, 5, 0, "s_file")
     local s_layout = self:node(self.UI, 5, 25, "s_layout")
     local s_widget = self:node(self.UI, 5, 285, "s_widget")
@@ -1189,6 +1207,15 @@ function Editor:load()
     l2.widget:setPropBase("color", _COLORS.e_cyan)
     l3.widget:setPropBase("color", _COLORS.e_yellow)
     l4.widget:setPropBase("color", _COLORS.e_cyan)
+
+    self.TEXT_INPUT_UI = Node(_Utils.loadJson("projects/Testing/layouts/textedit.json"), self.UI)
+    self.UI:addChild(self.TEXT_INPUT_UI)
+    self.TEXT_INPUT_UI:setAlign(_ALIGNMENTS.center)
+    self.TEXT_INPUT_UI:setParentAlign(_ALIGNMENTS.center)
+    self.TEXT_INPUT_UI:moveSelfToTop()
+    self.TEXT_INPUT_UI:setVisible(false)
+    self.TEXT_INPUT_UI:findChildByName("buttonConfirm"):setOnClick(function() self:textInputConfirm() end)
+    self.TEXT_INPUT_UI:findChildByName("buttonCancel"):setOnClick(function() self:textInputCancel() end)
 
     self:updateUI()
 end
@@ -1326,11 +1353,6 @@ function Editor:drawMain()
         self.UI:findChildByName("selEvText"):setText(string.format("Selected: %s {%s} time: %s -> %s", selectedEvent.type, selectedEvent.node, selectedEvent.time, selectedEvent.time + (selectedEvent.duration or 0)))
     end
 
-    -- Before the UI itself will be drawn, make some nice background for the top bar.
-    _SetColor(_COLORS.e_blue, 0.5)
-    love.graphics.rectangle("fill", 0, 0, _WINDOW_SIZE.x, 20)
-    self.UI:draw()
-
     -- Other UI that will be hardcoded for now.
     love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor").font)
 
@@ -1357,6 +1379,11 @@ function Editor:drawMain()
         _SetColor(_COLORS[name])
         love.graphics.rectangle("fill", x + i * 5, _WINDOW_SIZE.y - 20, 5, 20)
     end
+
+    -- Before the UI itself will be drawn, make some nice background for the top bar.
+    _SetColor(_COLORS.e_blue, 0.5)
+    love.graphics.rectangle("fill", 0, 0, _WINDOW_SIZE.x, 20)
+    self.UI:draw()
 
     -- Input box
     self.INPUT_DIALOG:draw()
@@ -1632,6 +1659,7 @@ end
 ---@param w integer The new width of the window.
 ---@param h integer The new height of the window.
 function Editor:resize(w, h)
+    self.UI:setSize(Vec2(w, h))
     self.UI:findChildByName("s_align"):setPos(Vec2(240, h - 310))
     self.UI:findChildByName("s_palign"):setPos(Vec2(360, h - 310))
     self.UI:findChildByName("s_talign"):setPos(Vec2(480, h - 310))

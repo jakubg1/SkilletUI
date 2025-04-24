@@ -21,7 +21,7 @@ function NineSprite:new(node, data)
         {name = "Click Image", key = "clickImage", type = "NineImage", nullable = true},
         {name = "Disabled Image", key = "disabledImage", type = "NineImage", nullable = true},
         {name = "Size", key = "size", type = "Vector2", defaultValue = Vec2(10)},
-        {name = "Scale", key = "scale", type = "number", defaultValue = 1},
+        {name = "Scale", key = "scale", type = "number", defaultValue = 1, minValue = 1, scrollStep = 1},
         {name = "Alpha", key = "alpha", type = "number", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1},
         {name = "Shadow Offset", key = "shadowOffset", type = "Vector2", nullable = true},
         {name = "Shadow Alpha", key = "shadowAlpha", type = "number", defaultValue = 0.5, minValue = 0, maxValue = 1, scrollStep = 0.1}

@@ -67,7 +67,7 @@ end
 ---Returns the panning of this Canvas to match its current size best.
 ---@return Vector2
 function EditorCanvas:getFittingPan()
-    return ((self.canvas.size - self.canvas.resolution * self:getFittingScale()) / 2) / -self:getFittingScale()
+    return ((self.canvas.size - self.canvas.resolution * self.scale) / 2) / -self.scale
 end
 
 ---Updates the canvas' settings to match the current manager state.
@@ -84,7 +84,7 @@ end
 ---@param around Vector2? The position to zoom the canvas around. That position will remain at the exact same pixel.
 function EditorCanvas:zoomInOut(factor, around)
     around = around or Vec2()
-    local newScale = math.min(math.max(self.scale * factor, 0.125), 8)
+    local newScale = math.min(math.max(self.scale * factor, 0.125), 16)
     local actualFactor = newScale / self.scale
     self.scale = newScale
 
@@ -124,7 +124,7 @@ end
 ---Resets the zoom scaling and panning.
 function EditorCanvas:resetZoom()
     self.scale = 1
-    self.pan = Vec2()
+    self.pan = self:getFittingPan()
     self:updateCanvas()
 end
 

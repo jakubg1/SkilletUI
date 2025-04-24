@@ -193,6 +193,23 @@ end
 
 
 
+---Selects the provided node, resets the name edit mode and changes the potential name edit node.
+---@param node Node? The Node to be selected.
+function EditorUITree:clickItem(node)
+    if self.nameEditNode then
+        self.nameEditNode = nil
+        self.nameEditValue = nil
+    end
+    self.nameEditLastClickedNode = node
+    if node then
+        self.editor:clickNode(node)
+        self.editor:updateUI()
+        self:startDraggingSelectedNodeInNodeTree()
+    end
+end
+
+
+
 ---Starts the name edit mode for the provided Node.
 ---@param node Node The Node for which the name edit box should show up.
 function EditorUITree:startNameEdit(node)
@@ -362,11 +379,8 @@ function EditorUITree:mousepressed(x, y, button, istouch, presses)
         end
         if presses == 1 then
             -- Single click
-            self:cancelNameEdit()
-            self.nameEditLastClickedNode = hoveredNode
+            self:clickItem(hoveredNode)
             if hoveredNode then
-                self.editor:clickNode(hoveredNode)
-                self:startDraggingSelectedNodeInNodeTree()
                 return true
             end
         else
@@ -380,9 +394,7 @@ function EditorUITree:mousepressed(x, y, button, istouch, presses)
             else
                 -- We've clicked a different Node. If that one will be clicked the second time now, its name could be edited.
                 -- This could be the third click after double clikcing a different node. End name edit mode.
-                self:cancelNameEdit()
-                self.nameEditLastClickedNode = hoveredNode
-                return true
+                self:clickItem(hoveredNode)
             end
         end
     elseif button == 2 then

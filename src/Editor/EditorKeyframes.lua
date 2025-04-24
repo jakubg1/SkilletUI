@@ -170,7 +170,7 @@ function EditorKeyframes:drawEntryBase(n, nodeOrName, isGhost)
         nodeOrName:getIcon():draw(Vec2(self.POS.x, y))
         self.editor:drawShadowedText(nodeOrName:getName(), self.POS.x + 25, y + 2, _COLORS.white, nil, isGhost and 0.5 or 1)
     else
-        self.editor:drawShadowedText(nodeOrName, self.POS.x + 5, y + 2, _COLORS.red, nil, isGhost and 0.5 or 1)
+        self.editor:drawShadowedText(nodeOrName, self.POS.x + 5, y + 2, _COLORS.e_red, nil, isGhost and 0.5 or 1)
     end
     love.graphics.setColor(0.2, 0.2, 0.2, isGhost and 0.4 or 0.8)
     love.graphics.rectangle("fill", self.KEYFRAME_AREA_X, y, self.KEYFRAME_AREA_WIDTH, self.ITEM_HEIGHT)
