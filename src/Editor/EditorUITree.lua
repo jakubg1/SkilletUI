@@ -55,7 +55,7 @@ end
 ---@param ignoreCollapses boolean? If set to `true`, the result will contain nodes that should be invisible in the UI tree. This is required by `NodeList:sortByTreeOrder()` and at some point will be removed.
 ---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
 function EditorUITree:getUITreeInfo(node, tab, indent, ignoreCollapses)
-    node = node or _PROJECT:getCurrentLayoutUI()
+    node = node or self.editor:getCurrentLayoutUI()
     if not node then
         -- Currently no layout is open.
         return {}

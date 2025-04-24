@@ -32,7 +32,7 @@ function EditorLayoutList:new(editor)
     -- Stores the layout that if clicked the second time will actually be name edited.
     -- This is because you could click elsewhere the second time and still activate that layout's input box,
     -- even if that particular layout was clicked just once.
-    self.nameEditLastClickedNode = nil
+    self.nameEditLastClickedItem = nil
     self.nameEditLayout = nil
     self.nameEditValue = nil
 end
@@ -47,7 +47,7 @@ end
 ---@param ignoreCollapses boolean? If set to `true`, the result will contain nodes that should be invisible in the UI tree. This is required by `NodeList:sortByTreeOrder()` and at some point will be removed.
 ---@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
 function EditorLayoutList:getUITreeInfo(node, tab, indent, ignoreCollapses)
-    node = node or _PROJECT:getCurrentLayoutUI()
+    node = node or self.editor:getCurrentLayoutUI()
     if not node then
         -- Currently no layout is open.
         return {}
@@ -116,10 +116,10 @@ function EditorLayoutList:clickItem(index)
         self.nameEditLayout = nil
         self.nameEditValue = nil
     end
-    self.nameEditLastClickedNode = index
+    self.nameEditLastClickedItem = index
     if index then
         local layout = self.items[index].layout
-        _PROJECT:openLayout(layout:getName())
+        self.editor:loadLayout(layout:getName())
     end
 end
 
@@ -137,8 +137,7 @@ function EditorLayoutList:submitNameEdit()
     if not self.nameEditLayout then
         return
     end
-    -- TODO: Layout rename should be an undoable Command.
-    _PROJECT:renameCurrentLayout(self.nameEditValue)
+    self.editor:renameCurrentLayout(self.nameEditValue)
     self.nameEditLayout = nil
     self.nameEditValue = nil
 end
@@ -186,7 +185,7 @@ function EditorLayoutList:draw()
         local x = self.POS.x + self.ITEM_INDENT * item.indent
         local y = self.POS.y + self:getItemY(i)
         local bgColor = nil
-        if item.layout == _PROJECT:getCurrentLayout() then
+        if item.layout == self.editor:getCurrentLayout() then
             bgColor = _COLORS.cyan
         elseif hoveredItemID == i and (not self.dragOrigin or not (self.hoverTop or self.hoverBottom)) then
             -- The additional condition above makes it extra clear what are you doing when arranging the nodes around in the tree.
@@ -283,10 +282,10 @@ function EditorLayoutList:mousepressed(x, y, button, istouch, presses)
             end
         else
             -- Subsequent clicks (double click)
-            if hoveredItemID == self.nameEditLastClickedNode then
+            if hoveredItemID == self.nameEditLastClickedItem then
                 if hoveredItemID then
                     -- We've clicked this actual Node the second time. Enable the name edit box.
-                    self:startNameEdit(assert(_PROJECT:getCurrentLayout()))
+                    self:startNameEdit(assert(self.editor:getCurrentLayout()))
                     return true
                 end
             else

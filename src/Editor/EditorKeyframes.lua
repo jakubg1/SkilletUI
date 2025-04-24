@@ -34,11 +34,23 @@ end
 
 
 
+---Returns a test timeline if any layout is currently being edited in the project, otherwise returns `nil`.
+---@return Timeline?
+function EditorKeyframes:getCurrentTimeline()
+    local layout = self.editor:getCurrentLayout()
+    if not layout then
+        return nil
+    end
+    return layout:getTimeline("test")
+end
+
+
+
 ---Returns event display information, in the form of a table. If no timeline exists, returns `nil`
 ---This function should only be called internally. If you want to get the current event display info, fetch the `self.eventInfo` field instead.
 ---@return table?
 function EditorKeyframes:getEventInfo()
-    local timeline = _PROJECT:getCurrentTimeline()
+    local timeline = self:getCurrentTimeline()
     if not timeline then
         return nil
     end
@@ -125,7 +137,7 @@ function EditorKeyframes:update(dt)
     self.hoveredEvent = self:getHoveredEvent()
 
     -- Calculate the maximum scroll offset.
-    local timeline = _PROJECT:getCurrentTimeline()
+    local timeline = self:getCurrentTimeline()
     if timeline then
         self.maxScrollOffset = math.max(self.ITEM_HEIGHT * #timeline.nodeNames - self.SIZE.y + self.HEADER_HEIGHT, 0)
     else
@@ -186,13 +198,13 @@ function EditorKeyframes:draw()
         t = t + 1
     end
 
-    local timeline = _PROJECT:getCurrentTimeline()
+    local timeline = self:getCurrentTimeline()
     if timeline then
         -- Real entries
         love.graphics.setScissor(self.POS.x, self.POS.y + self.HEADER_HEIGHT, self.SIZE.x, self.SIZE.y - self.HEADER_HEIGHT)
         local displayGhostNode = true
         for i, name in ipairs(timeline.nodeNames) do
-            local layout = _PROJECT:getCurrentLayoutUI()
+            local layout = self.editor:getCurrentLayoutUI()
             local node = layout and layout:findChildByName(name)
             local hovered = node and self.editor.hoveredNode == node
             local selected = node and self.editor:isNodeSelected(node)
@@ -221,36 +233,38 @@ function EditorKeyframes:draw()
     end
 
     -- Events
-    for i, entry in ipairs(self.eventInfo) do
-        local event = entry.event
-        local color = _COLORS.white
-        if event.property == "pos" then
-            color = _COLORS.green
-        elseif event.property == "alpha" then
-            color = _COLORS.red
-        elseif event.property == "visible" then
-            color = _COLORS.orange
-        elseif event.property == "typeInProgress" then
-            color = _COLORS.blue
-        end
-        if event == self.selectedEvent then
-            color = _COLORS.cyan
-        elseif event == self.hoveredEvent then
-            color = _COLORS.yellow
-        end
-        if entry.size.x == 0 or event.startValue then
-            -- Instant events and events with a start value are drawn as a line.
-            love.graphics.setLineWidth(3)
-            love.graphics.setColor(color.r, color.g, color.b)
-            love.graphics.line(entry.pos.x, entry.pos.y, entry.pos.x, entry.pos.y + entry.size.y)
-        end
-        if entry.size.x > 0 then
-            -- Events that have duration are drawn as a filled box.
-            love.graphics.setColor(color.r, color.g, color.b, 0.8)
-            love.graphics.rectangle("fill", entry.pos.x, entry.pos.y, entry.size.x, entry.size.y)
-            love.graphics.setLineWidth(1)
-            love.graphics.setColor(color.r, color.g, color.b)
-            love.graphics.rectangle("line", entry.pos.x, entry.pos.y, entry.size.x, entry.size.y)
+    if self.eventInfo then
+        for i, entry in ipairs(self.eventInfo) do
+            local event = entry.event
+            local color = _COLORS.white
+            if event.property == "pos" then
+                color = _COLORS.green
+            elseif event.property == "alpha" then
+                color = _COLORS.red
+            elseif event.property == "visible" then
+                color = _COLORS.orange
+            elseif event.property == "typeInProgress" then
+                color = _COLORS.blue
+            end
+            if event == self.selectedEvent then
+                color = _COLORS.cyan
+            elseif event == self.hoveredEvent then
+                color = _COLORS.yellow
+            end
+            if entry.size.x == 0 or event.startValue then
+                -- Instant events and events with a start value are drawn as a line.
+                love.graphics.setLineWidth(3)
+                love.graphics.setColor(color.r, color.g, color.b)
+                love.graphics.line(entry.pos.x, entry.pos.y, entry.pos.x, entry.pos.y + entry.size.y)
+            end
+            if entry.size.x > 0 then
+                -- Events that have duration are drawn as a filled box.
+                love.graphics.setColor(color.r, color.g, color.b, 0.8)
+                love.graphics.rectangle("fill", entry.pos.x, entry.pos.y, entry.size.x, entry.size.y)
+                love.graphics.setLineWidth(1)
+                love.graphics.setColor(color.r, color.g, color.b)
+                love.graphics.rectangle("line", entry.pos.x, entry.pos.y, entry.size.x, entry.size.y)
+            end
         end
     end
     love.graphics.setScissor()

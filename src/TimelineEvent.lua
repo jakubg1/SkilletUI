@@ -28,14 +28,14 @@ end
 ---Executes this Timeline Event.
 function TimelineEvent:execute()
     if self.type == "setNodeProperty" then
-        local node = _PROJECT:getCurrentLayoutUI() and _PROJECT:getCurrentLayoutUI():findChildByName(self.node)
+        local node = _EDITOR:getCurrentLayoutUI() and _EDITOR:getCurrentLayoutUI():findChildByName(self.node)
         if not node then
             print(string.format("Could not find node %s to animate, skipping", self.node))
             return
         end
         node.properties:animateValue(self.property, self.startValue, self.value, self.duration)
     elseif self.type == "setWidgetProperty" then
-        local node = _PROJECT:getCurrentLayoutUI() and _PROJECT:getCurrentLayoutUI():findChildByName(self.node)
+        local node = _EDITOR:getCurrentLayoutUI() and _EDITOR:getCurrentLayoutUI():findChildByName(self.node)
         if not node then
             print(string.format("Could not find node %s to animate, skipping", self.node))
             return

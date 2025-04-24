@@ -104,14 +104,12 @@ function _LoadRuntime()
 		return
 	end
 	_LoadProject(runtime.lastProject)
-	if _PROJECT:hasLayout(runtime.lastLayout) then
-		_PROJECT:openLayout(runtime.lastLayout)
-	end
+	_EDITOR:loadLayout(runtime.lastLayout)
 end
 
 ---Saves a runtime by saving the currently opened project and layout.
 function _SaveRuntime()
-	local runtime = {lastProject = _PROJECT:getName(), lastLayout = _PROJECT:getLayoutName()}
+	local runtime = {lastProject = _PROJECT:getName(), lastLayout = _EDITOR:getCurrentLayoutName()}
 	_Utils.saveJson("runtime.json", runtime)
 end
 
@@ -123,35 +121,35 @@ end
 ---@param name string The signal name.
 function _OnSignal(name)
 	if name == "main" then
-		_PROJECT:openLayout("welcome")
+		_EDITOR:loadLayout("welcome")
 	elseif name == "page1" then
-		_PROJECT:openLayout("todo")
+		_EDITOR:loadLayout("todo")
 	elseif name == "page2" then
-		_PROJECT:openLayout("todo2")
+		_EDITOR:loadLayout("todo2")
 	elseif name == "page3" then
-		_PROJECT:openLayout("todo3")
+		_EDITOR:loadLayout("todo3")
 	elseif name == "page4" then
-		_PROJECT:openLayout("todo4")
+		_EDITOR:loadLayout("todo4")
 	elseif name == "dive1" then
-		_PROJECT:openLayout("dive1")
+		_EDITOR:loadLayout("dive1")
 	elseif name == "dive2" then
-		_PROJECT:openLayout("dive2")
+		_EDITOR:loadLayout("dive2")
 	elseif name == "dive3" then
-		_PROJECT:openLayout("dive3")
+		_EDITOR:loadLayout("dive3")
 	elseif name == "dive4" then
-		_PROJECT:openLayout("dive4")
+		_EDITOR:loadLayout("dive4")
 	elseif name == "dive5" then
-		_PROJECT:openLayout("dive5")
+		_EDITOR:loadLayout("dive5")
 	elseif name == "dive6" then
-		_PROJECT:openLayout("dive6")
+		_EDITOR:loadLayout("dive6")
 	elseif name == "dive7" then
-		_PROJECT:openLayout("dive7")
+		_EDITOR:loadLayout("dive7")
 	elseif name == "dive8" then
-		_PROJECT:openLayout("dive8")
+		_EDITOR:loadLayout("dive8")
 	elseif name == "dive9" then
-		_PROJECT:openLayout("dive9")
+		_EDITOR:loadLayout("dive9")
 	elseif name == "dive10" then
-		_PROJECT:openLayout("dive10")
+		_EDITOR:loadLayout("dive10")
 	elseif name == "transition" then
 		if _TRANSITION.state then
 			_TRANSITION:hide()
@@ -191,7 +189,6 @@ function love.update(dt)
 
 	-- Main update
 	_TRANSITION:update(dt)
-	_PROJECT:update(dt)
 	if _EDITOR then
 		_EDITOR:update(dt)
 	end
@@ -200,16 +197,6 @@ end
 function love.draw()
 	local t = love.timer.getTime()
 	if _EDITOR then
-		_EDITOR:drawUnderCanvas()
-	end
-	_CANVAS:activate()
-	-- Start of main drawing routine
-	_PROJECT:draw()
-	_TRANSITION:draw()
-	-- End of main drawing routine
-	_CANVAS:draw()
-	if _EDITOR then
-		_EDITOR:drawUIPass()
 		_EDITOR:draw()
 	end
 	local t2 = love.timer.getTime() - t
@@ -217,18 +204,12 @@ function love.draw()
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-	if not _EDITOR or not _EDITOR.enabled then
-		_PROJECT:mousepressed(x, y, button, istouch, presses)
-	end
 	if _EDITOR then
 		_EDITOR:mousepressed(x, y, button, istouch, presses)
 	end
 end
 
 function love.mousereleased(x, y, button)
-	if not _EDITOR or not _EDITOR.enabled then
-		_PROJECT:mousereleased(x, y, button)
-	end
 	if _EDITOR then
 		_EDITOR:mousereleased(x, y, button)
 	end
@@ -243,9 +224,6 @@ end
 function love.keypressed(key)
 	if key == "f12" then
 		_Debug = not _Debug
-	end
-	if not _EDITOR or not _EDITOR.enabled then
-		_PROJECT:keypressed(key)
 	end
 	if _EDITOR then
 		_EDITOR:keypressed(key)

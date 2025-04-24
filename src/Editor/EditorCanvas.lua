@@ -210,24 +210,24 @@ end
 
 ---Draws the grid, if it is enabled in the project.
 function EditorCanvas:drawGrid()
-    local nativeResolution = _PROJECT:getNativeResolution()
+    local layoutSize = self.editor:getCurrentLayout():getSize()
     local gridSize = _PROJECT:getGridSize()
     if not gridSize then
         return
     end
-    local lineCount = (nativeResolution / gridSize):ceil() - 1
+    local lineCount = (layoutSize / gridSize):ceil() - 1
     love.graphics.setLineWidth(1)
     love.graphics.setColor(0.2, 0.2, 0.8)
     -- Vertical lines
     for i = 1, lineCount.x do
         local p1 = Vec2(gridSize.x * i, 0)
-        local p2 = Vec2(gridSize.x * i, nativeResolution.y)
+        local p2 = Vec2(gridSize.x * i, layoutSize.y)
         self:drawDashedLine(p1, p2, 4, 4, 0)
     end
     -- Horizontal lines
     for i = 1, lineCount.y do
         local p1 = Vec2(0, gridSize.y * i)
-        local p2 = Vec2(nativeResolution.x, gridSize.y * i)
+        local p2 = Vec2(layoutSize.x, gridSize.y * i)
         self:drawDashedLine(p1, p2, 4, 4, 0)
     end
 end

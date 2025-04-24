@@ -97,7 +97,8 @@ function Editor:new()
 
     self.clipboard = {}
 
-    self.enabled = true
+    self.enabled = true -- Whether the Editor is active (edit/preview mode)
+    self.currentLayout = nil -- Currently open layout name in the project
     self.activeInput = nil -- Can be a Node, but also `"save"` or `"load"`
     self.hoveredNode = nil
     self.isNodeHoverIndirect = false
@@ -181,6 +182,40 @@ end
 
 
 
+---Returns the currently open layout in the currently open Project.
+---If no Layout is open, returns `nil`.
+---@return ProjectLayout?
+function Editor:getCurrentLayout()
+    if not self.currentLayout then
+        return nil
+    end
+    return _PROJECT:getLayout(self.currentLayout)
+end
+
+---Returns the currently open layout's root UI node.
+---If no Layout is open, returns `nil`.
+---@return Node?
+function Editor:getCurrentLayoutUI()
+    local layout = self:getCurrentLayout()
+    if not layout then
+        return nil
+    end
+    return layout:getUI()
+end
+
+---Returns the currently open layout's name.
+---If no Layout is open, returns `nil`.
+---@return string?
+function Editor:getCurrentLayoutName()
+    local layout = self:getCurrentLayout()
+    if not layout then
+        return nil
+    end
+    return layout:getName()
+end
+
+
+
 ---Returns the currently hovered Node.
 ---This function also sets the values of the `self.isNodeHoverIndirect`, `self.nodeTreeHoverTop` and `self.nodeTreeHoverBottom` fields.
 ---
@@ -211,7 +246,7 @@ function Editor:getHoveredNode()
         return nil
     end
     -- Finally, look if any node is directly hovered.
-    local currentLayout = _PROJECT:getCurrentLayoutUI()
+    local currentLayout = self:getCurrentLayoutUI()
     if currentLayout then
         return currentLayout:findChildByPixelDepthFirst(_MouseCPos, true, true, true)
     end
@@ -270,7 +305,7 @@ end
 ---@param node Node The node to be looked for.
 ---@return boolean
 function Editor:doesNodeExistSomewhere(node)
-    local currentLayout = _PROJECT:getCurrentLayoutUI()
+    local currentLayout = self:getCurrentLayoutUI()
     if currentLayout and (currentLayout == node or currentLayout:findChild(node) ~= nil) then
         return true
     end
@@ -455,7 +490,7 @@ end
 ---@param node Node The node to be added.
 function Editor:addNode(node)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
-    local targetParent = target and target.parent or _PROJECT:getCurrentLayoutUI()
+    local targetParent = target and target.parent or self:getCurrentLayoutUI()
     self:executeCommand(CommandNodeAdd(NodeList(node), targetParent))
 end
 
@@ -464,7 +499,7 @@ end
 ---@param nodes NodeList The list of nodes to be added.
 function Editor:addNodes(nodes)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
-    local targetParent = target and target.parent or _PROJECT:getCurrentLayoutUI()
+    local targetParent = target and target.parent or self:getCurrentLayoutUI()
     self:executeCommand(CommandNodeAdd(nodes, targetParent))
 end
 
@@ -474,7 +509,7 @@ end
 ---@param node Node The node to be added.
 function Editor:newNode(node)
     local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
-    local targetParent = target and target.parent or _PROJECT:getCurrentLayoutUI()
+    local targetParent = target and target.parent or self:getCurrentLayoutUI()
     local nodeList = NodeList(node)
     self:startCommandTransaction()
     self:executeCommand(CommandNodeAdd(nodeList, targetParent))
@@ -691,7 +726,9 @@ function Editor:deleteSelectedNode()
     self:executeCommand(CommandNodeDelete(self.selectedNodes))
 end
 
-
+--############################################--
+---------------- C O M M A N D S ---------------
+--############################################--
 
 ---Executes an editor command.
 ---If the command has been executed successfully, it can be undone using `:undoLastCommand()`.
@@ -703,7 +740,7 @@ function Editor:executeCommand(command, groupID)
     local result = self.commandMgr:executeCommand(command, groupID)
     if result then
         -- Mark the layout as unsaved.
-        _PROJECT:setLayoutModified(true)
+        self:getCurrentLayout():setModified(true)
         -- Make sure to refresh UIs.
         -- If the commands are grouped, UIs are not updated so that we don't pull our text input
         -- whenever we type a single character while maintaining real-time changes.
@@ -715,8 +752,6 @@ function Editor:executeCommand(command, groupID)
     return result
 end
 
-
-
 ---Starts a command transaction.
 ---Command transactions bundle a few commands into an atomic pack. It only can be undone as a whole.
 ---To close a command transaction, use `:commitCommandTransaction()`.
@@ -724,8 +759,6 @@ end
 function Editor:startCommandTransaction(groupID)
     self.commandMgr:startCommandTransaction(groupID)
 end
-
-
 
 ---Closes a command transaction.
 ---From this point, any new commands will be added separately, as usual.
@@ -735,8 +768,6 @@ function Editor:commitCommandTransaction()
     --self:updateUI()
 end
 
-
-
 ---Cancels a command transaction by undoing all commands that have been already executed and removing the transaction from the stack.
 ---Cancelled command transactions can NOT be restored.
 function Editor:cancelCommandTransaction()
@@ -745,25 +776,23 @@ function Editor:cancelCommandTransaction()
     self:updateUI()
 end
 
-
-
 ---Undoes the command that has been executed last and moves it to the undo command stack.
 function Editor:undoLastCommand()
     self.commandMgr:undoLastCommand()
-    _PROJECT:setLayoutModified(not self.commandMgr:isAtSaveMarker())
+    self:getCurrentLayout():setModified(not self.commandMgr:isAtSaveMarker())
     self:updateUI()
 end
-
-
 
 ---Redoes the undone command and moves it back to the main command stack.
 function Editor:redoLastCommand()
     self.commandMgr:redoLastCommand()
-    _PROJECT:setLayoutModified(not self.commandMgr:isAtSaveMarker())
+    self:getCurrentLayout():setModified(not self.commandMgr:isAtSaveMarker())
     self:updateUI()
 end
 
-
+--##################################################################################--
+---------------- P R O J E C T   /   L A Y O U T   M A N A G E M E N T ---------------
+--##################################################################################--
 
 ---Loads another project from the specified folder.
 ---@param name string The name of the project.
@@ -773,21 +802,21 @@ function Editor:loadProject(name)
     self.commandMgr:clearStacks()
 end
 
-
-
----Creates a new blank layout in the current project.
-function Editor:newLayout()
-    _PROJECT:newLayout()
-    self:deselectAllNodes()
-    self.commandMgr:clearStacks()
+---Saves the current project.
+function Editor:saveProject()
+    _PROJECT:save()
 end
 
----Opens a layout of the specified name.
+---Sets the layout of the specified name as the current layout.
 ---@param name string The name of the layout.
 function Editor:loadLayout(name)
-    _PROJECT:openLayout(name)
+    if not _PROJECT:hasLayout(name) then
+        return
+    end
     self:deselectAllNodes()
     self.commandMgr:clearStacks()
+    self.currentLayout = name
+    _CANVAS:setResolution(self:getCurrentLayout():getSize())
 end
 
 ---Saves the current layout with a different name.
@@ -800,7 +829,7 @@ end
 ---Saves the current layout.
 ---If the current layout is a new layout, displays a file picker instead.
 function Editor:trySaveCurrentLayout()
-    local name = _PROJECT:getLayoutName()
+    local name = self:getCurrentLayoutName()
     if name then
         self:saveLayout(name)
     else
@@ -808,19 +837,62 @@ function Editor:trySaveCurrentLayout()
     end
 end
 
+---Creates a new empty layout and sets it as the current layout.
+---The new layout will be named `layout` by default, or if that name already exists, `layout#2`, `layout#3`, etc.
+---TODO: Move the logic to CommandLayoutNew!
+function Editor:newLayout()
+    local name = _PROJECT:generateUniqueLayoutName("layout")
+    _PROJECT:newLayout(name)
+    self:deselectAllNodes()
+    self.commandMgr:clearStacks()
+    self.currentLayout = name
+    _CANVAS:setResolution(self:getCurrentLayout():getSize())
+end
+
+---Renames the current layout.
+---TODO: Move the logic to CommandLayoutRename!
+---@param name string The new name for the current layout.
+function Editor:renameCurrentLayout(name)
+    if not self.currentLayout then
+        return
+    end
+    local result = _PROJECT:renameLayout(self.currentLayout, name)
+    if not result then
+        return
+    end
+    self.currentLayout = name
+end
+
 ---Deletes the current layout.
+---TODO: Move the logic to CommandLayoutDelete!
 function Editor:deleteCurrentLayout()
-    _PROJECT:deleteCurrentLayout()
+    if not self.currentLayout then
+        return
+    end
+    local result = _PROJECT:deleteLayout(self.currentLayout)
+    if not result then
+        return
+    end
+    self:deselectAllNodes()
+    self.commandMgr:clearStacks()
+    self.currentLayout = nil
 end
 
 ---Duplicates the current layout.
+---The duplicate will have a `#2` suffix applied, or the first free number after that.
+---TODO: Move the logic to CommandLayoutDuplicate!
 function Editor:duplicateCurrentLayout()
-    _PROJECT:duplicateCurrentLayout()
-end
-
----Saves the current project.
-function Editor:saveProject()
-    _PROJECT:save()
+    if not self.currentLayout then
+        return
+    end
+    local newName = _PROJECT:generateUniqueLayoutName(self.currentLayout)
+    local result = _PROJECT:duplicateLayout(self.currentLayout, newName)
+    if not result then
+        return
+    end
+    self:deselectAllNodes()
+    self.commandMgr:clearStacks()
+    self.currentLayout = newName
 end
 
 
@@ -1123,13 +1195,16 @@ end
 
 
 
----Updates the Editor.
+---Updates the Editor and the currently active Layout.
 ---@param dt number Time delta in seconds.
 function Editor:update(dt)
+    if self:getCurrentLayout() then
+        self:getCurrentLayout():update(dt)
+    end
+
     if not self.enabled then
         return
     end
-
     self.hoveredNode = self:getHoveredNode()
 
     -- Handle the node dragging.
@@ -1206,8 +1281,8 @@ end
 
 
 
----Draws the Editor.
-function Editor:draw()
+---Draws the Editor's entire UI.
+function Editor:drawMain()
     if not self.enabled then
         love.graphics.setFont(_RESOURCE_MANAGER:getFont("editor").font)
         if not self.canvasMgr.fullscreen then
@@ -1222,8 +1297,8 @@ function Editor:draw()
     local projectText = string.format("Project: %s", _PROJECT:getName() or "(unnamed)")
     self.UI:findChildByName("lb_project"):setText(projectText)
     local layoutText = "No layout loaded"
-    if _PROJECT:getCurrentLayout() then
-        layoutText = string.format("Layout: %s", _PROJECT:getCurrentLayout():getDisplayName())
+    if self:getCurrentLayout() then
+        layoutText = string.format("Layout: %s", self:getCurrentLayout():getDisplayName())
     end
     self.UI:findChildByName("lb_layout"):setText(layoutText)
 
@@ -1285,6 +1360,23 @@ function Editor:draw()
 
     -- Input box
     self.INPUT_DIALOG:draw()
+end
+
+
+
+---Draws the Editor and the currently active Layout.
+function Editor:draw()
+	self:drawUnderCanvas()
+	_CANVAS:activate()
+	-- Start of main drawing routine
+    if self:getCurrentLayout() then
+        self:getCurrentLayout():draw()
+    end
+	_TRANSITION:draw()
+	-- End of main drawing routine
+	_CANVAS:draw()
+    self:drawUIPass()
+    self:drawMain()
 end
 
 
@@ -1370,6 +1462,10 @@ end
 ---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
 function Editor:mousepressed(x, y, button, istouch, presses)
     if not self.enabled then
+        -- Process layout input only when the Editor is disabled.
+        if self:getCurrentLayout() then
+            self:getCurrentLayout():mousepressed(x, y, button, istouch, presses)
+        end
         return
     end
     if self.INPUT_DIALOG:mousepressed(x, y, button, istouch, presses) then
@@ -1425,6 +1521,12 @@ end
 ---@param y integer The Y coordinate.
 ---@param button integer The button that has been released.
 function Editor:mousereleased(x, y, button)
+    if not self.enabled then
+        -- Process layout input only when the Editor is disabled.
+        if self:getCurrentLayout() then
+            self:getCurrentLayout():mousereleased(x, y, button)
+        end
+    end
     self.UI:mousereleased(x, y, button)
     self.INPUT_DIALOG:mousereleased(x, y, button)
     if button == 1 then
@@ -1461,6 +1563,12 @@ end
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string The key code.
 function Editor:keypressed(key)
+    if not self.enabled then
+        -- Process layout input only when the Editor is disabled.
+        if self:getCurrentLayout() then
+            self:getCurrentLayout():keypressed(key)
+        end
+    end
     love.keyboard.setKeyRepeat(key == "backspace" or key == "up" or key == "down" or key == "left" or key == "right")
     self.UI:keypressed(key)
     if self.INPUT_DIALOG:keypressed(key) then
@@ -1476,9 +1584,9 @@ function Editor:keypressed(key)
         self.enabled = not self.enabled
         self.canvasMgr:updateCanvas()
         if self.enabled then
-            _PROJECT:stopTimeline("test")
+            self:getCurrentLayout():stopTimeline("test")
         else
-            _PROJECT:playTimeline("test")
+            self:getCurrentLayout():playTimeline("test")
         end
     elseif self.enabled and key == "up" then
         self:moveSelectedNode(Vec2(0, _IsShiftPressed() and -10 or -1))

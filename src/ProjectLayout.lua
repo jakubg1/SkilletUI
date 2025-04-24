@@ -1,31 +1,36 @@
 local class = require "com.class"
 
 ---@class ProjectLayout
----@overload fun(project, name):ProjectLayout
+---@overload fun(project, name, blank):ProjectLayout
 local ProjectLayout = class:derive("ProjectLayout")
 
 -- Place your imports here
 local Node = require("src.Node")
+local Timeline = require("src.Timeline")
 
 ---Creates a new ProjectLayout.
 ---ProjectLayouts are stored in Projects and represent a single layout.
 ---Any Layout can have any number of timelines.
 ---Layouts are stored in the `layouts/<name>.json` file inside the project directory. That file also includes all the layout's timelines.
 ---@param project Project The Project this layout belongs to.
----@param name string? The name of the layout. This is also its file name. If not specified, a new empty layout will be created and a name will be assigned: `layout`, `layout#2`, etc.
-function ProjectLayout:new(project, name)
+---@param name string The name of the layout. This is also its file name.
+---@param blank boolean? If set to `true`, create a new empty layout instead of trying to load an existing file.
+function ProjectLayout:new(project, name, blank)
     self.project = project
     self.name = name
 
+    self.timelines = {
+        test = Timeline()
+    }
     self.modified = false
 
-    if self.name then
+    if not blank then
+        -- Load an existing layout from a file. If the file does not exist, error out.
         local path = assert(self:getPath())
         local data = assert(_Utils.loadJson(path), "Could not load layout data from " .. path)
         self:deserialize(data)
     else
-        -- Set up the root node and name.
-        self.name = self.project:generateUniqueLayoutName("layout")
+        -- Create a new empty layout. Set up the root node.
         local size = self.project:getNativeResolution()
         self.ui = Node({name = "root", type = "box", widget = {size = {size.x, size.y}}, canvasInputMode = true})
     end
@@ -48,7 +53,7 @@ function ProjectLayout:getDisplayName()
 end
 
 ---Changes the name of this Layout.
----This function does NOT change the Project's associations. Please use `Project:renameCurrentLayout()` instead!
+---This function does NOT change the Project's associations. Please use `Project:renameLayout()` instead!
 ---@param name string The new name for this Layout.
 function ProjectLayout:setName(name)
     self.name = name
@@ -58,6 +63,17 @@ end
 ---@return Node
 function ProjectLayout:getUI()
     return self.ui
+end
+
+---Returns the size of this Layout.
+---@return Vector2
+function ProjectLayout:getSize()
+    local size = self.ui:getSize()
+    if size.x == 1 and size.y == 1 then
+        -- If the returned size is `(1, 1)`, the root node is widgetless. Accomodate for that.
+        return self.project:getNativeResolution()
+    end
+    return size
 end
 
 ---Returns whether this layout is modified.
@@ -73,14 +89,38 @@ function ProjectLayout:setModified(modified)
 end
 
 ---Makes a copy of this ProjectLayout and returns it.
----The Project generates a new name for this Layout, but does not add it to its list.
+---The copy will have the provided name.
+---@param name string The name for the copied layout.
 ---@return ProjectLayout
-function ProjectLayout:copy()
-    local copy = ProjectLayout(self.project)
+function ProjectLayout:copy(name)
+    local copy = ProjectLayout(self.project, name, true)
     local data = self:serialize()
     copy:deserialize(data)
-    copy:setName(self.project:generateUniqueLayoutName(self.name))
     return copy
+end
+
+--##############################################--
+---------------- T I M E L I N E S ---------------
+--##############################################--
+
+---Plays the specified Timeline.
+---@param name string The name of the Timeline to be played.
+function ProjectLayout:playTimeline(name)
+    self.timelines[name]:play()
+end
+
+---Stops the specified Timeline from playing and resets all widget properties.
+---@param name string The name of the Timeline to be stopped.
+function ProjectLayout:stopTimeline(name)
+    self.timelines[name]:stop()
+    self:getUI():resetProperties()
+end
+
+---Returns the specified Timeline.
+---@param name string The name of the Timeline to be returned.
+---@return Timeline?
+function ProjectLayout:getTimeline(name)
+    return self.timelines[name]
 end
 
 --################################################--
@@ -111,6 +151,9 @@ end
 ---@param dt number Time delta, in seconds.
 function ProjectLayout:update(dt)
     self.ui:update(dt)
+    for name, timeline in pairs(self.timelines) do
+        timeline:update(dt)
+    end
 end
 
 ---Draws the Layout on the screen.

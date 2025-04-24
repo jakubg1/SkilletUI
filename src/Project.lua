@@ -8,22 +8,15 @@ local Project = class:derive("Project")
 local Vec2 = require("src.Essentials.Vector2")
 local PropertyList = require("src.PropertyList")
 local ProjectLayout = require("src.ProjectLayout")
-local Timeline = require("src.Timeline")
 
 ---Constructs a new Project.
----Projects contain some settings and the currently loaded UI layout loaded to it.
----They also store a list of Timelines.
+---Projects contain all UI layouts belonging to it and some settings.
 ---@param name string The name of the project (and its folder in the `projects/` directory). If the specified directory doesn't exist, a new empty project will be created.
 function Project:new(name)
     self.name = name
 
+    ---@type {string: ProjectLayout}
     self.layouts = {}
-    self.currentLayout = nil
-
-    self.timelines = {
-        test = Timeline()
-    }
-    self.currentTimeline = "test"
 
     self.PROPERTY_LIST = {
         {name = "Native Resolution", key = "nativeResolution", type = "Vector2", defaultValue = Vec2(320, 180)},
@@ -92,18 +85,14 @@ end
 ---------------- L A Y O U T S ---------------
 --##########################################--
 
----Adds the provided Layout to the project layout list and sets it as the current layout.
----@param layout ProjectLayout The layout to be added.
-function Project:addLayoutAndSetAsCurrent(layout)
-    local name = layout:getName()
-    self.layouts[name] = layout
-    self.currentLayout = name
-end
-
----Creates a new empty layout and sets it as the current layout.
----The new layout is named `layout` by default, or if that name already exists, `layout#2`, `layout#3`, etc.
-function Project:newLayout()
-    self:addLayoutAndSetAsCurrent(ProjectLayout(self))
+---Creates a new empty layout of the given name.
+---Returns `true` if the operation succeeds, `false` otherwise.
+---@param name string The name of the new layout.
+function Project:newLayout(name)
+    if self.layouts[name] then
+        return false -- Name is already taken by a different layout.
+    end
+    self.layouts[name] = ProjectLayout(self, name, true)
 end
 
 ---Loads all layouts from this Project's directory.
@@ -114,16 +103,13 @@ function Project:loadLayouts()
     end
 end
 
----Sets a layout as the current layout.
----@param name string The name of the layout, excluding `.json`.
-function Project:openLayout(name)
-    self.currentLayout = name
-end
-
----Saves the current UI layout.
----@param name string The name of this layout, excluding `.json`.
+---Saves the layout matching provided name.
+---@param name string The name of the layout which will be saved.
 function Project:saveLayout(name)
-    self:getCurrentLayout():save(name)
+    if not self.layouts[name] then
+        return false -- Layout not found.
+    end
+    self.layouts[name]:save()
 end
 
 ---Saves all UI layouts and deletes files corresponding to removed layouts.
@@ -137,35 +123,48 @@ function Project:save()
     _Utils.saveJson(self:getSettingsPath(), self:serialize())
 end
 
----Renames the current layout.
----Returns `false` if the name is illegal, another layout already has this name or no layout is loaded.
----@param name string The new name for the current layout.
-function Project:renameCurrentLayout(name)
-    if name == "" or self.layouts[name] or not self.currentLayout then
-        return false
+---Renames the layout matching provided name.
+---Returns `true` if the operation succeeds, `false` otherwise.
+---@param name string The name of the layout which will be renamed.
+---@param newName string The new name for the current layout.
+---@return boolean
+function Project:renameLayout(name, newName)
+    if not self.layouts[name] then
+        return false -- Layout not found.
+    elseif self.layouts[newName] then
+        return false -- Name is already taken by a different layout.
+    elseif not self:isLayoutNameValid(newName) then
+        return false -- Layout name is invalid.
     end
-    local layout = assert(self:getCurrentLayout())
-    self.layouts[layout:getName()] = nil
-    layout:setName(name)
-    self.layouts[name] = layout
-    self.currentLayout = name
+    self.layouts[name]:setName(newName)
+    self.layouts[newName] = self.layouts[name]
+    self.layouts[name] = nil
+    return true
 end
 
----Deletes the current UI layout from this Project.
-function Project:deleteCurrentLayout()
-    if not self.currentLayout then
-        return
+---Deletes the layout matching provided name from this Project.
+---Returns `true` if the operation succeeds, `false` otherwise.
+---@param name string The name of the layout which will be deleted.
+---@return boolean
+function Project:deleteLayout(name)
+    if not self.layouts[name] then
+        return false -- Layout not found.
     end
-    self.layouts[self.currentLayout] = nil
-    self.currentLayout = nil
+    self.layouts[name] = nil
+    return true
 end
 
----Creates a copy of the currently active UI layout.
-function Project:duplicateCurrentLayout()
-    if not self.currentLayout then
-        return
+---Creates a copy of the layout matching provided name.
+---Returns `true` if the operation succeeds, `false` otherwise.
+---@param name string The name of the layout which will be duplicated.
+---@param newName string The name of the duplicate layout.
+---@return boolean
+function Project:duplicateLayout(name, newName)
+    if not self.layouts[name] then
+        return false -- Layout not found.
     end
-    self:addLayoutAndSetAsCurrent(self:getCurrentLayout():copy())
+    self.layouts[newName] = self.layouts[name]:copy(newName)
+    return true
 end
 
 ---Returns whether the layout of the given name exists.
@@ -183,49 +182,18 @@ function Project:getLayout(name)
     return self.layouts[name]
 end
 
----Returns the current layout, or `nil` if no layout is loaded.
----@return ProjectLayout?
-function Project:getCurrentLayout()
-    return self.layouts[self.currentLayout]
-end
-
----Returns the root node of the current layout, or `nil` if no layout is loaded.
----@return Node?
-function Project:getCurrentLayoutUI()
-    if not self.currentLayout then
-        return nil
-    end
-    return self:getCurrentLayout():getUI()
-end
-
 ---Returns the names of all layouts in this project, sorted alphabetically.
 ---@return table
 function Project:getLayoutNameList()
     return _Utils.tableGetSortedKeys(self.layouts)
 end
 
----Returns the current layout name, or `nil` if no layout is loaded.
----@return string?
-function Project:getLayoutName()
-    if not self.currentLayout then
-        return nil
-    end
-    return self:getCurrentLayout():getName()
-end
-
----Returns whether the current layout is modified (unsaved), or `nil` if no layout is loaded.
----@return boolean?
-function Project:isLayoutModified()
-    if not self.currentLayout then
-        return nil
-    end
-    return self:getCurrentLayout():isModified()
-end
-
----Marks the current layout as modified or not modified.
----@param modified boolean Whether the layout should be marked as modified (`true`) or not (`false`).
-function Project:setLayoutModified(modified)
-    self:getCurrentLayout():setModified(modified)
+---Returns `true` if the provided name is a valid layout name (is empty and does not contain illegal characters).
+---@param name string The layout name to be checked.
+---@return boolean
+function Project:isLayoutNameValid(name)
+    -- TODO: Add a check for illegal characters.
+    return name ~= ""
 end
 
 ---If the layout of the provided name already exists, generates a `#N` suffix to ensure the names don't repeat.
@@ -241,38 +209,6 @@ function Project:generateUniqueLayoutName(name)
         suffixNumber = suffixNumber + 1
     end
     return currentName
-end
-
---##############################################--
----------------- T I M E L I N E S ---------------
---##############################################--
-
----Plays the specified Timeline.
----@param name string The name of the Timeline to be played.
-function Project:playTimeline(name)
-    self.timelines[name]:play()
-end
-
----Stops the specified Timeline from playing and resets all widget properties.
----@param name string The name of the Timeline to be stopped.
-function Project:stopTimeline(name)
-    self.timelines[name]:stop()
-    if self.currentLayout then
-        self:getCurrentLayout():getUI():resetProperties()
-    end
-end
-
----Returns the specified Timeline.
----@param name string The name of the Timeline to be returned.
----@return Timeline?
-function Project:getTimeline(name)
-    return self.timelines[name]
-end
-
----Returns the current Timeline, if any exists.
----@return Timeline?
-function Project:getCurrentTimeline()
-    return self.timelines[self.currentTimeline]
 end
 
 --############################################--
@@ -328,58 +264,6 @@ function Project:isGridVisible()
     return self:getProperty("gridVisible")
 end
 
---##############################################--
----------------- C A L L B A C K S ---------------
---##############################################--
-
----Updates the Project's components: layout and all timelines.
----@param dt number Time delta, in seconds.
-function Project:update(dt)
-    if self.currentLayout then
-        self:getCurrentLayout():update(dt)
-    end
-    for name, timeline in pairs(self.timelines) do
-        timeline:update(dt)
-    end
-end
-
----Draws the Project's UI on the screen.
-function Project:draw()
-    if self.currentLayout then
-        self:getCurrentLayout():draw()
-    end
-end
-
----Executed whenever a mouse button is pressed anywhere on the screen.
----@param x integer The X coordinate.
----@param y integer The Y coordinate.
----@param button integer The button that has been pressed.
----@param istouch boolean Whether the press is coming from a touch input.
----@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
-function Project:mousepressed(x, y, button, istouch, presses)
-    if self.currentLayout then
-        self:getCurrentLayout():mousepressed(x, y, button, istouch, presses)
-    end
-end
-
----Executed whenever a mouse button is released anywhere on the screen.
----@param x integer The X coordinate.
----@param y integer The Y coordinate.
----@param button integer The button that has been released.
-function Project:mousereleased(x, y, button)
-    if self.currentLayout then
-        self:getCurrentLayout():mousereleased(x, y, button)
-    end
-end
-
----Executed whenever a key is pressed on the keyboard.
----@param key string The key code.
-function Project:keypressed(key)
-    if self.currentLayout then
-        self:getCurrentLayout():keypressed(key)
-    end
-end
-
 --######################################################--
 ---------------- S E R I A L I Z A T I O N ---------------
 --######################################################--
@@ -388,7 +272,6 @@ end
 ---@param data table The project properties.
 function Project:deserialize(data)
     self.properties:deserialize(data)
-    _CANVAS:setResolution(self:getProperty("nativeResolution"))
 end
 
 ---Returns data for this Project which can be saved on disk and loaded later with `:deserialize()`.
