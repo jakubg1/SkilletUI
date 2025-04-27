@@ -39,32 +39,6 @@ end
 
 
 
----Returns UI tree information.
----This function should only be called internally. If you want to get the current UI tree info, fetch the `self.items` field instead.
----@param node Node? The UI node of which the tree should be added to the list.
----@param tab table? The table, used internally.
----@param indent integer? The starting indentation.
----@param ignoreCollapses boolean? If set to `true`, the result will contain nodes that should be invisible in the UI tree. This is required by `NodeList:sortByTreeOrder()` and at some point will be removed.
----@return table tab This is a one-dimensional table of entries in the form `{node = Node, indent = number}`.
-function EditorLayoutList:getUITreeInfo(node, tab, indent, ignoreCollapses)
-    node = node or self.editor:getCurrentLayoutUI()
-    if not node then
-        -- Currently no layout is open.
-        return {}
-    end
-    tab = tab or {}
-    indent = indent or 0
-    table.insert(tab, {node = node, indent = indent})
-    for i, child in ipairs(node.children) do
-        if ignoreCollapses or child:isVisibleInUITree() then
-            self:getUITreeInfo(child, tab, indent + 1, ignoreCollapses)
-        end
-    end
-    return tab
-end
-
-
-
 ---Returns the Y coordinate of the n-th entry in the tree (starting from 1) on the screen. Does not take the position of the tree itself!
 ---@param n integer The item index.
 ---@return number

@@ -221,6 +221,7 @@ end
 ---This function also sets the values of the `self.isNodeHoverIndirect`, `self.nodeTreeHoverTop` and `self.nodeTreeHoverBottom` fields.
 ---
 ---This function should only be called internally. If you want to get the currently hovered node, fetch the `self.hoveredNode` field instead.
+---@private
 ---@return Node?
 function Editor:getHoveredNode()
     self.isNodeHoverIndirect = false
@@ -1095,23 +1096,6 @@ end
 
 
 
----Brings up the text editor window.
-function Editor:textInputAsk()
-    self.TEXT_INPUT_UI:setVisible(true)
-end
-
----Closes the text editor window and saves the changed text to the currently selected node.
-function Editor:textInputConfirm()
-    self.TEXT_INPUT_UI:setVisible(false)
-end
-
----Closes the text editor window without saving the changes.
-function Editor:textInputCancel()
-    self.TEXT_INPUT_UI:setVisible(false)
-end
-
-
-
 ---Returns whether an editor button (or any editor UI) is hovered.
 ---@return boolean
 function Editor:isUIHovered()
@@ -1214,9 +1198,6 @@ function Editor:load()
     self.TEXT_INPUT_UI:setParentAlign(_ALIGNMENTS.center)
     self.TEXT_INPUT_UI:moveSelfToTop()
     self.TEXT_INPUT_UI:setVisible(false)
-    self.TEXT_INPUT_UI:findChildByName("buttonConfirm"):setOnClick(function() self:textInputConfirm() end)
-    self.TEXT_INPUT_UI:findChildByName("buttonCancel"):setOnClick(function() self:textInputCancel() end)
-
     self:updateUI()
 end
 
@@ -1647,6 +1628,12 @@ end
 ---Executed whenever a certain character has been typed on the keyboard.
 ---@param text string The character.
 function Editor:textinput(text)
+    if not self.enabled then
+        -- Process layout input only when the Editor is disabled.
+        if self:getCurrentLayout() then
+            self:getCurrentLayout():textinput(text)
+        end
+    end
     self.UI:textinput(text)
     self.INPUT_DIALOG:textinput(text)
     self.layoutList:textinput(text)

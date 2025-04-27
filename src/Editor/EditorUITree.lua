@@ -49,6 +49,7 @@ end
 
 ---Returns UI tree information.
 ---This function should only be called internally. If you want to get the current UI tree info, fetch the `self.uiTreeInfo` field instead.
+---@private
 ---@param node Node? The UI node of which the tree should be added to the list.
 ---@param tab table? The table, used internally.
 ---@param indent integer? The starting indentation.

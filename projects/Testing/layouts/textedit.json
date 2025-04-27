@@ -28,15 +28,18 @@
 		{
 			"children": [
 				{
-					"name": "inputText",
+					"name": "editText",
 					"pos": [
 						4,
 						4
 					],
 					"type": "text",
 					"widget": {
+						"editable": true,
 						"inputCaret": true,
+						"newlineShiftInput": true,
 						"scale": 2,
+						"signalOnInput": "eteui_input",
 						"size": [
 							552,
 							132
@@ -58,6 +61,21 @@
 					560,
 					140
 				]
+			}
+		},
+		{
+			"name": "hint",
+			"pos": [
+				20,
+				180
+			],
+			"type": "text",
+			"widget": {
+				"shadowOffset": [
+					1,
+					1
+				],
+				"text": "Shift + Enter to make a new line"
 			}
 		},
 		{
@@ -144,6 +162,10 @@
 				360,
 				364
 			],
+			"shortcut": {
+				"key": "return"
+			},
+			"signalOnClick": "eteui_confirm",
 			"type": "9sprite",
 			"widget": {
 				"clickImage": "ed_button_click",
@@ -179,6 +201,10 @@
 				480,
 				364
 			],
+			"shortcut": {
+				"key": "escape"
+			},
+			"signalOnClick": "eteui_cancel",
 			"type": "9sprite",
 			"widget": {
 				"clickImage": "ed_button_click",
@@ -196,13 +222,13 @@
 			"widget": {
 				"image": "button",
 				"scale": 4,
-				"size": [
-					600,
-					400
-				],
 				"shadowOffset": [
 					4,
 					4
+				],
+				"size": [
+					600,
+					400
 				]
 			}
 		}

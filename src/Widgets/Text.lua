@@ -41,7 +41,10 @@ function Text:new(node, data)
         {name = "Gradient Wave Speed", key = "gradientWaveSpeed", type = "number", nullable = true},
         {name = "Type-in Progress", key = "typeInProgress", type = "number", nullable = true, minValue = 0, maxValue = 1, scrollStep = 0.1},
         {name = "Input Caret", key = "inputCaret", type = "boolean", defaultValue = false},
-        {name = "Max Width", key = "maxWidth", type = "number", nullable = true, minValue = 1, scrollStep = 10}
+        {name = "Max Width", key = "maxWidth", type = "number", nullable = true, minValue = 1, scrollStep = 10},
+        {name = "Editable", key = "editable", type = "boolean", defaultValue = false},
+        {name = "Shift+Enter New Line Input", key = "newlineShiftInput", type = "boolean", defaultValue = false},
+        {name = "Signal On Input", key = "signalOnInput", type = "string", nullable = true}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 
@@ -439,6 +442,70 @@ function Text:drawDebug()
         love.graphics.setLineWidth(prop.scale)
         love.graphics.setColor(1, 0, 0.5, prop.alpha)
         love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
+    end
+end
+
+---Executed whenever a mouse button has been pressed.
+---This Widget's Node must not be disabled or invisible.
+---Returns `true` if the input is consumed.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+---@param button integer The button that has been pressed.
+---@param istouch boolean Whether the press is coming from a touch input.
+---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
+---@return boolean
+function Text:mousepressed(x, y, button, istouch, presses)
+    --print(self.node:getName(), "mousepressed", x, y, button, istouch, presses)
+    return false
+end
+
+---Executed whenever a mouse button is released.
+---The button must have been pressed on this Widget's Node.
+---The mouse cursor can be anywhere on the screen.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+---@param button integer The button that has been released.
+function Text:mousereleased(x, y, button)
+    --print(self.node:getName(), "mousereleased", x, y, button)
+end
+
+---Executed whenever a mouse wheel has been scrolled.
+---The mouse cursor must be hovering this Widget's Node.
+---This Widget's Node must not be disabled or invisible.
+---@param x integer The X coordinate.
+---@param y integer The Y coordinate.
+function Text:wheelmoved(x, y)
+    --print(self.node:getName(), "wheelmoved", x, y)
+end
+
+---Executed whenever a key is pressed on the keyboard.
+---This Widget's Node must not be disabled or invisible.
+---@param key string Code of the key that has been pressed.
+function Text:keypressed(key)
+    -- If the editing mode is active, check backspace.
+    if self:getProp("editable") then
+        if key == "backspace" then
+            local offset = utf8.offset(self:getProp("text"), -1)
+            if offset then
+                self:setPropBase("text", self:getProp("text"):sub(1, offset - 1))
+            end
+            if self:getProp("signalOnInput") then
+                _OnSignal(self:getProp("signalOnInput"))
+            end
+        end
+    end
+end
+
+---Executed whenever a certain character has been typed on the keyboard.
+---This Widget's Node must not be disabled or invisible.
+---@param text string The character.
+function Text:textinput(text)
+    -- If the editing mode is active, add the typed characters to the edited value.
+    if self:getProp("editable") then
+        self:setPropBase("text", self:getProp("text") .. text)
+        if self:getProp("signalOnInput") then
+            _OnSignal(self:getProp("signalOnInput"))
+        end
     end
 end
 

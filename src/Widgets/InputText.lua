@@ -340,7 +340,7 @@ end
 
 
 ---Executed whenever a mouse button has been pressed.
----This Widget's Node must not be disabled.
+---This Widget's Node must not be disabled or invisible.
 ---Returns `true` if the input is consumed.
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
@@ -356,12 +356,12 @@ function InputText:mousepressed(x, y, button, istouch, presses)
         if self.type == "boolean" then
             -- If this is a boolean field, just immediately flip the value instead.
             self:setValue(not self.value)
-        elseif self.type == "number" or (self.type == "string" and not _Debug) then
+        elseif self.type == "number" then
             -- TODO: Colors, Shortcuts etc. use the legacy input method. Do something with this in 100,000 years.
             self:startEditing()
         elseif self.type == "string" then
             -- TODO: WHAT ARE YOU DOING?!?!?!
-            _EDITOR:textInputAsk()
+            _OnSignal("eteui_start")
         end
         return true
     elseif self.editText then
@@ -391,7 +391,7 @@ end
 
 ---Executed whenever a mouse wheel has been scrolled.
 ---The mouse cursor must be hovering this Widget's Node.
----This Widget's Node must not be disabled.
+---This Widget's Node must not be disabled or invisible.
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
 function InputText:wheelmoved(x, y)
@@ -426,7 +426,7 @@ end
 
 
 ---Executed whenever a key is pressed on the keyboard.
----This Widget's Node must not be disabled.
+---This Widget's Node must not be disabled or invisible.
 ---@param key string Code of the key that has been pressed.
 function InputText:keypressed(key)
     --print(self.node:getName(), "keypressed", key)
@@ -450,7 +450,7 @@ end
 
 
 ---Executed whenever a certain character has been typed on the keyboard.
----This Widget's Node must not be disabled.
+---This Widget's Node must not be disabled or invisible.
 ---@param text string The character.
 function InputText:textinput(text)
     --print(self.node:getName(), "textinput", text)

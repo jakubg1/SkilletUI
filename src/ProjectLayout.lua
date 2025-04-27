@@ -185,6 +185,12 @@ function ProjectLayout:keypressed(key)
     self.ui:keypressed(key)
 end
 
+---Executed whenever a certain character has been typed on the keyboard.
+---@param text string The character.
+function ProjectLayout:textinput(text)
+    self.ui:textinput(text)
+end
+
 --######################################################--
 ---------------- S E R I A L I Z A T I O N ---------------
 --######################################################--

@@ -1,10 +1,7 @@
 {
-    "nativeResolution": {
-        "x": 320,
-        "y": 180
-    },
-    "gridSize": {
-        "x": 20,
-        "y": 20
-    }
+	"gridSize": [
+		20,
+		20
+	],
+	"gridSnap": false
 }

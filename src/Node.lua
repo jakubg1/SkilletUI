@@ -66,6 +66,9 @@ function Node:new(data, parent)
 end
 
 
+--################################################--
+---------------- P R O P E R T I E S ---------------
+--################################################--
 
 ---Returns the given property of this Node.
 ---@param key string The property key.
@@ -74,16 +77,12 @@ function Node:getProp(key)
     return self.properties:getValue(key)
 end
 
-
-
 ---Sets the given property of this Node to a given value.
 ---@param key string The property key.
 ---@param value any? The property value.
 function Node:setProp(key, value)
     self.properties:setValue(key, value)
 end
-
-
 
 ---Returns the given property base of this Node.
 ---@param key string The property key.
@@ -92,8 +91,6 @@ function Node:getPropBase(key)
     return self.properties:getBaseValue(key)
 end
 
-
-
 ---Sets the given property base of this Node to a given value.
 ---@param key string The property key.
 ---@param value any? The property value.
@@ -101,7 +98,33 @@ function Node:setPropBase(key, value)
     self.properties:setBaseValue(key, value)
 end
 
+---Returns the given property of this Node's Widget.
+---@param key string The property key.
+---@return any?
+function Node:getWidgetProp(key)
+    return self.widget:getProp(key)
+end
 
+---Sets the given property of this Node's Widget to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Node:setWidgetProp(key, value)
+    self.widget:setProp(key, value)
+end
+
+---Returns the given property base of this Node's Widget.
+---@param key string The property key.
+---@return any?
+function Node:getWidgetPropBase(key)
+    return self.widget:getPropBase(key)
+end
+
+---Sets the given property base of this Node's Widget to a given value.
+---@param key string The property key.
+---@param value any? The property value.
+function Node:setWidgetPropBase(key, value)
+    self.widget:setPropBase(key, value)
+end
 
 ---Resets all of the properties of this Node, its Widget, and all its children to the base values.
 function Node:resetProperties()
@@ -541,23 +564,38 @@ end
 
 
 
----Returns any Text this Node's widget contains. Works only with `text` widgets. Returns `nil` otherwise.
----@return string?
-function Node:getText()
-    if self.type == "text" then
-        return self.widget:getProp("text")
-    end
+---Throws an error if the widget on this Node is not a Text Widget.
+---@private
+function Node:ensureTextNode()
+    assert(self.type == "text", string.format("Cannot get or set text information on a non-text Widget: %s!", self:getName()))
 end
 
-
+---Returns any Text this Node's widget contains. Works only with `text` widgets.
+---@return string
+function Node:getText()
+    self:ensureTextNode()
+    return self.widget:getProp("text")
+end
 
 ---Sets the given text on this Node's widget. Works only with `text` widgets.
 ---@param text string The text to be set on this Node's widget.
 function Node:setText(text)
     assert(type(text) == "string", string.format("Cannot set the text to a non-string: %s!", text))
-    if self.type == "text" then
-        self.widget:setProp("text", text)
-    end
+    self:ensureTextNode()
+    self.widget:setProp("text", text)
+end
+
+---Returns whether this Node's text widget is formatted. Works only with `text` widgets.
+function Node:getTextFormatted()
+    self:ensureTextNode()
+    return self.widget:getProp("formatted")
+end
+
+---Sets whether this Node's text widget is formatted. Works only with `text` widgets.
+---@param formatted boolean Whether this Node's widget should be formatted.
+function Node:setTextFormatted(formatted)
+    self:ensureTextNode()
+    self.widget:setProp("formatted", formatted)
 end
 
 
@@ -852,7 +890,27 @@ end
 
 
 
+--################################################################--
+---------------- C H I L D R E N   O B T A I N I N G ---------------
+--################################################################--
+
+---Returns the first encountered child of the provided name (recursively), or `nil` if it is not found.
+---@param name string The name of the child to be found.
+---@return Node?
+function Node:getChild(name)
+    return self:findChildByName(name)
+end
+
+
+
+--##############################################################################--
+---------------- L E G A C Y   C H I L D R E N   O B T A I N I N G ---------------
+--##############################################################################--
+-- These methods are going to be deprecated, because they aren't really that intuitive.
+-- Seek alternatives above!
+
 ---Returns the first encountered child by reference (recursively), or `nil` if it is not found.
+---@private
 ---@param node Node The instance of the child to be found.
 ---@return Node?
 function Node:findChild(node)
@@ -866,8 +924,6 @@ function Node:findChild(node)
         end
     end
 end
-
-
 
 ---Returns the first encountered child of the provided name (recursively), or `nil` if it is not found.
 ---@param name string The name of the child to be found.
@@ -884,8 +940,6 @@ function Node:findChildByName(name)
     end
 end
 
-
-
 ---Returns the first encountered child that contains the provided position (recursively), or `nil` if it is not found.
 ---@param pos Vector2 The position to be checked.
 ---@return Node?
@@ -900,8 +954,6 @@ function Node:findChildByPixel(pos)
         end
     end
 end
-
-
 
 ---Returns the first encountered child that contains the provided position (recursively, depth first), or `nil` if it is not found.
 ---@param pos Vector2 The position to be checked.
@@ -920,8 +972,6 @@ function Node:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvis
         end
     end
 end
-
-
 
 ---Returns the last encountered child that contains the provided position (recursively, depth first), or `nil` if it is not found.
 ---@param pos Vector2 The position to be checked.
@@ -997,15 +1047,16 @@ end
 ---@param presses integer How many clicks have been performed in a short amount of time. Useful for double click checks.
 ---@return boolean
 function Node:mousepressed(x, y, button, istouch, presses)
+    if not self:isVisible() or self.disabled then
+        return false
+    end
     local consumed = false
-    if button == 1 and self:isHovered() and not self.disabled then
+    if button == 1 and self:isHovered() then
         self.clicked = true
     end
-    if not self.disabled then
-        if self.widget and self.widget.mousepressed then
-            if self.widget:mousepressed(x, y, button, istouch, presses) then
-                consumed = true
-            end
+    if self.widget and self.widget.mousepressed then
+        if self.widget:mousepressed(x, y, button, istouch, presses) then
+            consumed = true
         end
     end
     for i, child in ipairs(self.children) do
@@ -1023,6 +1074,9 @@ end
 ---@param y integer The Y coordinate.
 ---@param button integer The button that has been released.
 function Node:mousereleased(x, y, button)
+    if not self:isVisible() or self.disabled then
+        return
+    end
     if button == 1 and self.clicked then
         self.clicked = false
         -- We don't want the click function to occur if the cursor was released outside of the node.
@@ -1044,7 +1098,10 @@ end
 ---@param x integer The X coordinate.
 ---@param y integer The Y coordinate.
 function Node:wheelmoved(x, y)
-    if self:isHovered() and not self.disabled then
+    if not self:isVisible() or self.disabled then
+        return
+    end
+    if self:isHovered() then
         if self.widget and self.widget.wheelmoved then
             self.widget:wheelmoved(x, y)
         end
@@ -1059,14 +1116,15 @@ end
 ---Executed whenever a key is pressed on the keyboard.
 ---@param key string Code of the key that has been pressed.
 function Node:keypressed(key)
-    if not self.disabled then
-        local shortcut = self:getProp("shortcut")
-        if shortcut and shortcut.key == key and (shortcut.ctrl or false) == _IsCtrlPressed() and (shortcut.shift or false) == _IsShiftPressed() then
-            self:click()
-        end
-        if self.widget and self.widget.keypressed then
-            self.widget:keypressed(key)
-        end
+    if not self:isVisible() or self.disabled then
+        return
+    end
+    local shortcut = self:getProp("shortcut")
+    if shortcut and shortcut.key == key and (shortcut.ctrl or false) == _IsCtrlPressed() and (shortcut.shift or false) == _IsShiftPressed() then
+        self:click()
+    end
+    if self.widget and self.widget.keypressed then
+        self.widget:keypressed(key)
     end
     for i, child in ipairs(self.children) do
         child:keypressed(key)
@@ -1078,10 +1136,11 @@ end
 ---Executed whenever a certain character has been typed on the keyboard.
 ---@param text string The character.
 function Node:textinput(text)
-    if not self.disabled then
-        if self.widget and self.widget.textinput then
-            self.widget:textinput(text)
-        end
+    if not self:isVisible() or self.disabled then
+        return
+    end
+    if self.widget and self.widget.textinput then
+        self.widget:textinput(text)
     end
     for i, child in ipairs(self.children) do
         child:textinput(text)

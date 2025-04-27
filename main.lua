@@ -77,6 +77,7 @@ _RESOURCE_MANAGER = ResourceManager()
 _PROJECT = nil
 --_EDITOR = nil
 _EDITOR = Editor()
+_SCRIPTS = {}
 
 
 
@@ -113,6 +114,13 @@ end
 function _SaveRuntime()
 	local runtime = {lastProject = _PROJECT:getName(), lastLayout = _EDITOR:getCurrentLayoutName()}
 	_Utils.saveJson("runtime.json", runtime)
+end
+
+
+
+---Loads the UI script prototypes.
+function _LoadScripts()
+	_SCRIPTS.EditorTextEditUI = require("src.Scripts.EditorTextEditUI")
 end
 
 
@@ -158,6 +166,14 @@ function _OnSignal(name)
 		else
 			_TRANSITION:show()
 		end
+	elseif name == "eteui_start" then
+		_SCRIPTS.EditorTextEditUI.startEditing()
+	elseif name == "eteui_input" then
+		_SCRIPTS.EditorTextEditUI.onTextChanged()
+	elseif name == "eteui_confirm" then
+		_SCRIPTS.EditorTextEditUI.onConfirmClicked()
+	elseif name == "eteui_cancel" then
+		_SCRIPTS.EditorTextEditUI.onCancelClicked()
 	end
 end
 
@@ -179,6 +195,7 @@ function love.load()
 		_EDITOR:load()
 		_EDITOR.canvasMgr:fitZoom()
 	end
+	_LoadScripts()
 end
 
 function love.update(dt)

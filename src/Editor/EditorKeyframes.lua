@@ -48,6 +48,7 @@ end
 
 ---Returns event display information, in the form of a table. If no timeline exists, returns `nil`
 ---This function should only be called internally. If you want to get the current event display info, fetch the `self.eventInfo` field instead.
+---@private
 ---@return table?
 function EditorKeyframes:getEventInfo()
     local timeline = self:getCurrentTimeline()
@@ -108,6 +109,7 @@ end
 ---Returns the hovered Timeline Event, if any is hovered.
 ---
 ---This function should only be called internally. If you want to get the currently hovered event, fetch the `self.hoveredEvent` field instead.
+---@private
 ---@return TimelineEvent?
 function EditorKeyframes:getHoveredEvent()
     if not self.eventInfo then
