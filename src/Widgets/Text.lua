@@ -136,13 +136,6 @@ function Text:getFinalTextSize()
     return size
 end
 
----Returns the effective character separation of this Text, as both the character separation but also boldness will push the characters apart.
----@return integer
-function Text:getEffectiveCharacterSeparation()
-    local prop = self.properties:getValues()
-    return prop.boldness + prop.characterSeparation - 1
-end
-
 ---Returns the width scaling (squish) of this Text: 1 if it falls into the `maxWidth` property, less than 1 if not.
 ---@return number
 function Text:getWidthScale()
@@ -225,8 +218,6 @@ end
 ---(Re)generates text chunk data which is used to draw this Text on the screen and recalculates the text size.
 ---This should ideally be only ever called whenever the text is changed.
 function Text:generateChunks()
-    local d = self.node:getName() == "previewText"
-    if d then print("================ START") end
     local prop = self.properties:getValues()
     local tokens
     if prop.formatted then
@@ -276,7 +267,6 @@ function Text:generateChunks()
             -- For example when they are bolded, separated or have a different color or wave effect active.
             local greedySplit = style.boldness ~= 1 or style.separation ~= 0
             for j, chunk in ipairs(chunks) do
-                if d then print("chunk: " .. chunk, j) end
                 local subchunks
                 if greedySplit then
                     subchunks = _Utils.strSplitChars(chunk)
@@ -284,7 +274,6 @@ function Text:generateChunks()
                     subchunks = {chunk}
                 end
                 if j > 1 then
-                    if d then print("LBREAK") end
                     -- All subsequent chunks are guaranteed to have a line break character before them.
                     -- Do line break stuff.
                     x = 0
@@ -293,7 +282,6 @@ function Text:generateChunks()
                 end
                 for k, subchunk in ipairs(subchunks) do
                     if subchunk ~= "" then
-                        if d then print("  subchunk: " .. subchunk) end
                         -- If no formatting has been changed, append text to the most recent chunk.
                         local lastChunk = chunkData[#chunkData]
                         if not greedySplit and j == 1 and lastChunk and lastChunk.color == style.color and lastChunk.boldness == style.boldness then
