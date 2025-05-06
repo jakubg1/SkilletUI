@@ -217,6 +217,14 @@ end
 
 
 
+---Returns a single Node that is currently selected.
+---If no Nodes are selected, the function will throw an error.
+---If more than one Node is selected, the function will return the first selected Node, however ideally this should never happen.
+---@return Node
+function Editor:getSingleSelectedNode()
+    return assert(self.selectedNodes:getNode(1), "Editor error: Expected one selected Node, none were selected")
+end
+
 ---Returns the currently hovered Node.
 ---This function also sets the values of the `self.isNodeHoverIndirect`, `self.nodeTreeHoverTop` and `self.nodeTreeHoverBottom` fields.
 ---
@@ -263,7 +271,7 @@ function Editor:getNodeResizeHandlePos(id)
     if self.selectedNodes:getSize() ~= 1 then
         return nil
     end
-    local node = self.selectedNodes:getNode(1)
+    local node = self:getSingleSelectedNode()
     assert(node, "size > 0, but nodes[1] = nil. This should never happen")
     local pos, size = _CANVAS:pixelToPosBox(node:getGlobalPos(), node:getSize())
     pos = pos - 6
@@ -278,7 +286,7 @@ function Editor:getHoveredNodeResizeHandleID()
     if self.selectedNodes:getSize() ~= 1 then
         return nil
     end
-    local node = self.selectedNodes:getNode(1)
+    local node = self:getSingleSelectedNode()
     assert(node, "size > 0, but nodes[1] = nil. This should never happen")
     if not node:isResizable() then
         return nil
@@ -325,7 +333,7 @@ function Editor:updateUI()
         self:generateProjectPropertyUI()
     elseif self.selectedNodes:getSize() == 1 then
         -- Display property UI only if a single node has been selected.
-        self:generateNodePropertyUI(self.selectedNodes:getNode(1))
+        self:generateNodePropertyUI(self:getSingleSelectedNode())
     else
         -- TODO: Make property UI for multiple nodes (show common values)
         self:generateNodePropertyUI()
@@ -491,7 +499,7 @@ end
 ---Otherwise, the node will be parented to the root node.
 ---@param node Node The node to be added.
 function Editor:addNode(node)
-    local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
+    local target = self.selectedNodes:getSize() == 1 and self:getSingleSelectedNode()
     local targetParent = target and target.parent or self:getCurrentLayoutUI()
     self:executeCommand(CommandNodeAdd(NodeList(node), targetParent))
 end
@@ -500,7 +508,7 @@ end
 ---Otherwise, the nodes will be parented to the root node.
 ---@param nodes NodeList The list of nodes to be added.
 function Editor:addNodes(nodes)
-    local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
+    local target = self.selectedNodes:getSize() == 1 and self:getSingleSelectedNode()
     local targetParent = target and target.parent or self:getCurrentLayoutUI()
     self:executeCommand(CommandNodeAdd(nodes, targetParent))
 end
@@ -510,7 +518,7 @@ end
 ---The node will be positioned at the center of the screen and will be selected.
 ---@param node Node The node to be added.
 function Editor:newNode(node)
-    local target = self.selectedNodes:getSize() == 1 and self.selectedNodes:getNode(1)
+    local target = self.selectedNodes:getSize() == 1 and self:getSingleSelectedNode()
     local targetParent = target and target.parent or self:getCurrentLayoutUI()
     local nodeList = NodeList(node)
     self:startCommandTransaction()
@@ -614,8 +622,7 @@ function Editor:startResizingSelectedNode(handleID)
         -- Resizing more than one node at once or none at all does not make any sense.
         return
     end
-    local selectedNode = self.selectedNodes:getNode(1)
-    assert(selectedNode, "size = 1, but nodes[1] = nil. This should never happen")
+    local selectedNode = self:getSingleSelectedNode()
     self.nodeResizeOrigin = _MouseCPos
     self.nodeResizeOriginalSize = selectedNode:getSize()
     self.nodeResizeOffset = (selectedNode:getGlobalPos() + (self.NODE_RESIZE_DIRECTIONS[handleID] + 1) / 2 * selectedNode:getSize()) - _MouseCPos
@@ -1080,11 +1087,9 @@ end
 function Editor:onInputReceived(result)
     if type(self.activeInput) == "string" then
         if self.activeInput == "save" then
-            -- Strip the `.json` extension.
-            self:saveLayout(result:sub(1, result:len() - 5))
+            self:saveLayout(_Utils.pathStripExtension(result))
         elseif self.activeInput == "load" then
-            -- Strip the `.json` extension.
-            self:loadLayout(result:sub(1, result:len() - 5))
+            self:loadLayout(_Utils.pathStripExtension(result))
         elseif self.activeInput == "loadProject" then
             self:loadProject(result)
         end
@@ -1317,8 +1322,7 @@ function Editor:drawMain()
     if self.selectedNodes:getSize() > 0 then
         local text = ""
         if self.selectedNodes:getSize() == 1 then
-            local node = self.selectedNodes:getNode(1)
-            assert(node, "size > 0, but nodes[1] = nil. This should never happen")
+            local node = self:getSingleSelectedNode()
             text = string.format("Selected: %s {%s} pos: %s -> %s", node:getName(), node.type, node:getPos(), node:getGlobalPos())
         else
             text = string.format("Selected: [%s nodes]", self.selectedNodes:getSize())

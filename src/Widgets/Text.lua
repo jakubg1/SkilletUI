@@ -48,26 +48,9 @@ function Text:new(node, data)
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 
-    -- Text Widgets store 3 different formats of text:
-    -- - Raw text (`text` property)
-    -- - Processed text (`text` with stripped formatting or as-is if formatting is disabled)
-    -- - Character data (a list of characters with formatting applied or `nil` if formatting is disabled)
-    -- - Escapes like `\n` and `\\` are always processed, `<...>` formatting marks are processed only if formatting is enabled.
-    --
-    -- Example:
-    --                      FORMATTING DISABLED                         FORMATTING ENABLED
-    --  RAW TEXT            PROCESSED TEXT      CHARACTER DATA          PROCESSED TEXT      CHARACTER DATA
-    --  Color               Color               nil                     Color               {...}
-    --  <blue>Color         <blue>Color         nil                     Color               {...}
-    --  One!\nTwo!          One!                nil                     One!                {...}
-    --                      Two!                                        Two!
-    --  <b>One!\n</>Two!    <b>One!             nil                     One!                {...}
-    --                      </>Two!                                     Two!
-    --
-    self.characterData = nil
-    self.processedText = nil
+    self.chunkData = nil
     self.textSize = Vec2()
-    self:generateCharacterData()
+    self:generateChunks()
 end
 
 --################################################--
@@ -86,7 +69,7 @@ end
 ---@param value any? The property value.
 function Text:setProp(key, value)
     self.properties:setValue(key, value)
-    self:generateCharacterData()
+    self:generateChunks()
 end
 
 ---Returns the given property base of this Text.
@@ -101,7 +84,7 @@ end
 ---@param value any? The property value.
 function Text:setPropBase(key, value)
     self.properties:setBaseValue(key, value)
-    self:generateCharacterData()
+    self:generateChunks()
 end
 
 ---Returns the property list of this Text.
@@ -174,156 +157,186 @@ end
 ---------------- T E X T   A N D   C H A R A C T E R S ---------------
 --##################################################################--
 
----Returns the actual raw text (but stripped from the formatting tags) that is visible on this Widget.
----It can differ from the real text if the `typeInProgress` or `inputCaret` properties are set.
+---Returns the displayed text, which might differ from the `text` property if certain properties, such as `typeInProgress` or `inputCaret` are set.
 ---@return string
-function Text:getText()
+function Text:getDisplayedText()
     local prop = self.properties:getValues()
     local caret = (prop.inputCaret and _Time % 1 < 0.5) and "|" or ""
     if not prop.typeInProgress then
-        return self.processedText .. caret
+        return prop.text .. caret
     end
-    local totalCharsRendered = math.floor(_Utils.interpolateClamped(0, utf8.len(self.processedText), prop.typeInProgress))
-    return self.processedText:sub(0, utf8.offset(self.processedText, totalCharsRendered + 1) - 1) .. caret
+    local totalCharsRendered = math.floor(_Utils.interpolateClamped(0, utf8.len(prop.text), prop.typeInProgress))
+    return prop.text:sub(0, utf8.offset(prop.text, totalCharsRendered + 1) - 1) .. caret
 end
 
----Returns the text (not the actual text, this function is unaffected by the `typeInProgress` property!) split into characters, with UTF-8 support.
----@return table
-function Text:getTextCharacters()
-    local text = self:getProp("text")
-    local characters = {}
-    for i = 1, utf8.len(text) do
-        table.insert(characters, text:sub(utf8.offset(text, i), utf8.offset(text, i + 1) - 1))
-    end
-    return characters
-end
-
----Returns `true` if the Text can be rendered as a whole batch, instead of having to be drawn character by character.
----@return boolean
-function Text:isSimpleRendered()
-    local prop = self.properties:getValues()
-    -- Check if any of the properties which require changing the character drawing positions are not default.
-    if prop.waveAmplitude or prop.gradientWaveColor or prop.characterSeparation ~= 0 or prop.boldness ~= 1 then
-        return false
-    end
-    -- Check if there are any formatting marks in the text.
-    if prop.formatted then
-        local characters = self:getTextCharacters()
-        local escape = false
-        local formattingOpen = false
-        for i, char in ipairs(characters) do
-            if not escape then
-                if char == "<" then
-                    -- An unescaped opening formatting mark found.
-                    formattingOpen = true
-                elseif char == ">" and formattingOpen then
-                    -- An unescaped closing formatting mark found. It's game over.
-                    return false
-                end
-            end
-            -- Handle escaped characters.
-            if not escape and char == "\\" then
-                escape = true
-            else
-                escape = false
-            end
-        end
-    end
-    return true
-end
-
----Generates character data for this Text, or removes it, if this Text can be drawn in the simple mode.
----Also updates the text size.
-function Text:generateCharacterData()
-    local prop = self.properties:getValues()
-    local lineHeight = prop.font:getHeight() * prop.scale
-    if self:isSimpleRendered() then
-        self.characterData = nil
-        self.processedText = self:getProp("text")
-        local w = (prop.font:getWidth(self.processedText) - 1) * prop.scale + self:getEffectiveCharacterSeparation() * (utf8.len(self.processedText) - 1) + prop.boldness - 1
-        self.textSize = Vec2(math.max(w, 0), lineHeight)
-        return
-    end
-
-    self.characterData = {}
-    self.processedText = ""
-
-    local characters = self:getTextCharacters()
-    local x, y = 0, 0
-    local color = prop.color
-    local boldness = prop.boldness
-    -- Formatting variables
+---Processes the formatting characters and returns a list of text and formatting values.
+---Backslashes are treated as follows:
+--- - All backslashed characters are treated as text.
+--- - Backslashed formatting opening `\<` will cause the `<` character to render instead of being treated as a formatting clause.
+--- - Double backslashes are converted into one backslash.
+--- - The `\n` string is NOT converted into a newline character, but instead into `n`.
+--- - Newline characters are left intact.
+---@private
+---@return [{type: "text"|"format", value: string}]
+function Text:parseFormatting()
+    local tokens = {}
+    local token = ""
+    local formatting = false
     local escape = false
-    local formattingContent = nil
+    local characters = _Utils.strSplitChars(self:getDisplayedText())
     for i, char in ipairs(characters) do
-        local draw = true
-
-        if prop.formatted then
-            -- Parse formatting characters.
-            if not escape then
+        if escape then
+            -- Escaped characters are directly added to the token.
+            token = token .. char
+            escape = false
+        else
+            if char == "\\" then
+                escape = true
+            elseif not formatting then
+                -- If we are not in formatting mode, check whether we should start.
                 if char == "<" then
-                    -- An unescaped opening formatting mark found. Start parsing the contents.
-                    formattingContent = ""
-                    draw = false
-                elseif formattingContent then
-                    if char == ">" then
-                        -- An unescaped closing formatting mark found. Stop parsing and apply the contents.
-                        if formattingContent:sub(1, 1) ~= "/" then
-                            -- Starting mark.
-                            if _COLORS[formattingContent] then
-                                color = _COLORS[formattingContent] -- Color name
-                            elseif (formattingContent:len() == 4 or formattingContent:len() == 7) and formattingContent:sub(1, 1) == "#" then
-                                color = Color(formattingContent:sub(2)) -- Color hex code (#rgb or #rrggbb)
-                            elseif formattingContent == "b" then
-                                boldness = 2 -- Bold
-                            end
-                        else
-                            -- Ending mark.
-                            formattingContent = formattingContent:sub(2)
-                            if formattingContent == "" then
-                                -- Reset everything to default.
-                                color = prop.color
-                                boldness = prop.boldness
-                            elseif formattingContent == "#" then
-                                color = prop.color -- Reset color
-                            elseif formattingContent == "b" then
-                                boldness = prop.boldness -- Reset boldness
-                            end
-                        end
-                        formattingContent = nil
-                    else
-                        formattingContent = formattingContent .. char
+                    if token ~= "" then
+                        table.insert(tokens, {type = "text", value = token})
+                        token = ""
                     end
-                    draw = false
+                    formatting = true
+                else
+                    token = token .. char
+                end
+            else
+                -- If we are in formatting mode, check whether we should finish.
+                if char == ">" then
+                    table.insert(tokens, {type = "format", value = token})
+                    token = ""
+                    formatting = false
+                else
+                    token = token .. char
                 end
             end
-            -- Handle escaped characters.
-            if not escape and char == "\\" and i < #characters then
-                escape = true
-                -- Don't draw the backslash if it escapes something.
-                draw = false
-            else
-                escape = false
-            end
-        end
-
-        -- Insert the character if eligible.
-        if draw then
-            local character = {
-                char = char,
-                x = math.floor(x + 0.5),
-                y = math.floor(y + 0.5) + (_Debug and math.random(-1, 1) or 0),
-                scaleX = prop.scale,
-                scaleY = prop.scale,
-                color = color,
-                boldness = boldness
-            }
-            table.insert(self.characterData, character)
-            self.processedText = self.processedText .. char
-            x = x + prop.font:getWidth(char) * prop.scale + prop.characterSeparation + boldness - 1
         end
     end
-    self.textSize = Vec2(math.max(x - 1, 0), lineHeight)
+    -- If there is a leftover text token, add it.
+    if not formatting and token ~= "" then
+        table.insert(tokens, {type = "text", value = token})
+    end
+    return tokens
+end
+
+---(Re)generates text chunk data which is used to draw this Text on the screen and recalculates the text size.
+---This should ideally be only ever called whenever the text is changed.
+function Text:generateChunks()
+    local d = self.node:getName() == "previewText"
+    if d then print("================ START") end
+    local prop = self.properties:getValues()
+    local tokens
+    if prop.formatted then
+        tokens = self:parseFormatting()
+    else
+        tokens = {{type = "text", value = prop.text}}
+    end
+    local chunkData = {}
+    local x, y = 0, 0
+    local width = 0
+    local lineHeight = 0
+    local style = {
+        color = prop.color,
+        boldness = prop.boldness,
+        separation = prop.characterSeparation
+    }
+    for i, token in ipairs(tokens) do
+        if token.type == "format" then
+            -- Change the formatting.
+            if token.value:sub(1, 1) ~= "/" then
+                -- Starting mark.
+                local value = token.value
+                if _COLORS[value] then
+                    style.color = _COLORS[value] -- Color name
+                elseif (value:len() == 4 or value:len() == 7) and value:sub(1, 1) == "#" then
+                    style.color = Color(value:sub(2)) -- Color hex code (#rgb or #rrggbb)
+                elseif value == "b" then
+                    style.boldness = 2 -- Bold
+                end
+            else
+                -- Ending mark.
+                local value = token.value:sub(2)
+                if value == "" then
+                    -- Reset everything to default.
+                    style.color = prop.color
+                    style.boldness = prop.boldness
+                elseif value == "#" then
+                    style.color = prop.color -- Reset color
+                elseif value == "b" then
+                    style.boldness = prop.boldness -- Reset boldness
+                end
+            end
+        elseif token.type == "text" then
+            -- Add text.
+            local chunks = _Utils.strSplit(token.value, "\n")
+            -- We will do a greedy split (split into single characters) if the characters have to be drawn one by one.
+            -- For example when they are bolded, separated or have a different color or wave effect active.
+            local greedySplit = style.boldness ~= 1 or style.separation ~= 0
+            for j, chunk in ipairs(chunks) do
+                if d then print("chunk: " .. chunk, j) end
+                local subchunks
+                if greedySplit then
+                    subchunks = _Utils.strSplitChars(chunk)
+                else
+                    subchunks = {chunk}
+                end
+                if j > 1 then
+                    if d then print("LBREAK") end
+                    -- All subsequent chunks are guaranteed to have a line break character before them.
+                    -- Do line break stuff.
+                    x = 0
+                    y = y + lineHeight
+                    lineHeight = 0
+                end
+                for k, subchunk in ipairs(subchunks) do
+                    if subchunk ~= "" then
+                        if d then print("  subchunk: " .. subchunk) end
+                        -- If no formatting has been changed, append text to the most recent chunk.
+                        local lastChunk = chunkData[#chunkData]
+                        if not greedySplit and j == 1 and lastChunk and lastChunk.color == style.color and lastChunk.boldness == style.boldness then
+                            lastChunk.text = lastChunk.text .. subchunk
+                        else
+                            -- Add a brand new chunk.
+                            table.insert(chunkData, {text = subchunk, x = x, y = y, color = style.color, boldness = style.boldness})
+                        end
+                        -- Update the chunk data.
+                        lastChunk = chunkData[#chunkData]
+                        lastChunk.width = (prop.font:getWidth(lastChunk.text) - 1) * prop.scale + lastChunk.boldness - 1
+                        lastChunk.height = prop.font:getHeight() * prop.scale
+                        x = x + lastChunk.width
+                        width = math.max(width, x)
+                        x = x + prop.scale + style.separation
+                        lineHeight = math.max(lineHeight, lastChunk.height)
+                    end
+                end
+            end
+        end
+    end
+    -- Shorten last chunk so that we don't have a pesky extra pixel at the end.
+    self.chunkData = chunkData
+    self.textSize = Vec2(width, y + lineHeight)
+end
+
+---Turns the formatting token list generated by `:parseFormatting()` into a readable string format for debugging.
+---@private
+---@param tokens [{type: "text"|"format", value: string}] Token list to stringify.
+---@return string
+function Text:formattingToString(tokens)
+    local str = ""
+    for i, token in ipairs(tokens) do
+        if i > 1 then
+            str = str .. " "
+        end
+        if token.type == "text" then
+            str = str .. "\"" .. token.value .. "\""
+        elseif token.type == "format" then
+            str = str .. "<" .. token.value .. ">"
+        end
+    end
+    return str
 end
 
 --##############################################--
@@ -340,7 +353,6 @@ end
 function Text:draw()
     local pos = self:getPos()
     local widthScale = self:getWidthScale()
-    local text = self:getText()
     local prop = self.properties:getValues()
 
     love.graphics.setFont(prop.font.font)
@@ -350,49 +362,44 @@ function Text:draw()
         globalTextColor = prop.hoverColor
     end
 
-    if self.characterData then
-        -- Character by character
-        for i, char in ipairs(self.characterData) do
-            local animOffset = char.x - pos.x
-            local charY = char.y
-            if prop.waveFrequency and prop.waveAmplitude and prop.waveSpeed then
-                charY = charY + _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, animOffset, _Time) * prop.waveAmplitude
+    -- TEMPORARY: Draw a placeholder input caret.
+    if prop.inputCaret and _Time % 1 < 0.5 then
+        love.graphics.setColor(1, 0, 0.5, 0.5)
+        love.graphics.rectangle("fill", pos.x, pos.y, self.textSize.x, self.textSize.y)
+    end
+    -- The text is drawn chunk by chunk.
+    for i, chunk in ipairs(self.chunkData) do
+        local animOffset = chunk.x - pos.x
+        local chunkY = chunk.y
+        if prop.waveFrequency and prop.waveAmplitude and prop.waveSpeed then
+            chunkY = chunkY + _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, animOffset, _Time) * prop.waveAmplitude
+        end
+        local chunkColor = chunk.color
+        if prop.hoverColor and self.node:isHovered() then
+            chunkColor = prop.hoverColor
+        end
+        if prop.gradientWaveFrequency and prop.gradientWaveColor then
+            local t
+            if prop.gradientWaveSpeed then
+                t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, animOffset, _Time) + 1) / 2
+            else
+                t = (_Utils.getWavePoint(1 / prop.gradientWaveFrequency, 1, 0, _Time) + 1) / 2
             end
-            local charColor = char.color
-            if prop.hoverColor and self.node:isHovered() then
-                charColor = prop.hoverColor
-            end
-            if prop.gradientWaveFrequency and prop.gradientWaveColor then
-                local t
-                if prop.gradientWaveSpeed then
-                    t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, animOffset, _Time) + 1) / 2
-                else
-                    t = (_Utils.getWavePoint(1 / prop.gradientWaveFrequency, 1, 0, _Time) + 1) / 2
-                end
-                charColor = _Utils.interpolate(charColor, prop.gradientWaveColor, t)
-            end
+            chunkColor = _Utils.interpolate(chunkColor, prop.gradientWaveColor, t)
+        end
 
-            if prop.shadowOffset then
-                for j = 1, char.boldness do
-                    local bx = j - 1
-                    love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-                    love.graphics.print(char.char, pos.x + char.x * widthScale + bx + prop.shadowOffset.x, pos.y + charY + prop.shadowOffset.y, 0, char.scaleX * widthScale, char.scaleY)
-                end
-            end
-            for j = 1, char.boldness do
-                local bx = j - 1
-                love.graphics.setColor(charColor.r, charColor.g, charColor.b, prop.alpha)
-                love.graphics.print(char.char, pos.x + char.x * widthScale + bx, pos.y + charY, 0, char.scaleX * widthScale, char.scaleY)
-            end
-        end
-    else
-        -- Optimize drawing if there are no effects which require drawing each character separately.
         if prop.shadowOffset then
-            love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-            love.graphics.print(text, math.floor(pos.x + prop.shadowOffset.x + 0.5), math.floor(pos.y + prop.shadowOffset.y + 0.5), 0, prop.scale * widthScale, prop.scale)
+            for j = 1, chunk.boldness do
+                local bx = j - 1
+                love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
+                love.graphics.print(chunk.text, pos.x + chunk.x * widthScale + bx + prop.shadowOffset.x, pos.y + chunkY + prop.shadowOffset.y, 0, prop.scale * widthScale, prop.scale)
+            end
         end
-        love.graphics.setColor(globalTextColor.r, globalTextColor.g, globalTextColor.b, prop.alpha)
-        love.graphics.print(text, math.floor(pos.x + 0.5), math.floor(pos.y + 0.5), 0, prop.scale * widthScale, prop.scale)
+        for j = 1, chunk.boldness do
+            local bx = j - 1
+            love.graphics.setColor(chunkColor.r, chunkColor.g, chunkColor.b, prop.alpha)
+            love.graphics.print(chunk.text, pos.x + chunk.x * widthScale + bx, pos.y + chunkY, 0, prop.scale * widthScale, prop.scale)
+        end
     end
 
     if prop.underline then
@@ -434,14 +441,10 @@ function Text:drawDebug()
     local pos = self:getPos()
     local prop = self.properties:getValues()
 
-    if not self.characterData then
-        local size = self:getSize()
-        local x1 = pos.x + 0.5
-        local x2 = pos.x + size.x + 0.5
-        local y = pos.y + 0.5
-        love.graphics.setLineWidth(prop.scale)
-        love.graphics.setColor(1, 0, 0.5, prop.alpha)
-        love.graphics.line(math.floor(x1), math.floor(y), math.floor(x2), math.floor(y))
+    local colors = {_COLORS.blue, _COLORS.green, _COLORS.red, _COLORS.gray}
+    for i, chunk in ipairs(self.chunkData) do
+        _SetColor(colors[i % 4 + 1], 0.5)
+        love.graphics.rectangle("fill", pos.x + chunk.x, pos.y + chunk.y, chunk.width, chunk.height)
     end
 end
 
@@ -489,6 +492,11 @@ function Text:keypressed(key)
             if offset then
                 self:setPropBase("text", self:getProp("text"):sub(1, offset - 1))
             end
+            if self:getProp("signalOnInput") then
+                _OnSignal(self:getProp("signalOnInput"))
+            end
+        elseif key == "return" and self:getProp("newlineShiftInput") == _IsShiftPressed() then
+            self:setPropBase("text", self:getProp("text") .. "\n")
             if self:getProp("signalOnInput") then
                 _OnSignal(self:getProp("signalOnInput"))
             end

@@ -151,7 +151,6 @@
 					],
 					"type": "text",
 					"widget": {
-						"color": "#000000",
 						"scale": 2,
 						"text": "Confirm"
 					}
@@ -160,7 +159,7 @@
 			"name": "buttonConfirm",
 			"pos": [
 				360,
-				364
+				363
 			],
 			"shortcut": {
 				"key": "return"
@@ -168,11 +167,12 @@
 			"signalOnClick": "eteui_confirm",
 			"type": "9sprite",
 			"widget": {
-				"clickImage": "ed_button_click",
+				"clickImage": "base_button_click",
+				"image": "base_button",
 				"scale": 2,
 				"size": [
 					100,
-					24
+					30
 				]
 			}
 		},
@@ -190,7 +190,6 @@
 					],
 					"type": "text",
 					"widget": {
-						"color": "#000000",
 						"scale": 2,
 						"text": "Cancel"
 					}
@@ -199,7 +198,7 @@
 			"name": "buttonCancel",
 			"pos": [
 				480,
-				364
+				363
 			],
 			"shortcut": {
 				"key": "escape"
@@ -207,11 +206,12 @@
 			"signalOnClick": "eteui_cancel",
 			"type": "9sprite",
 			"widget": {
-				"clickImage": "ed_button_click",
+				"clickImage": "base_button_click",
+				"image": "base_button",
 				"scale": 2,
 				"size": [
 					100,
-					24
+					30
 				]
 			}
 		},
@@ -220,8 +220,8 @@
 			"name": "background",
 			"type": "9sprite",
 			"widget": {
-				"image": "button",
-				"scale": 4,
+				"image": "base_button",
+				"scale": 2,
 				"shadowOffset": [
 					4,
 					4

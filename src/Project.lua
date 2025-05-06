@@ -74,8 +74,7 @@ end
 function Project:getLayoutFileList()
     local names = _Utils.getDirListing(self:getLayoutDirectory(), "file", ".json", false)
     for i, name in ipairs(names) do
-        -- Strip the `.json` extension.
-        names[i] = name:sub(1, name:len() - 5)
+        names[i] = _Utils.pathStripExtension(name)
     end
     table.sort(names)
     return names

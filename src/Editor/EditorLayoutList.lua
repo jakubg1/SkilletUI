@@ -225,10 +225,8 @@ function EditorLayoutList:draw()
 
     -- Dragged element in node tree
     if self.dragOrigin and not self.dragSnap then
-        local selectedNode = self.editor.selectedNodes:getNode(1)
-        if selectedNode then
-            self.editor:drawShadowedText(string.format("%s {%s}", selectedNode:getName(), selectedNode.type), _MousePos.x + 10, _MousePos.y + 15, _COLORS.white, _COLORS.blue)
-        end
+        local selectedNode = self.editor:getSingleSelectedNode()
+        self.editor:drawShadowedText(string.format("%s {%s}", selectedNode:getName(), selectedNode.type), _MousePos.x + 10, _MousePos.y + 15, _COLORS.white, _COLORS.blue)
     end
 end
 

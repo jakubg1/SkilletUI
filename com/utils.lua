@@ -1,6 +1,7 @@
 -- utils.lua by jakubg1
 -- version for all the new stuff! (I need to find a more exhaustively edited one)
 
+local utf8 = require("utf8")
 local json = require("com.json")
 
 local utils = {}
@@ -233,6 +234,23 @@ end
 
 
 
+---Returns a table with combined entries of both tables. Duplicates are not removed.
+---@param t1 table The first table.
+---@param t2 table The second table.
+---@return table
+function utils.tableAdd(t1, t2)
+	local t = {}
+	for i, v in ipairs(t1) do
+		table.insert(t, v)
+	end
+	for i, v in ipairs(t2) do
+		table.insert(t, v)
+	end
+	return t
+end
+
+
+
 ---Returns `true` if both tables are identical in contents. Shallow check is used.
 ---@param t1 table The first table.
 ---@param t2 table The second table to be compared with the first table.
@@ -352,6 +370,19 @@ end
 
 
 
+---Splits a string `str` into characters. UTF-8 characters are respected.
+---@param str string A string to be split.
+---@return table
+function utils.strSplitChars(str)
+    local characters = {}
+    for i = 1, utf8.len(str) do
+        table.insert(characters, str:sub(utf8.offset(str, i), utf8.offset(str, i + 1) - 1))
+    end
+    return characters
+end
+
+
+
 ---Returns `true` if the string `s` starts with the clause `c`.
 ---@param s string The string to be searched.
 ---@param c string The expected beginning of the string `s`.
@@ -373,17 +404,11 @@ end
 
 
 ---Combines a table of strings together to produce a string and returns the result.
----Deprecated, please use `table.concat` instead.
 ---@param t table A table of strings to be combined.
 ---@param k string A delimiter which will separate the terms.
 ---@return string
 function utils.strJoin(t, k)
-	local s = ""
-	for i, n in ipairs(t) do
-		if i > 1 then s = s .. k end
-		s = s .. n
-	end
-	return s
+	return table.concat(t, k)
 end
 
 
@@ -610,6 +635,17 @@ function utils.getShortcutString(shortcut)
 		value = "Ctrl + " .. value
 	end
 	return value
+end
+
+
+
+---Strips the extension from a path to a file.
+---@param path string The path to have its extension stripped.
+---@return string
+function utils.pathStripExtension(path)
+	local spl = utils.strSplit(path, ".")
+	spl[#spl] = nil
+	return utils.strJoin(spl, ".")
 end
 
 

@@ -582,7 +582,7 @@ end
 function Node:setText(text)
     assert(type(text) == "string", string.format("Cannot set the text to a non-string: %s!", text))
     self:ensureTextNode()
-    self.widget:setProp("text", text)
+    self.widget:setPropBase("text", text)
 end
 
 ---Returns whether this Node's text widget is formatted. Works only with `text` widgets.
@@ -595,7 +595,7 @@ end
 ---@param formatted boolean Whether this Node's widget should be formatted.
 function Node:setTextFormatted(formatted)
     self:ensureTextNode()
-    self.widget:setProp("formatted", formatted)
+    self.widget:setPropBase("formatted", formatted)
 end
 
 

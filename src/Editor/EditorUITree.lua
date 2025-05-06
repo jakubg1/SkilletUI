@@ -143,16 +143,17 @@ function EditorUITree:finishDraggingSelectedNodeInNodeTree()
         self:cancelDraggingSelectedNodeInNodeTree()
         return
     end
+    local selectedNode = self.editor:getSingleSelectedNode()
     self.editor:startCommandTransaction()
     if self.hoverTop then
         -- We've dropped the node above the hovered node.
         -- First, make sure that our parent is correct.
-        if self.editor.selectedNodes:getNode(1).parent ~= self.editor.hoveredNode.parent then
+        if selectedNode.parent ~= self.editor.hoveredNode.parent then
             self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNodes, self.editor.hoveredNode.parent))
         end
         -- Now, reorder it so that the selected node is before the hovered node.
         local index = self.editor.hoveredNode:getSelfIndex()
-        if index > self.editor.selectedNodes:getNode(1):getSelfIndex() then
+        if index > selectedNode:getSelfIndex() then
             index = index - 1
         end
         self.editor:executeCommand(CommandNodeMoveToIndex(self.editor.selectedNodes, index))
@@ -165,12 +166,12 @@ function EditorUITree:finishDraggingSelectedNodeInNodeTree()
         else
             -- Otherwise, move on similarly to the top case.
             -- First, make sure that our parent is correct.
-            if self.editor.selectedNodes:getNode(1).parent ~= self.editor.hoveredNode.parent then
+            if selectedNode.parent ~= self.editor.hoveredNode.parent then
                 self.editor:executeCommand(CommandNodeSetParent(self.editor.selectedNodes, self.editor.hoveredNode.parent))
             end
             -- Now, reorder it so that the selected node is after the hovered node.
             local index = self.editor.hoveredNode:getSelfIndex() + 1
-            if index > self.editor.selectedNodes:getNode(1):getSelfIndex() then
+            if index > selectedNode:getSelfIndex() then
                 index = index - 1
             end
             self.editor:executeCommand(CommandNodeMoveToIndex(self.editor.selectedNodes, index))
@@ -355,10 +356,8 @@ function EditorUITree:draw()
 
     -- Dragged element in node tree
     if self.dragOrigin and not self.dragSnap then
-        local selectedNode = self.editor.selectedNodes:getNode(1)
-        if selectedNode then
-            self.editor:drawShadowedText(string.format("%s {%s}", selectedNode:getName(), selectedNode.type), _MousePos.x + 10, _MousePos.y + 15, _COLORS.white, _COLORS.blue)
-        end
+        local selectedNode = self.editor:getSingleSelectedNode()
+        self.editor:drawShadowedText(string.format("%s {%s}", selectedNode:getName(), selectedNode.type), _MousePos.x + 10, _MousePos.y + 15, _COLORS.white, _COLORS.blue)
     end
 end
 

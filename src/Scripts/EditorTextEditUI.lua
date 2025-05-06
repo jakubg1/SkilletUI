@@ -5,7 +5,7 @@ local f = {}
 local ui = _EDITOR.TEXT_INPUT_UI
 
 function f.startEditing()
-    local editedNode = assert(_EDITOR.selectedNodes:getNode(1))
+    local editedNode = _EDITOR:getSingleSelectedNode()
     local text = editedNode:getText()
     local formatted = editedNode:getTextFormatted()
     ui:getChild("editText"):setText(text)
@@ -20,9 +20,9 @@ function f.onTextChanged()
 end
 
 function f.onConfirmClicked()
-    local editedNode = assert(_EDITOR.selectedNodes:getNode(1))
+    local editedNode = _EDITOR:getSingleSelectedNode()
     local text = ui:getChild("editText"):getText()
-    editedNode:setWidgetPropBase("text", text)
+    _EDITOR:setNodeWidgetProperty(editedNode, "text", text)
     ui:setVisible(false)
 end
 
