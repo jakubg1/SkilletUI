@@ -215,9 +215,96 @@ function Text:parseFormatting()
     return tokens
 end
 
+---Returns a style table which is the default style based on this Text's properties.
+---@private
+---@return table
+function Text:getStyleFromProperties()
+    local prop = self.properties:getValues()
+    return {
+        color = prop.color,
+        scale = prop.scale,
+        boldness = prop.boldness,
+        separation = prop.characterSeparation,
+        waveAmplitude = prop.waveAmplitude,
+        waveFrequency = prop.waveFrequency,
+        waveSpeed = prop.waveSpeed,
+        gradientWaveColor = prop.gradientWaveColor,
+        gradientWaveFrequency = prop.gradientWaveFrequency,
+        gradientWaveSpeed = prop.gradientWaveSpeed
+    }
+end
+
+---Returns a copy of the provided style modified depending on the provided formatting mark.
+---@private
+---@param style table The style table to be modified.
+---@param format string The formatting mark without sharp brackets, such as `b`, `/` or `orange`.
+---@return table
+function Text:alterStyle(style, format)
+    -- Bypass: Reset everything if style is `/`.
+    if format == "/" then
+        return self:getStyleFromProperties()
+    end
+    local prop = self.properties:getValues()
+    local newStyle = _Utils.copyTable(style)
+    local firstChar = format:sub(1, 1)
+    if firstChar ~= "/" then
+        -- Starting mark.
+        if _COLORS[format] then
+            newStyle.color = _COLORS[format] -- Color name
+        elseif firstChar == "#" and (format:len() == 4 or format:len() == 7) then
+            newStyle.color = Color(format:sub(2)) -- Color hex code (#rgb or #rrggbb)
+        elseif firstChar == "s" then
+            newStyle.scale = (tonumber(format:sub(2)) or 2) * prop.scale -- Scale
+        elseif firstChar == "b" then
+            newStyle.boldness = tonumber(format:sub(2)) or 2 -- Bold
+        elseif firstChar == "e" then
+            newStyle.separation = tonumber(format:sub(2)) or 2 -- Character separation
+        end
+    else
+        -- Ending mark.
+        format = format:sub(2)
+        if format == "#" then
+            newStyle.color = prop.color -- Reset color
+        elseif format == "s" then
+            newStyle.scale = prop.scale -- Reset scale
+        elseif format == "b" then
+            newStyle.boldness = prop.boldness -- Reset boldness
+        elseif format == "e" then
+            newStyle.separation = prop.characterSeparation -- Reset character separation
+        end
+    end
+    return newStyle
+end
+
+---Returns whether both provided styles are identical.
+---@private
+---@param style1 table The first style.
+---@param style2 table The second style.
+---@return boolean
+function Text:areStylesEqual(style1, style2)
+    return _Utils.areTablesIdentical(style1, style2)
+end
+
+---Returns `true` if the provided style must make the characters render separately.
+---@private
+---@param style table The style to be checked for a greedy split.
+---@return boolean
+function Text:styleConstitutesGreedySplit(style)
+    if style.boldness ~= 1 or style.separation ~= 0 then
+        return true
+    elseif style.waveAmplitude and style.waveFrequency and style.waveSpeed then
+        return true
+    elseif style.gradientWaveColor and style.gradientWaveFrequency then
+        return true
+    end
+    return false
+end
+
 ---(Re)generates text chunk data which is used to draw this Text on the screen and recalculates the text size.
 ---This should ideally be only ever called whenever the text is changed.
+---@private
 function Text:generateChunks()
+    local d = self.node:getName() == "previewText"
     local prop = self.properties:getValues()
     local tokens
     if prop.formatted then
@@ -229,43 +316,17 @@ function Text:generateChunks()
     local x, y = 0, 0
     local width = 0
     local lineHeight = 0
-    local style = {
-        color = prop.color,
-        boldness = prop.boldness,
-        separation = prop.characterSeparation
-    }
+    local style = self:getStyleFromProperties()
     for i, token in ipairs(tokens) do
         if token.type == "format" then
             -- Change the formatting.
-            if token.value:sub(1, 1) ~= "/" then
-                -- Starting mark.
-                local value = token.value
-                if _COLORS[value] then
-                    style.color = _COLORS[value] -- Color name
-                elseif (value:len() == 4 or value:len() == 7) and value:sub(1, 1) == "#" then
-                    style.color = Color(value:sub(2)) -- Color hex code (#rgb or #rrggbb)
-                elseif value == "b" then
-                    style.boldness = 2 -- Bold
-                end
-            else
-                -- Ending mark.
-                local value = token.value:sub(2)
-                if value == "" then
-                    -- Reset everything to default.
-                    style.color = prop.color
-                    style.boldness = prop.boldness
-                elseif value == "#" then
-                    style.color = prop.color -- Reset color
-                elseif value == "b" then
-                    style.boldness = prop.boldness -- Reset boldness
-                end
-            end
+            style = self:alterStyle(style, token.value)
         elseif token.type == "text" then
             -- Add text.
             local chunks = _Utils.strSplit(token.value, "\n")
             -- We will do a greedy split (split into single characters) if the characters have to be drawn one by one.
             -- For example when they are bolded, separated or have a different color or wave effect active.
-            local greedySplit = style.boldness ~= 1 or style.separation ~= 0
+            local greedySplit = self:styleConstitutesGreedySplit(style)
             for j, chunk in ipairs(chunks) do
                 local subchunks
                 if greedySplit then
@@ -281,22 +342,24 @@ function Text:generateChunks()
                     lineHeight = 0
                 end
                 for k, subchunk in ipairs(subchunks) do
+                    local lastChunk = chunkData[#chunkData]
                     if subchunk ~= "" then
                         -- If no formatting has been changed, append text to the most recent chunk.
-                        local lastChunk = chunkData[#chunkData]
-                        if not greedySplit and j == 1 and lastChunk and lastChunk.color == style.color and lastChunk.boldness == style.boldness then
+                        if not greedySplit and j == 1 and lastChunk and self:areStylesEqual(lastChunk.style, style) then
                             lastChunk.text = lastChunk.text .. subchunk
                         else
                             -- Add a brand new chunk.
-                            table.insert(chunkData, {text = subchunk, x = x, y = y, color = style.color, boldness = style.boldness})
+                            table.insert(chunkData, {text = subchunk, x = x, y = y, style = style})
                         end
                         -- Update the chunk data.
                         lastChunk = chunkData[#chunkData]
-                        lastChunk.width = (prop.font:getWidth(lastChunk.text) - 1) * prop.scale + lastChunk.boldness - 1
-                        lastChunk.height = prop.font:getHeight() * prop.scale
+                        lastChunk.width = (prop.font:getWidth(lastChunk.text) + lastChunk.style.boldness - 2) * lastChunk.style.scale
+                        lastChunk.height = prop.font:getHeight() * lastChunk.style.scale
                         x = x + lastChunk.width
                         width = math.max(width, x)
-                        x = x + prop.scale + style.separation
+                        x = x + style.scale + style.separation
+                    end
+                    if lastChunk then
                         lineHeight = math.max(lineHeight, lastChunk.height)
                     end
                 end
@@ -357,36 +420,37 @@ function Text:draw()
     end
     -- The text is drawn chunk by chunk.
     for i, chunk in ipairs(self.chunkData) do
-        local animOffset = chunk.x - pos.x
-        local chunkY = chunk.y
-        if prop.waveFrequency and prop.waveAmplitude and prop.waveSpeed then
-            chunkY = chunkY + _Utils.getWavePoint(prop.waveFrequency, prop.waveSpeed, animOffset, _Time) * prop.waveAmplitude
+        local x, y = chunk.x, chunk.y
+        local style = chunk.style
+        local animOffset = x - pos.x
+        if style.waveFrequency and style.waveAmplitude and style.waveSpeed then
+            y = y + _Utils.getWavePoint(style.waveFrequency, style.waveSpeed, animOffset, _Time) * style.waveAmplitude
         end
-        local chunkColor = chunk.color
+        local color = style.color
         if prop.hoverColor and self.node:isHovered() then
-            chunkColor = prop.hoverColor
+            color = prop.hoverColor
         end
-        if prop.gradientWaveFrequency and prop.gradientWaveColor then
+        if style.gradientWaveFrequency and style.gradientWaveColor then
             local t
-            if prop.gradientWaveSpeed then
-                t = (_Utils.getWavePoint(prop.gradientWaveFrequency, prop.gradientWaveSpeed, animOffset, _Time) + 1) / 2
+            if style.gradientWaveSpeed then
+                t = (_Utils.getWavePoint(style.gradientWaveFrequency, style.gradientWaveSpeed, animOffset, _Time) + 1) / 2
             else
-                t = (_Utils.getWavePoint(1 / prop.gradientWaveFrequency, 1, 0, _Time) + 1) / 2
+                t = (_Utils.getWavePoint(1 / style.gradientWaveFrequency, 1, 0, _Time) + 1) / 2
             end
-            chunkColor = _Utils.interpolate(chunkColor, prop.gradientWaveColor, t)
+            color = _Utils.interpolate(color, style.gradientWaveColor, t)
         end
 
         if prop.shadowOffset then
-            for j = 1, chunk.boldness do
-                local bx = j - 1
+            for j = 1, style.boldness do
+                local bx = (j - 1) * style.scale
                 love.graphics.setColor(0, 0, 0, prop.alpha * prop.shadowAlpha)
-                love.graphics.print(chunk.text, pos.x + chunk.x * widthScale + bx + prop.shadowOffset.x, pos.y + chunkY + prop.shadowOffset.y, 0, prop.scale * widthScale, prop.scale)
+                love.graphics.print(chunk.text, pos.x + x * widthScale + bx + prop.shadowOffset.x, pos.y + y + prop.shadowOffset.y, 0, style.scale * widthScale, style.scale)
             end
         end
-        for j = 1, chunk.boldness do
-            local bx = j - 1
-            love.graphics.setColor(chunkColor.r, chunkColor.g, chunkColor.b, prop.alpha)
-            love.graphics.print(chunk.text, pos.x + chunk.x * widthScale + bx, pos.y + chunkY, 0, prop.scale * widthScale, prop.scale)
+        for j = 1, style.boldness do
+            local bx = (j - 1) * style.scale
+            love.graphics.setColor(color.r, color.g, color.b, prop.alpha)
+            love.graphics.print(chunk.text, pos.x + x * widthScale + bx, pos.y + y, 0, style.scale * widthScale, style.scale)
         end
     end
 
@@ -427,8 +491,6 @@ end
 --- - When the text is drawn in the simple mode, a magenta line will be drawn above the text.
 function Text:drawDebug()
     local pos = self:getPos()
-    local prop = self.properties:getValues()
-
     local colors = {_COLORS.blue, _COLORS.green, _COLORS.red, _COLORS.gray}
     for i, chunk in ipairs(self.chunkData) do
         _SetColor(colors[i % 4 + 1], 0.5)
