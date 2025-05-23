@@ -182,6 +182,15 @@ function InputText:parseStringValue(value)
         return value
     elseif self.type == "number" then
 		return tonumber(value)
+    elseif self.type == "Vector2" then
+        local vals = _Utils.strSplit(value, ",")
+        if #vals ~= 2 then
+            return nil
+        end
+        for i, val in ipairs(vals) do
+            vals[i] = tonumber(_Utils.strTrim(val))
+        end
+        return Vec2(vals[1], vals[2])
     elseif self.type == "color" then
         local success, result = pcall(function() return Color(value) end)
         if success then
@@ -214,6 +223,10 @@ function InputText:startEditing()
         return
     end
     self.editText = self:getStringValue()
+    -- HACK: Remove parentheses from Vector2.
+    if self.type == "Vector2" then
+        self.editText = self.editText:sub(2, #self.editText - 1)
+    end
     self:updateUI()
 end
 
@@ -356,7 +369,7 @@ function InputText:mousepressed(x, y, button, istouch, presses)
         if self.type == "boolean" then
             -- If this is a boolean field, just immediately flip the value instead.
             self:setValue(not self.value)
-        elseif self.type == "number" then
+        elseif self.type == "number" or self.type == "Vector2" then
             -- TODO: Colors, Shortcuts etc. use the legacy input method. Do something with this in 100,000 years.
             self:startEditing()
         elseif self.type == "string" then

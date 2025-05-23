@@ -14,7 +14,7 @@ love.graphics.setBackgroundColor(0.2, 0.5, 0.9)
 
 -- Globals
 _VEC2S_PER_FRAME = 0
-_WINDOW_SIZE = Vec2(1600, 900)
+_WINDOW_SIZE = Vec2(1920, 1000)
 _Time = 0
 _MousePos = Vec2()
 _MouseCPos = Vec2()
@@ -50,7 +50,8 @@ _COLORS = {
 	e_cyan = Color("0ff"),
 	e_yellow = Color("ff0"),
 	e_red = Color("f00"),
-	e_green = Color("0f0")
+	e_green = Color("0f0"),
+	e_pink = Color("f08")
 }
 _COLOR_ORDER = {
 	"black", "dark_gray", "gray", "light_gray", "white",

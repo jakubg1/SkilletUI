@@ -33,51 +33,6 @@ local CommandNodeMoveToBottom = require("src.Editor.Commands.NodeMoveToBottom")
 
 
 
---- Done:
---- - Hovering nodes
---- - Selecting nodes
---- - Deleting nodes
---- - Moving nodes around
---- - Cancelling a node movement while it is being dragged
---- - Changing nodes' anchor points
---- - Changing nodes' parents
---- - Reordering nodes
---- - Node tree
---- - Selecting via node tree
---- - Undo/Redo (rewrite to commands)
---- - Widget manipulation (color, text, size, scale, etc.)
---- - Dragging entries around in the node tree
---- - Resizing widgets like boxes
---- - Saving layouts
---- - Loading/switching layouts
---- - Finish widget parameters
---- - Proper editing of node groups (size forwarding, unable to edit their components, etc.)
---- - Nullifying parameters
---- - Copy/Paste and widget duplication
---- - Adding new nodes (and entire node groups for stuff like buttons, scroll bars, etc.)
---- - Animations and timelines
---- - Live editing of parameters
---- - Multi-selection
---- - Font and image support for parameters
---- - Grid and snapping to it
---- - Canvas zooming and panning
---- - Responsiveness for the editor UI
---- - Resizable text
---- - Make new widgets show up at the center of the current viewport instead of at (0, 0)
----
---- To Do (arbitrary order):
---- - Vector edit support for parameters
---- - Node modifier system, where you could add a rule, like: "modify this node and all its children's widgets' alpha by multiplying it by 0.5"
---- - Property modifier system: instead of always having just the base and current value, make it a base value and a list of any modifiers (current value could be cached and got but could not be set)
---- - Timeline editing
---- - Fix ctrl+drag in node tree
---- - Fix "Cannot nest command transactions!" when dragging a Node after it has been moved with arrow keys
---- - Multiline text and inline formatting
---- - Attaching sides of Nodes to other Nodes' sides with margin
---- - Projects load all their layouts and all the layouts are listed
-
-
-
 ---Constructs a new UI Editor.
 function Editor:new()
     self.UI = nil
@@ -94,7 +49,7 @@ function Editor:new()
         Vec2(-1, 1),
         Vec2(-1, 0)
     }
-    self.EDITABLE_TYPES = {"string", "number", "boolean", "color", "shortcut", "Font", "Image", "NineImage"}
+    self.EDITABLE_TYPES = {"string", "number", "boolean", "color", "shortcut", "Vector2", "Font", "Image", "NineImage"}
 
     self.clipboard = {}
 
@@ -241,6 +196,10 @@ function Editor:getHoveredNode()
     if self.nodeDragOrigin or self.nodeResizeOrigin then
         return nil
     end
+    -- Do not hover any other node if we are hovering a resize handle.
+    if self:getHoveredNodeResizeHandleID() then
+        return nil
+    end
     -- Look whether we've hovered over any UI info entry.
     local hoveredNode = self.uiTree:getHoveredNode()
     if hoveredNode then
@@ -258,7 +217,15 @@ function Editor:getHoveredNode()
     -- Finally, look if any node is directly hovered.
     local currentLayout = self:getCurrentLayoutUI()
     if currentLayout then
-        return currentLayout:findChildByPixelDepthFirst(_MouseCPos, true, true, true)
+        hoveredNode = currentLayout:findChildByPixelDepthFirst(_MouseCPos, true, true, true)
+        if hoveredNode then
+            return hoveredNode
+        end
+        -- Bypass so that the root node itself can be hovered as well.
+        -- TODO: Make a better set of functions to select a node which matches our requirements.
+        if currentLayout:hasPixel(_MouseCPos) then
+            return currentLayout
+        end
     end
 end
 
@@ -1071,7 +1038,7 @@ end
 ---@param pathFilter string? If `type` == `"file"`: `"file"`, `"dir"` or `"all"` - show either files or directories or both respectively.
 function Editor:askForInput(input, inputType, extensions, warnWhenFileExists, basePath, pathFilter)
     self.activeInput = input
-    if inputType ~= "number" and inputType ~= "string" and inputType ~= "boolean" then
+    if inputType ~= "number" and inputType ~= "string" and inputType ~= "boolean" and inputType ~= "Vector2" then
         local value = ""
         if type(input) ~= "string" then
             value = input.widget:getValue()
@@ -1115,7 +1082,7 @@ function Editor:load()
     local s_file = self:node(self.UI, 5, 0, "s_file")
     local s_layout = self:node(self.UI, 5, 25, "s_layout")
     local s_widget = self:node(self.UI, 5, 285, "s_widget")
-    local s_utility = self:node(self.UI, 5, 760, "s_utility")
+    local s_utility = self:node(self.UI, 5, 735, "s_utility")
     local s_align = self:node(self.UI, 240, 590, "s_align")
     local s_palign = self:node(self.UI, 360, 590, "s_palign")
     local s_talign = self:node(self.UI, 480, 590, "s_talign")
@@ -1248,9 +1215,13 @@ function Editor:update(dt)
                 -- Force a square size if Shift is held.
                 size = Vec2(math.max(size.x, size.y), math.max(size.x, size.y))
             end
-            -- TODO: Snap to grid for resizing.
             node:resizeTo(size, (self.nodeResizeDirection - 1) / 2)
             self:updateUI()
+
+            -- Update the canvas if the root node is resized.
+            if node == self:getCurrentLayoutUI() then
+                _CANVAS:setResolution(self:getCurrentLayout():getSize())
+            end
         end
     end
 
@@ -1363,6 +1334,14 @@ function Editor:drawMain()
         local x = _WINDOW_SIZE.x - #_COLOR_ORDER * 5 - 5
         _SetColor(_COLORS[name])
         love.graphics.rectangle("fill", x + i * 5, _WINDOW_SIZE.y - 20, 5, 20)
+    end
+
+    -- Pop-up when dragging or resizing a node
+    if self.nodeDragOrigin and not self.nodeDragSnap then
+        self:drawShadowedText(tostring(self:getSingleSelectedNode():getPos()), _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_pink)
+    end
+    if self.nodeResizeOrigin then
+        self:drawShadowedText(tostring(self:getSingleSelectedNode():getSize()), _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_pink)
     end
 
     -- Before the UI itself will be drawn, make some nice background for the top bar.

@@ -22,7 +22,7 @@ function EditorUITree:new(editor)
     self.editor = editor
 
     self.POS = Vec2(5, 350)
-    self.SIZE = Vec2(220, 400)
+    self.SIZE = Vec2(220, 375)
     self.ITEM_HEIGHT = 20
     self.ITEM_INDENT = 20
     self.ITEM_MARGIN = 5

@@ -69,7 +69,7 @@ end
 ---Returns the size of this Sprite.
 ---@return Vector2
 function Sprite:getSize()
-    return self.node.scaleSize or self:getProp("image"):getSize()
+    return self.node.scaleSize or self:getProp("image"):getSize() * self:getProp("scale")
 end
 
 
