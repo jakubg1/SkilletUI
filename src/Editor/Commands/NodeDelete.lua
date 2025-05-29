@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeDelete
----@overload fun(nodeList):EditorCommandNodeDelete
-local EditorCommandNodeDelete = class:derive("EditorCommandNodeDelete")
+---@class EditorCommandNodeDelete : EditorCommand
+---@overload fun(nodeList): EditorCommandNodeDelete
+local EditorCommandNodeDelete = EditorCommand:derive("EditorCommandNodeDelete")
 
 ---Constructs a new Node Delete command.
 ---@param nodeList NodeList The node that should be deleted.

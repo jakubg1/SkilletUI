@@ -29,7 +29,6 @@ local CommandNodeMoveToTop = require("src.Editor.Commands.NodeMoveToTop")
 local CommandNodeMoveToBottom = require("src.Editor.Commands.NodeMoveToBottom")
 
 ---@alias Widget* Box|Button|Canvas|InputText|NineSprite|Text|TitleDigit
----@alias EditorCommand* EditorCommandNodeAdd|EditorCommandNodeRename|EditorCommandNodeMove|EditorCommandNodeDrag|EditorCommandNodeResize|EditorCommandNodeDelete|EditorCommandNodeSetParent|EditorCommandNodeSetProperty|EditorCommandNodeSetWidgetProperty|EditorCommandNodeMoveUp|EditorCommandNodeMoveDown|EditorCommandNodeMoveToTop|EditorCommandNodeMoveToBottom|EditorCommandNodeMoveToIndex
 
 
 
@@ -291,7 +290,7 @@ end
 
 
 
----Refreshes all critical UI for Editors, for example the node properties.
+---Refreshes all critical UI for Editors, for example the node properties and the layout resolution.
 function Editor:updateUI()
     -- If any of the selected nodes have been removed, deselect them.
     self.selectedNodes:removeNodesFunction(function(node) return not self:doesNodeExistSomewhere(node) end)
@@ -304,6 +303,12 @@ function Editor:updateUI()
     else
         -- TODO: Make property UI for multiple nodes (show common values)
         self:generateNodePropertyUI()
+    end
+
+    -- Update the canvas if the root node is resized.
+    local layoutSize = self:getCurrentLayout():getSize()
+    if _CANVAS:getResolution() ~= layoutSize then
+        _CANVAS:setResolution(layoutSize)
     end
 end
 
@@ -380,7 +385,7 @@ function Editor:generatePropertyListUI(parent, propertyList, properties, header,
         local inputValue = propertyList:getBaseValue(property.key)
         local propertyUI = Node({name = "input", pos = {10, y}})
         y = y + 20
-        local propertyText = self:label(propertyUI, 0, 1, property.name, nil, 145)
+        local propertyText = self:label(propertyUI, 0, 1, property.name, nil, 145, property.description)
         local propertyInput = self:input(propertyUI, 150, 0, 200, property, inputValue, affectedType, nil)
         self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (controlled and property.disabledIfControlled))
         listUI:addChild(propertyUI)
@@ -709,7 +714,7 @@ end
 ---Executes an editor command.
 ---If the command has been executed successfully, it can be undone using `:undoLastCommand()`.
 ---Returns `true` if the command has been executed successfully. Otherwise, returns `false`.
----@param command EditorCommand* The command to be performed.
+---@param command EditorCommand The command to be performed.
 ---@param groupID string? An optional group identifier for this command execution. If set, commands with the same group ID will be grouped together, and so will be packed into a single command transaction.
 ---@return boolean
 function Editor:executeCommand(command, groupID)
@@ -894,9 +899,10 @@ end
 ---@param text string The text that should be written on the label.
 ---@param name string? The label name.
 ---@param maxWidth number? The maximum width of the label. If the label is exceeding it, the text will be squished.
+---@param tooltip string? The optional tooltip to be displayed when this label is hovered.
 ---@return Node
-function Editor:label(parent, x, y, text, name, maxWidth)
-    local label = Node({name = name or ("lb_" .. text), type = "text", widget = {font = "editor", text = text, maxWidth = maxWidth, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x, y}})
+function Editor:label(parent, x, y, text, name, maxWidth, tooltip)
+    local label = Node({name = name or ("lb_" .. text), type = "text", tooltip = tooltip, widget = {font = "editor", text = text, maxWidth = maxWidth, shadowOffset = 2, shadowAlpha = 0.8}, pos = {x, y}})
     parent:addChild(label)
     return label
 end
@@ -1217,11 +1223,6 @@ function Editor:update(dt)
             end
             node:resizeTo(size, (self.nodeResizeDirection - 1) / 2)
             self:updateUI()
-
-            -- Update the canvas if the root node is resized.
-            if node == self:getCurrentLayoutUI() then
-                _CANVAS:setResolution(self:getCurrentLayout():getSize())
-            end
         end
     end
 
@@ -1336,18 +1337,25 @@ function Editor:drawMain()
         love.graphics.rectangle("fill", x + i * 5, _WINDOW_SIZE.y - 20, 5, 20)
     end
 
-    -- Pop-up when dragging or resizing a node
-    if self.nodeDragOrigin and not self.nodeDragSnap then
-        self:drawShadowedText(tostring(self:getSingleSelectedNode():getPos()), _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_pink)
-    end
-    if self.nodeResizeOrigin then
-        self:drawShadowedText(tostring(self:getSingleSelectedNode():getSize()), _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_pink)
-    end
-
     -- Before the UI itself will be drawn, make some nice background for the top bar.
     _SetColor(_COLORS.e_blue, 0.5)
     love.graphics.rectangle("fill", 0, 0, _WINDOW_SIZE.x, 20)
     self.UI:draw()
+
+    -- Tooltip when dragging or resizing a node
+    if self.nodeDragOrigin and not self.nodeDragSnap then
+        self:drawShadowedText(tostring(self:getSingleSelectedNode():getPos()), _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8)
+    end
+    if self.nodeResizeOrigin then
+        self:drawShadowedText(tostring(self:getSingleSelectedNode():getSize()), _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8)
+    end
+
+    -- Tooltip when a UI element is hovered
+    local hoveredNode = self.UI:findChildByPixelDepthFirst(_MousePos)
+    local tooltip = hoveredNode and hoveredNode:getTooltip()
+    if tooltip then
+        self:drawShadowedText(tooltip, _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8)
+    end
 
     -- Input box
     self.INPUT_DIALOG:draw()
@@ -1390,13 +1398,17 @@ end
 ---@param backgroundColor Color? The background color to be used. No background by default.
 ---@param alpha number? The text alpha, 1 by default.
 ---@param noShadow boolean? If you don't want the shadow after all, despite this function's name...
-function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha, noShadow)
+---@param backgroundAlpha number? The background alpha, `0.5 * alpha` by default.
+function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha, noShadow, backgroundAlpha)
     color = color or _COLORS.white
     alpha = alpha or 1
+    local w = love.graphics.getFont():getWidth(text)
+    local h = love.graphics.getFont():getHeight() * #_Utils.strSplit(text, "\n")
+    -- Make sure the box stays entirely inside of the screen.
+    x = math.min(x, _WINDOW_SIZE.x - w - 4)
+    y = math.min(y, _WINDOW_SIZE.y - h - 4)
     if backgroundColor then
-        local w = love.graphics.getFont():getWidth(text)
-        local h = love.graphics.getFont():getHeight()
-        love.graphics.setColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.5 * alpha)
+        love.graphics.setColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundAlpha or (0.5 * alpha))
         love.graphics.rectangle("fill", x - 2, y - 2, w + 4, h + 4)
     end
     if not noShadow then

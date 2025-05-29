@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeSetProperty
----@overload fun(nodeList, property, value):EditorCommandNodeSetProperty
-local EditorCommandNodeSetProperty = class:derive("EditorCommandNodeSetProperty")
+---@class EditorCommandNodeSetProperty : EditorCommand
+---@overload fun(nodeList, property, value): EditorCommandNodeSetProperty
+local EditorCommandNodeSetProperty = EditorCommand:derive("EditorCommandNodeSetProperty")
 
 ---Constructs a new Node Set Property command.
 ---@param nodeList NodeList The list of nodes that will have their property changed.

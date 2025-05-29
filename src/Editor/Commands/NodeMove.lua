@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeMove
----@overload fun(nodeList, offset):EditorCommandNodeMove
-local EditorCommandNodeMove = class:derive("EditorCommandNodeMove")
+---@class EditorCommandNodeMove : EditorCommand
+---@overload fun(nodeList, offset): EditorCommandNodeMove
+local EditorCommandNodeMove = EditorCommand:derive("EditorCommandNodeMove")
 
 ---Constructs a new Node Move command.
 ---@param nodeList NodeList The node that should be moved.

@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeRename
----@overload fun(nodeList, name):EditorCommandNodeRename
-local EditorCommandNodeRename = class:derive("EditorCommandNodeRename")
+---@class EditorCommandNodeRename : EditorCommand
+---@overload fun(nodeList, name): EditorCommandNodeRename
+local EditorCommandNodeRename = EditorCommand:derive("EditorCommandNodeRename")
 
 ---Constructs a new Node Rename command.
 ---@param nodeList NodeList The list of nodes that should be renamed.

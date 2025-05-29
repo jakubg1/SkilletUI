@@ -37,6 +37,12 @@ function MainCanvas:setResolution(resolution)
     self.canvas:setFilter("linear", "nearest")
 end
 
+---Returns the current resolution of this Canvas.
+---@return Vector2
+function MainCanvas:getResolution()
+    return self.resolution
+end
+
 ---Sets the zoom factor of this Canvas. The zoom origin is in the top left corner.
 ---@param zoom number The new zoom factor.
 function MainCanvas:setZoom(zoom)

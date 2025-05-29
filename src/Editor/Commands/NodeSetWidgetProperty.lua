@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeSetWidgetProperty
----@overload fun(nodeList, property, value):EditorCommandNodeSetWidgetProperty
-local EditorCommandNodeSetWidgetProperty = class:derive("EditorCommandNodeSetWidgetProperty")
+---@class EditorCommandNodeSetWidgetProperty : EditorCommand
+---@overload fun(nodeList, property, value): EditorCommandNodeSetWidgetProperty
+local EditorCommandNodeSetWidgetProperty = EditorCommand:derive("EditorCommandNodeSetWidgetProperty")
 
 ---Constructs a new Node Set Widget Property command.
 ---@param nodeList NodeList The list of nodes that will have their widgets' property changed.

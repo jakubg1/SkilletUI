@@ -65,7 +65,8 @@ function ProjectLayout:getUI()
     return self.ui
 end
 
----Returns the size of this Layout.
+---Returns the size of this Layout, which is the root node size.
+---If the root node does not have a widget, returns the project's native resolution.
 ---@return Vector2
 function ProjectLayout:getSize()
     local size = self.ui:getSize()

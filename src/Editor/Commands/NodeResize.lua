@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeResize
----@overload fun(nodeList):EditorCommandNodeResize
-local EditorCommandNodeResize = class:derive("EditorCommandNodeResize")
+---@class EditorCommandNodeResize : EditorCommand
+---@overload fun(nodeList): EditorCommandNodeResize
+local EditorCommandNodeResize = EditorCommand:derive("EditorCommandNodeResize")
 
 ---Constructs a new Node Resize command. This is a special command which is pushed onto the stack once the resizing has been **finished**.
 ---@param nodeList NodeList The list of nodes that have been resized.

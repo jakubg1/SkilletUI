@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeMoveToBottom
----@overload fun(nodeList):EditorCommandNodeMoveToBottom
-local EditorCommandNodeMoveToBottom = class:derive("EditorCommandNodeMoveToBottom")
+---@class EditorCommandNodeMoveToBottom : EditorCommand
+---@overload fun(nodeList): EditorCommandNodeMoveToBottom
+local EditorCommandNodeMoveToBottom = EditorCommand:derive("EditorCommandNodeMoveToBottom")
 
 ---Constructs a new Node Move To Bottom command.
 ---**WARNING!** This command works correctly ONLY if the node list is sorted by the tree order.

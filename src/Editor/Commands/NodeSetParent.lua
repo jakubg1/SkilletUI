@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeSetParent
----@overload fun(nodeList, parent):EditorCommandNodeSetParent
-local EditorCommandNodeSetParent = class:derive("EditorCommandNodeSetParent")
+---@class EditorCommandNodeSetParent : EditorCommand
+---@overload fun(nodeList, parent): EditorCommandNodeSetParent
+local EditorCommandNodeSetParent = EditorCommand:derive("EditorCommandNodeSetParent")
 
 ---Constructs a new Node Set Parent command.
 ---**WARNING!** This command works correctly ONLY if the node list is sorted by the tree order.

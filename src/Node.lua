@@ -47,6 +47,7 @@ function Node:new(data, parent)
         {name = "Collapsed", key = "collapsed", type = "boolean", defaultValue = false},
         {name = "Locked", key = "locked", type = "boolean", defaultValue = false},
         {name = "Canvas Input Mode", key = "canvasInputMode", type = "boolean", defaultValue = false},
+        {name = "Tooltip", key = "tooltip", type = "string", description = "An optional tooltip which will be shown under the cursor when this Node is hovered.\nThis tooltip is visible only in the editor!", nullable = true},
         {name = "Shortcut", key = "shortcut", type = "shortcut", nullable = true},
         {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true}
     }
@@ -368,6 +369,14 @@ function Node:isCanvasInputModeEnabled()
         return self.parent:isCanvasInputModeEnabled()
     end
     return self:getProp("canvasInputMode")
+end
+
+
+
+---Returns a tooltip for this Node, if set.
+---@return string?
+function Node:getTooltip()
+    return self:getProp("tooltip")
 end
 
 

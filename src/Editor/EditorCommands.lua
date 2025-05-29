@@ -39,7 +39,7 @@ end
 ---Executes a Command. Each command is an atomic action, which can be undone with a single press of the Undo button. They can be grouped into transactions.
 ---If the command has been executed successfully, it is added to the command stack and can be undone using `:undoLastCommand()`.
 ---Returns `true` if the command has been executed successfully. Otherwise, returns `false`.
----@param command EditorCommand* The command to be performed.
+---@param command EditorCommand The command to be performed.
 ---@param groupID string? An optional group identifier for this command execution. If set, commands with the same group ID will be grouped together, and so will be packed into a single command transaction.
 ---@return boolean
 function EditorCommands:executeCommand(command, groupID)

@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeDrag
----@overload fun(nodeList):EditorCommandNodeDrag
-local EditorCommandNodeDrag = class:derive("EditorCommandNodeDrag")
+---@class EditorCommandNodeDrag : EditorCommand
+---@overload fun(nodeList): EditorCommandNodeDrag
+local EditorCommandNodeDrag = EditorCommand:derive("EditorCommandNodeDrag")
 
 ---Constructs a new Node Drag command. This is a special command which is pushed onto the stack once the dragging has been **finished**.
 ---@param nodeList NodeList The list of nodes that have been dragged.

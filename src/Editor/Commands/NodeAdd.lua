@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeAdd
----@overload fun(nodeList, parent):EditorCommandNodeAdd
-local EditorCommandNodeAdd = class:derive("EditorCommandNodeAdd")
+---@class EditorCommandNodeAdd : EditorCommand
+---@overload fun(nodeList, parent): EditorCommandNodeAdd
+local EditorCommandNodeAdd = EditorCommand:derive("EditorCommandNodeAdd")
 
 ---Constructs a new Node Add command.
 ---@param nodeList NodeList The list of nodes that should be added.

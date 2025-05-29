@@ -1,8 +1,8 @@
-local class = require "com.class"
+local EditorCommand = require("src.Editor.Commands.EditorCommand")
 
----@class EditorCommandNodeMoveToIndex
----@overload fun(nodeList, index):EditorCommandNodeMoveToIndex
-local EditorCommandNodeMoveToIndex = class:derive("EditorCommandNodeMoveToIndex")
+---@class EditorCommandNodeMoveToIndex : EditorCommand
+---@overload fun(nodeList, index): EditorCommandNodeMoveToIndex
+local EditorCommandNodeMoveToIndex = EditorCommand:derive("EditorCommandNodeMoveToIndex")
 
 ---Constructs a new Node Move To Index command.
 ---**WARNING!** This command works correctly ONLY if the node list is sorted by the tree order.

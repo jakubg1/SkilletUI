@@ -16,11 +16,11 @@ function Box:new(node, data)
     self.node = node
 
     self.PROPERTY_LIST = {
-        {name = "Size", key = "size", type = "Vector2", defaultValue = Vec2(10)},
-        {name = "Color", key = "color", type = "color", nullable = true, defaultValueNoData = _COLORS.white},
-        {name = "Alpha", key = "alpha", type = "number", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1},
-        {name = "Border Color", key = "borderColor", type = "color", nullable = true},
-        {name = "Border Alpha", key = "borderAlpha", type = "number", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1}
+        {name = "Size", key = "size", type = "Vector2", description = "Size of this box in pixels.", defaultValue = Vec2(10)},
+        {name = "Color", key = "color", type = "color", description = "The color of this box.", nullable = true, defaultValueNoData = _COLORS.white},
+        {name = "Alpha", key = "alpha", type = "number", description = "Opacity of this box.\n1 = fully opaque, 0 = fully transparent.", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1},
+        {name = "Border Color", key = "borderColor", type = "color", description = "The color of this box border.", nullable = true},
+        {name = "Border Alpha", key = "borderAlpha", type = "number", description = "Opacity of this box border.\n1 = fully opaque, 0 = fully transparent.", defaultValue = 1, minValue = 0, maxValue = 1, scrollStep = 0.1}
     }
     self.properties = PropertyList(self.PROPERTY_LIST, data)
 end
