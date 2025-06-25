@@ -45,6 +45,14 @@ function NodeList:addNode(node)
     end
 end
 
+---Adds all Nodes from the provided Node List to this Node List. All duplicates are ignored.
+---@param nodes NodeList The list of nodes to be added.
+function NodeList:addNodes(nodes)
+    for i, node in ipairs(nodes:getNodes()) do
+        self:addNode(node)
+    end
+end
+
 ---Removes a Node from the Node List, if it is in there.
 ---@param node Node The node to be removed.
 function NodeList:removeNode(node)

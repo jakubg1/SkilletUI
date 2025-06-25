@@ -22,7 +22,8 @@ function Project:new(name)
         {name = "Native Resolution", key = "nativeResolution", type = "Vector2", defaultValue = Vec2(320, 180)},
         {name = "Grid Size", key = "gridSize", type = "Vector2", nullable = true},
         {name = "Snap to Grid", key = "gridSnap", type = "boolean", defaultValue = true},
-        {name = "Grid Visible", key = "gridVisible", type = "boolean", defaultValue = false}
+        {name = "Grid Visible", key = "gridVisible", type = "boolean", defaultValue = false, description = "Toggles the visibility of the grid.\nYou need to set a grid size in order for the grid to show up.\n\nHotkey: G"},
+        {name = "Guides Visible", key = "guidesVisible", type = "boolean", defaultValue = true, description = "Toggles the visibility of guides (crosshairs and lines of selected Nodes) on or off.\nThe guides will show up regardless while a node is being dragged, but hopefully that's\nmuch less annoying.\n\nHotkey: Q"}
     }
     self.properties = PropertyList(self.PROPERTY_LIST)
 
@@ -271,6 +272,17 @@ end
 ---Switches grid visibility on or off.
 function Project:toggleGridVisibility()
     self:setProperty("gridVisible", not self:getProperty("gridVisible"))
+end
+
+---Returns whether the guides are visible.
+---@return boolean
+function Project:areGuidesVisible()
+    return self:getProperty("guidesVisible")
+end
+
+---Switches guide visibility on or off.
+function Project:toggleGuideVisibility()
+    self:setProperty("guidesVisible", not self:getProperty("guidesVisible"))
 end
 
 --######################################################--

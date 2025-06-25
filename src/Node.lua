@@ -46,12 +46,12 @@ function Node:new(data, parent)
         {name = "Align", key = "align", type = "align", defaultValue = _ALIGNMENTS.topLeft},
         {name = "Parent Align", key = "parentAlign", type = "align", defaultValue = _ALIGNMENTS.topLeft},
         {name = "Visible", key = "visible", type = "boolean", defaultValue = true},
-        {name = "Collapsed", key = "collapsed", type = "boolean", defaultValue = false},
         {name = "Locked", key = "locked", type = "boolean", defaultValue = false},
-        {name = "Canvas Input Mode", key = "canvasInputMode", type = "boolean", defaultValue = false},
-        {name = "Tooltip", key = "tooltip", type = "string", description = "An optional tooltip which will be shown under the cursor when this Node is hovered.\nThis tooltip is visible only in the editor!", nullable = true},
+        {name = "Tooltip", key = "tooltip", type = "string", nullable = true, description = "An optional tooltip which will be shown under the cursor when this Node is hovered.\nThis tooltip is visible only in the editor!"},
         {name = "Shortcut", key = "shortcut", type = "shortcut", nullable = true},
-        {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true}
+        {name = "Signal On Click", key = "signalOnClick", type = "string", nullable = true},
+        {name = "Collapsed", key = "collapsed", type = "boolean", defaultValue = false, hidden = true},
+        {name = "Canvas Input Mode", key = "canvasInputMode", type = "boolean", defaultValue = false, hidden = true}
     }
     self.properties = PropertyList(self.PROPERTY_LIST)
 
@@ -969,21 +969,37 @@ function Node:getChild(name)
     end
 end
 
----Returns the first encountered child (or self) that is hovered (recursively, depth first), or `nil` if it is not found.
+---Returns the first encountered child (or self) that is hovered (recursively), or `nil` if it is not found.
+---@param depthFirst boolean? If set, the nodes will be looked at depth-first, otherwise breadth-first.
 ---@param bypassControlled boolean? If set, controlled nodes can still be hovered (and returned by this function).
 ---@param bypassInvisible boolean? If set, invisible nodes can still be hovered (and returned by this function).
 ---@param bypassLocked boolean? If set, locked nodes can still be hovered (and returned by this function).
 ---@return Node?
-function Node:getHoveredNode(bypassControlled, bypassInvisible, bypassLocked)
-    if self:isHovered(bypassControlled, bypassInvisible, bypassLocked) then
+function Node:getHoveredNode(depthFirst, bypassControlled, bypassInvisible, bypassLocked)
+    if not depthFirst and self:isHovered(bypassControlled, bypassInvisible, bypassLocked) then
         return self
     end
     for i, child in ipairs(self.children) do
-        local potentialResult = child:getHoveredNode(bypassControlled, bypassInvisible, bypassLocked)
+        local potentialResult = child:getHoveredNode(depthFirst, bypassControlled, bypassInvisible, bypassLocked)
         if potentialResult then
             return potentialResult
         end
     end
+    if depthFirst and self:isHovered(bypassControlled, bypassInvisible, bypassLocked) then
+        return self
+    end
+end
+
+---Returns a list of all this Node and all its children, at any depth.
+---@param list NodeList? If provided, all Nodes will be added to this Node List. Otherwise, a new Node List will be created.
+---@return NodeList
+function Node:getNodeList(list)
+    list = list or NodeList()
+    list:addNode(self)
+    for i, child in ipairs(self.children) do
+        child:getNodeList(list)
+    end
+    return list
 end
 
 ---Returns a list of all Nodes (both self and children) which are contained within the provided box.

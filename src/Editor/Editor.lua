@@ -59,7 +59,7 @@ function Editor:new()
     self.isNodeHoverIndirect = false
     self.selectedNodes = NodeList()
     self.nodeDragOrigin = nil
-    self.nodeDragSnap = false
+    self.nodeDragSnap = nil
     self.nodeResizeOrigin = nil
     self.nodeResizeOriginalSize = nil
     self.nodeResizeOffset = nil -- Offset between the clicked position and the actual corner of the node
@@ -211,7 +211,7 @@ function Editor:getHoveredNode()
     -- Finally, look if any node is directly hovered.
     local currentLayout = self:getCurrentLayoutUI()
     if currentLayout then
-        hoveredNode = currentLayout:getHoveredNode()
+        hoveredNode = currentLayout:getHoveredNode(true)
         if hoveredNode then
             return hoveredNode
         end
@@ -347,11 +347,12 @@ function Editor:generateNodePropertyUI(node)
     else
         propertyWidgetInfoUI.widget:setProp("text", "This Node does not have a widget.")
     end
-    local widgetListWrapperUI = self:node(propertiesUI, 0, 0)
-    local widgetListUI = self:generatePropertyListUI(widgetListWrapperUI, node.properties, node:getPropertyList(), "Node Properties", "node", node:isControlled())
+    local nodeListWrapperUI = self:node(propertiesUI, 0, 0)
+    local nodeListUI = self:generatePropertyListUI(nodeListWrapperUI, node.properties, node:getPropertyList(), "Node Properties", "node", node:isControlled())
     if widget and widget.getPropertyList then
-        local nodeListWrapperUI = self:node(propertiesUI, 0, 240)
-        local nodeListUI = self:generatePropertyListUI(nodeListWrapperUI, widget.properties, widget:getPropertyList(), "Widget Properties", "widget")
+        -- TODO: Calculate the height of node property UI and set the Y position of widget property UI accordingly.
+        local widgetListWrapperUI = self:node(propertiesUI, 0, 210)
+        local widgetListUI = self:generatePropertyListUI(widgetListWrapperUI, widget.properties, widget:getPropertyList(), "Widget Properties", "widget")
     end
 end
 
@@ -375,13 +376,15 @@ function Editor:generatePropertyListUI(parent, propertyList, properties, header,
     propertyHeaderUI.widget:setProp("boldness", 2)
     y = y + 20
     for i, property in ipairs(properties) do
-        local inputValue = propertyList:getBaseValue(property.key)
-        local propertyUI = Node({name = "input", pos = {10, y}})
-        y = y + 20
-        local propertyText = self:label(propertyUI, 0, 1, property.name, nil, 145, property.description)
-        local propertyInput = self:input(propertyUI, 150, 0, 200, property, inputValue, affectedType, nil)
-        self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (controlled and property.disabledIfControlled))
-        listUI:addChild(propertyUI)
+        if not property.hidden then
+            local inputValue = propertyList:getBaseValue(property.key)
+            local propertyUI = Node({name = "input", pos = {10, y}})
+            y = y + 20
+            local propertyText = self:label(propertyUI, 0, 1, property.name, nil, 145, property.description)
+            local propertyInput = self:input(propertyUI, 150, 0, 200, property, inputValue, affectedType, nil)
+            self:inputSetDisabled(propertyInput, not self:isNodePropertySupported(property) or (controlled and property.disabledIfControlled))
+            listUI:addChild(propertyUI)
+        end
     end
     parent:addChild(listUI)
     return listUI
@@ -406,10 +409,17 @@ end
 ---Marks the provided nodes as selected.
 ---@param nodes NodeList The nodes to be selected.
 function Editor:selectNodes(nodes)
-    for i, node in ipairs(nodes:getNodes()) do
-        self.selectedNodes:addNode(node)
-    end
+    self.selectedNodes:addNodes(nodes)
     self.selectedNodes:sortByTreeOrder()
+end
+
+---Marks all nodes on this layout as selected.
+function Editor:selectAllNodes()
+    local ui = self:getCurrentLayoutUI()
+    if not ui then
+        return
+    end
+    ui:getNodeList(self.selectedNodes)
 end
 
 ---Marks the provided node as unselected.
@@ -454,7 +464,7 @@ function Editor:clickNode(node)
         self:startCommandTransaction()
         self:duplicateSelectedNode()
     end
-    if not self.isNodeHoverIndirect and self.selectedNodes:getSize() > 0 and not self.selectedNodes:getNode(1):isRoot() then
+    if not self.isNodeHoverIndirect and self.selectedNodes:getSize() > 0 and not self:getSingleSelectedNode():isRoot() then
         -- Start dragging the actual node on the screen.
         self:startDraggingSelectedNode()
     end
@@ -546,7 +556,7 @@ function Editor:startDraggingSelectedNode()
         return
     end
     self.nodeDragOrigin = _MouseCPos
-    self.nodeDragSnap = true
+    self.nodeDragSnap = _MousePos
 end
 
 ---Finishes dragging the selected node and pushes a command so that the movement can be undone.
@@ -562,7 +572,7 @@ function Editor:finishDraggingSelectedNode()
         self:commitCommandTransaction()
     end
     self.nodeDragOrigin = nil
-    self.nodeDragSnap = false
+    self.nodeDragSnap = nil
 end
 
 ---Restores the original selected node position and finishes the dragging process.
@@ -574,7 +584,7 @@ function Editor:cancelDraggingSelectedNode()
         self:cancelCommandTransaction()
     end
     self.nodeDragOrigin = nil
-    self.nodeDragSnap = false
+    self.nodeDragSnap = nil
 end
 
 
@@ -1120,6 +1130,7 @@ function Editor:load()
     self:button(s_utility, 110, 100, 110, "Redo [Ctrl+Y]", function() self:redoLastCommand() end, {ctrl = true, key = "y"})
     self:button(s_utility, 0, 120, 110, "Copy [Ctrl+C]", function() self:copySelectedNode() end, {ctrl = true, key = "c"})
     self:button(s_utility, 110, 120, 110, "Paste [Ctrl+V]", function() self:pasteNode() end, {ctrl = true, key = "v"})
+    self:button(s_utility, 0, 140, 220, "Select All [Ctrl+A]", function() self:selectAllNodes() end, {ctrl = true, key = "a"})
 
     self:label(s_align, 0, 0, "Node Align")
     self:button(s_align, 0, 20, 30, "TL", function() self:setSelectedNodeAlign(_ALIGNMENTS.topLeft) end)
@@ -1190,8 +1201,8 @@ function Editor:update(dt)
     if self.nodeDragOrigin then
         local movement = _MouseCPos - self.nodeDragOrigin
         if self.nodeDragSnap then
-            if movement:len() >= 5 then
-                self.nodeDragSnap = false
+            if (_MousePos - self.nodeDragSnap):len() >= 5 then
+                self.nodeDragSnap = nil
             end
         else
             for i, node in ipairs(self.selectedNodes:getNodes()) do
@@ -1320,7 +1331,7 @@ function Editor:drawMain()
     love.graphics.rectangle("fill", 0, _WINDOW_SIZE.y - 20, _WINDOW_SIZE.x, 20)
     local text = string.format("Draw: %.1fms | Vecs/frame: %s", _DrawTime * 1000, _VEC2S_PER_FRAME)
     _VEC2S_PER_FRAME = 0
-    text = text .. "          [Tab] Presentation Mode   [Arrow Keys] Move Selected Nodes   [Ctrl + P] Show Internal UI Tree   [M] Parent Selected to Hovered   [G] Toggle Grid   [F12] Debug Mode"
+    text = text .. "          [Tab] Presentation Mode   [Arrow Keys] Move Selected Nodes   [Ctrl + P] Print Internal UI Tree   [M] Parent Selected to Hovered   [G] Toggle Grid   [F12] Debug Mode"
     self:drawShadowedText(text, 5, _WINDOW_SIZE.y - 19)
 
     -- Color palette on the status bar
@@ -1344,7 +1355,7 @@ function Editor:drawMain()
     end
 
     -- Tooltip when a UI element is hovered
-    local hoveredNode = self.UI:getHoveredNode(true, true, true)
+    local hoveredNode = self.UI:getHoveredNode(true, true, true, true)
     local tooltip = hoveredNode and hoveredNode:getTooltip()
     if tooltip then
         self:drawShadowedText(tooltip, _MousePos.x + 15, _MousePos.y + 15, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8, _COLORS.e_cyan)
@@ -1635,6 +1646,8 @@ function Editor:keypressed(key)
         self:parentSelectedNodeToHoveredNode()
     elseif self.enabled and key == "g" then
         _PROJECT:toggleGridVisibility()
+    elseif self.enabled and key == "q" then
+        _PROJECT:toggleGuideVisibility()
     end
 end
 

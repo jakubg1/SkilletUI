@@ -257,17 +257,19 @@ function EditorCanvas:drawUIForNodes()
             love.graphics.setColor(1, 1, 1)
             self:drawCrosshair(pos, 5)
         end
-        -- Draw a local crosshair.
-        local localPos = self:pixelAlignPos(node:getGlobalPosWithoutLocalAlign())
-        --love.graphics.setColor(0, 0, 1)
-        --self:drawCrosshair(localPos, 5)
-        -- Draw parent align crosshair.
-        local localPos2 = self:pixelAlignPos(node:getParentAlignPos())
-        love.graphics.setColor(1, 0, 1)
-        self:drawCrosshair(localPos2, 5)
-        -- Draw a line between them.
-        love.graphics.setColor(0.5, 0, 1)
-        self:drawLine(localPos, localPos2)
+        if _PROJECT:areGuidesVisible() or node:isBeingDragged() then
+            local localPos = self:pixelAlignPos(node:getGlobalPosWithoutLocalAlign())
+            local localPos2 = self:pixelAlignPos(node:getParentAlignPos())
+            -- Draw a local crosshair.
+            love.graphics.setColor(0, 0.5, 1)
+            self:drawCrosshair(localPos, 5)
+            -- Draw parent align crosshair.
+            love.graphics.setColor(1, 0, 1)
+            self:drawCrosshair(localPos2, 5)
+            -- Draw a line between them.
+            love.graphics.setColor(0.5, 0, 1)
+            self:drawLine(localPos, localPos2)
+        end
         -- Draw resizing boxes if the widget can be resized.
         if node:isResizable() then
             local id = self.editor:getHoveredNodeResizeHandleID()
