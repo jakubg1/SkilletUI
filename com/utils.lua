@@ -561,6 +561,78 @@ end
 
 
 
+---Returns `true` if two ranges of numbers intersect (at least one number is common).
+---@param s1 number The start of the first range.
+---@param e1 number The end of the first range.
+---@param s2 number The start of the second range.
+---@param e2 number The end of the second range.
+---@return boolean
+function utils.doRangesIntersect(s1, e1, s2, e2)
+	return s1 <= e2 and s2 <= e1
+end
+
+
+
+---Returns `true` if the first range of numbers is fully contained within the second range.
+---This function does NOT return `true` if the second range is contained in the first range!
+---@param s1 number The start of the first range.
+---@param e1 number The end of the first range.
+---@param s2 number The start of the second range.
+---@param e2 number The end of the second range.
+---@return boolean
+function utils.areRangesContained(s1, e1, s2, e2)
+	return s1 >= s2 and e1 <= e2
+end
+
+
+
+---Returns `true` if the first box intersects the second box in any way.
+---@param x1 number X position of the top left corner of the first box.
+---@param y1 number Y position of the top left corner of the first box.
+---@param w1 number Width of the first box.
+---@param h1 number Height of the first box.
+---@param x2 number X position of the top left corner of the second box.
+---@param y2 number Y position of the top left corner of the second box.
+---@param w2 number Width of the second box.
+---@param h2 number Height of the second box.
+---@return boolean
+function utils.doBoxesIntersect(x1, y1, w1, h1, x2, y2, w2, h2)
+	assert(w1 >= 0 and h1 >= 0 and w2 >= 0 and h2 >= 0, "Illegal boxes passed to `_Utils.doBoxesIntersect()`! You must normalize the boxes first using `_Utils.normalizeBox(x, y, w, h)`.")
+	return utils.doRangesIntersect(x1, x1 + w1, x2, x2 + w2) and utils.doRangesIntersect(y1, y1 + h1, y2, y2 + h2)
+end
+
+
+
+---Returns `true` if the first box is fully contained in the second box.
+---This function does NOT return `true` if the second box is contained in the first box instead!
+---@param x1 number X position of the top left corner of the first box.
+---@param y1 number Y position of the top left corner of the first box.
+---@param w1 number Width of the first box.
+---@param h1 number Height of the first box.
+---@param x2 number X position of the top left corner of the second box.
+---@param y2 number Y position of the top left corner of the second box.
+---@param w2 number Width of the second box.
+---@param h2 number Height of the second box.
+---@return boolean
+function utils.areBoxesContained(x1, y1, w1, h1, x2, y2, w2, h2)
+	assert(w1 >= 0 and h1 >= 0 and w2 >= 0 and h2 >= 0, "Illegal boxes passed to `_Utils.doBoxesIntersect()`! You must normalize the boxes first using `_Utils.normalizeBox(x, y, w, h)`.")
+	return utils.areRangesContained(x1, x1 + w1, x2, x2 + w2) and utils.areRangesContained(y1, y1 + h1, y2, y2 + h2)
+end
+
+
+
+---Normalizes a box to make sure it does not have a negative width and/or height.
+---@param x number X position of the top left corner of the box.
+---@param y number Y position of the top left corner of the box.
+---@param w number Width of the box.
+---@param h number Height of the box.
+---@return number, number, number, number
+function utils.normalizeBox(x, y, w, h)
+	return math.min(x, x + w), math.min(y, y + h), math.abs(w), math.abs(h)
+end
+
+
+
 ---Removes all dead objects from the table `t`. By dead objects we mean objects that have their `delQueue` field set to `true`.
 ---The table must be a list-like. Other keysets are not supported.
 ---@param t table The table to be cleaned up.

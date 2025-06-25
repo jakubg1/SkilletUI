@@ -258,11 +258,11 @@ function EditorCanvas:drawUIForNodes()
             self:drawCrosshair(pos, 5)
         end
         -- Draw a local crosshair.
-        local localPos = node:getGlobalPosWithoutLocalAlign()
-        love.graphics.setColor(0, 0, 1)
-        self:drawCrosshair(localPos, 5)
+        local localPos = self:pixelAlignPos(node:getGlobalPosWithoutLocalAlign())
+        --love.graphics.setColor(0, 0, 1)
+        --self:drawCrosshair(localPos, 5)
         -- Draw parent align crosshair.
-        local localPos2 = node:getParentAlignPos()
+        local localPos2 = self:pixelAlignPos(node:getParentAlignPos())
         love.graphics.setColor(1, 0, 1)
         self:drawCrosshair(localPos2, 5)
         -- Draw a line between them.
@@ -347,28 +347,30 @@ end
 ---@param width integer The width of the rectangle's line.
 function EditorCanvas:drawDashedRectangle(pos, size, width)
     local c1 = pos
-    local c2 = pos + Vec2(size.x - 1, 0)
-    local c3 = pos + size - 1
-    local c4 = pos + Vec2(0, size.y - 1)
+    local c2 = pos + Vec2(size.x, 0)
+    local c3 = pos + size
+    local c4 = pos + Vec2(0, size.y)
     love.graphics.setLineWidth(width)
-    -- TODO: Get rid of these stupid corrections and find out a correct way to draw stuff like that...
-    local a = {0, 0, 0.5, 0.5, 0.75}
-    local b = {0, 1, 0.75, 0.75, 0.5}
-    local c = {0, 0.75, 0.75, 0.5, 0.5}
-    local d = {0, 0.5, 0.5, 0.75, 0.75}
-    self:drawDashedLine(c1 + Vec2(0, a[width + 1]), c2 + Vec2(0, a[width + 1]))
-    self:drawDashedLine(c2 + Vec2(b[width + 1], 0), c3 + Vec2(b[width + 1], 0))
-    self:drawDashedLine(c3 + Vec2(0, c[width + 1]), c4 + Vec2(0, c[width + 1]))
-    self:drawDashedLine(c4 + Vec2(d[width + 1], 0), c1 + Vec2(d[width + 1], 0))
+    self:drawDashedLine(c1, c2)
+    self:drawDashedLine(c2, c3)
+    self:drawDashedLine(c3, c4)
+    self:drawDashedLine(c4, c1)
 end
 
 ---Draws a crosshair.
 ---@param pos Vector2 The crosshair position.
 ---@param size number The crosshair size, in pixels.
 function EditorCanvas:drawCrosshair(pos, size)
-    pos = self.canvas:pixelToPos(pos:floor() + 0.5)
+    pos = self.canvas:pixelToPos(self:pixelAlignPos(pos))
     love.graphics.line(pos.x - size, pos.y, pos.x + size + 1, pos.y)
     love.graphics.line(pos.x, pos.y - size, pos.x, pos.y + size + 1)
+end
+
+---Returns the provided position centered on the pixel it's on.
+---@param pos Vector2 The position to be aligned.
+---@return Vector2
+function EditorCanvas:pixelAlignPos(pos)
+    return pos:floor() + 0.5
 end
 
 --##############################################--

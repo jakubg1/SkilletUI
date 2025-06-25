@@ -204,11 +204,6 @@ function Editor:getHoveredNode()
     if hoveredNode then
         return hoveredNode
     end
-    -- Already selected nodes take over the hover, regardless of whatever is over it.
-    -- TODO: Is that necessary? Also, update the code for multi-selection.
-    --if self.selectedNode and (self.selectedNode:isHovered() or self.selectedNode:getHoveredResizeHandleID()) then
-    --    return self.selectedNode
-    --end
     -- If we didn't hover any editor UI and we're outside of the canvas window, stop here.
     if not self.canvasMgr:isHovered() then
         return nil
@@ -301,9 +296,12 @@ function Editor:updateUI()
     end
 
     -- Update the canvas if the root node is resized.
-    local layoutSize = self:getCurrentLayout():getSize()
-    if _CANVAS:getResolution() ~= layoutSize then
-        _CANVAS:setResolution(layoutSize)
+    local layout = self:getCurrentLayout()
+    if layout then
+        local layoutSize = layout:getSize()
+        if _CANVAS:getResolution() ~= layoutSize then
+            _CANVAS:setResolution(layoutSize)
+        end
     end
 end
 
@@ -1223,7 +1221,9 @@ function Editor:update(dt)
 
     -- Handle the multi-selection.
     if self.nodeMultiSelectOrigin then
-        self.nodeMultiSelectSize = _MouseCPos - self.nodeMultiSelectOrigin
+        self.nodeMultiSelectSize = _MouseCPos - self.nodeMultiSelectOrigin + 1
+        local x, y, w, h = _Utils.normalizeBox(self.nodeMultiSelectOrigin.x, self.nodeMultiSelectOrigin.y, self.nodeMultiSelectSize.x, self.nodeMultiSelectSize.y)
+        self.selectedNodes = self:getCurrentLayoutUI():getBoxedNodeList(x, y, w, h)
     end
 
     self.layoutList:update(dt)

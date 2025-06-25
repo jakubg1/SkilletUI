@@ -32,7 +32,7 @@ function ProjectLayout:new(project, name, blank)
     else
         -- Create a new empty layout. Set up the root node.
         local size = self.project:getNativeResolution()
-        self.ui = Node({name = "root", type = "box", widget = {size = {size.x, size.y}}, canvasInputMode = true})
+        self.ui = Node({name = "root", type = "box", widget = {size = {size.x, size.y}}, canvasInputMode = true, locked = true})
     end
 end
 

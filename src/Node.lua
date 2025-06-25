@@ -6,6 +6,8 @@ local Node = class:derive("Node")
 
 local Vec2 = require("src.Essentials.Vector2")
 local PropertyList = require("src.PropertyList")
+local NodeList = require("src.NodeList")
+
 local Box = require("src.Widgets.Box")
 local Button = require("src.Widgets.Button")
 local Canvas = require("src.Widgets.Canvas")
@@ -479,6 +481,25 @@ end
 
 
 
+---Returns `true` if the given pixel position is inside of this Node's bounding box.
+---@param pos Vector2 The position to be checked.
+---@return boolean
+function Node:hasPixel(pos)
+    return _Utils.isPointInsideBox(pos, self:getGlobalPos(), self:getSize())
+end
+
+---Returns `true` if this Node is fully contained inside of the provided box.
+---@param x number X position of the top left corner of the box.
+---@param y number Y position of the top left corner of the box.
+---@param w number Width of the box.
+---@param h number Height of the box.
+---@return boolean
+function Node:isInsideBox(x, y, w, h)
+    local pos = self:getGlobalPos()
+    local size = self:getSize()
+    return _Utils.areBoxesContained(pos.x, pos.y, size.x, size.y, x, y, w, h)
+end
+
 ---Returns whether this Node is hovered.
 ---Controlled, invisible or locked Nodes cannot be hovered, unless their corresponding bypasses are turned on.
 ---@param bypassControlled boolean? If set, controlled nodes can still be hovered.
@@ -906,15 +927,6 @@ end
 
 
 
----Returns `true` if the given pixel position is inside of this Node's bounding box.
----@param pos Vector2 The position to be checked.
----@return boolean
-function Node:hasPixel(pos)
-    return _Utils.isPointInsideBox(pos, self:getGlobalPos(), self:getSize())
-end
-
-
-
 ---Returns `true` if this Node has at least one child.
 ---@return boolean
 function Node:hasChildren()
@@ -972,6 +984,24 @@ function Node:getHoveredNode(bypassControlled, bypassInvisible, bypassLocked)
             return potentialResult
         end
     end
+end
+
+---Returns a list of all Nodes (both self and children) which are contained within the provided box.
+---@param x number X position of the top left corner of the box.
+---@param y number Y position of the top left corner of the box.
+---@param w number Width of the box.
+---@param h number Height of the box.
+---@param list NodeList? If provided, all Nodes will be added to this Node List. Otherwise, a new Node List will be created.
+---@return NodeList
+function Node:getBoxedNodeList(x, y, w, h, list)
+    list = list or NodeList()
+    if self:isInsideBox(x, y, w, h) then
+        list:addNode(self)
+    end
+    for i, child in ipairs(self.children) do
+        child:getBoxedNodeList(x, y, w, h, list)
+    end
+    return list
 end
 
 
