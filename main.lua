@@ -212,6 +212,9 @@ function love.update(dt)
 	if _EDITOR then
 		_EDITOR:update(dt)
 	end
+
+	-- Temporary HACK because Linux: Update window size every frame
+	love.resize(love.window.getMode())
 end
 
 function love.draw()

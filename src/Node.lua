@@ -203,7 +203,7 @@ function Node:ensureUniqueName()
     repeat
         newName = nameBase .. "#" .. tostring(suffixNumber)
         suffixNumber = suffixNumber + 1
-    until not self.parent:findChildByName(newName)
+    until not self.parent:getChild(newName)
     -- When we finally find it, set it as our new name.
     prop.name = newName
 end
@@ -373,6 +373,14 @@ end
 
 
 
+---Returns whether this node is a root node (has no parent).
+---@return boolean
+function Node:isRoot()
+    return self.parent == nil
+end
+
+
+
 ---Returns a tooltip for this Node, if set.
 ---@return string?
 function Node:getTooltip()
@@ -472,19 +480,32 @@ end
 
 
 ---Returns whether this Node is hovered.
----Invisible Nodes cannot be hovered.
-function Node:isHovered()
-    if not self:isVisible() then
-        return
+---Controlled, invisible or locked Nodes cannot be hovered, unless their corresponding bypasses are turned on.
+---@param bypassControlled boolean? If set, controlled nodes can still be hovered.
+---@param bypassInvisible boolean? If set, invisible nodes can still be hovered.
+---@param bypassLocked boolean? If set, locked nodes can still be hovered.
+---@return boolean
+function Node:isHovered(bypassControlled, bypassInvisible, bypassLocked)
+    if self:isControlled() and not bypassControlled then
+        return false
+    end
+    if not self:isVisible() and not bypassInvisible then
+        return false
+    end
+    if self:isLocked() and not bypassLocked then
+        return false
     end
     return self:hasPixel(self:isCanvasInputModeEnabled() and _MouseCPos or _MousePos)
 end
 
 ---Returns whether any of this Node's children are hovered.
+---@param bypassControlled boolean? If set, controlled nodes can still be hovered.
+---@param bypassInvisible boolean? If set, invisible nodes can still be hovered.
+---@param bypassLocked boolean? If set, locked nodes can still be hovered.
 ---@return boolean
-function Node:isChildHovered()
+function Node:isChildHovered(bypassControlled, bypassInvisible, bypassLocked)
     for i, child in ipairs(self.children) do
-        if child:isHoveredWithChildren() then
+        if child:isHoveredWithChildren(bypassControlled, bypassInvisible, bypassLocked) then
             return true
         end
     end
@@ -492,9 +513,12 @@ function Node:isChildHovered()
 end
 
 ---Returns whether this Node or any of its children is hovered.
+---@param bypassControlled boolean? If set, controlled nodes can still be hovered.
+---@param bypassInvisible boolean? If set, invisible nodes can still be hovered.
+---@param bypassLocked boolean? If set, locked nodes can still be hovered.
 ---@return boolean
-function Node:isHoveredWithChildren()
-    return self:isHovered() or self:isChildHovered()
+function Node:isHoveredWithChildren(bypassControlled, bypassInvisible, bypassLocked)
+    return self:isHovered(bypassControlled, bypassInvisible, bypassLocked) or self:isChildHovered(bypassControlled, bypassInvisible, bypassLocked)
 end
 
 
@@ -655,7 +679,7 @@ end
 ---@return boolean
 function Node:addChild(node, index)
     -- We cannot parent a node to itself or its own child, or else we will get stuck in a loop!!!
-    if node == self or node:findChild(self) then
+    if node:isNodeInTree(self) then
         return false
     end
     -- Controller Nodes cannot have their structure changed. And we must not accept any Controlled Node that's trying to run away from their controller, either.
@@ -903,100 +927,51 @@ end
 ---------------- C H I L D R E N   O B T A I N I N G ---------------
 --################################################################--
 
----Returns the first encountered child of the provided name (recursively), or `nil` if it is not found.
+---Returns `true` if the provided Node is a child of this Node, at any depth, including self.
+---@param node Node The node to be found.
+---@return boolean
+function Node:isNodeInTree(node)
+    if node == self then
+        return true
+    end
+    for i, child in ipairs(self.children) do
+        if child:isNodeInTree(node) then
+            return true
+        end
+    end
+    return false
+end
+
+---Returns the first encountered child (or self) of the provided name (recursively), or `nil` if it is not found.
 ---@param name string The name of the child to be found.
 ---@return Node?
 function Node:getChild(name)
-    return self:findChildByName(name)
-end
-
-
-
---##############################################################################--
----------------- L E G A C Y   C H I L D R E N   O B T A I N I N G ---------------
---##############################################################################--
--- These methods are going to be deprecated, because they aren't really that intuitive.
--- Seek alternatives above!
-
----Returns the first encountered child by reference (recursively), or `nil` if it is not found.
----@private
----@param node Node The instance of the child to be found.
----@return Node?
-function Node:findChild(node)
+    if self:getProp("name") == name then
+        return self
+    end
     for i, child in ipairs(self.children) do
-        if child == node then
-            return child
-        end
-        local potentialResult = child:findChild(node)
+        local potentialResult = child:getChild(name)
         if potentialResult then
             return potentialResult
         end
     end
 end
 
----Returns the first encountered child of the provided name (recursively), or `nil` if it is not found.
----@param name string The name of the child to be found.
+---Returns the first encountered child (or self) that is hovered (recursively, depth first), or `nil` if it is not found.
+---@param bypassControlled boolean? If set, controlled nodes can still be hovered (and returned by this function).
+---@param bypassInvisible boolean? If set, invisible nodes can still be hovered (and returned by this function).
+---@param bypassLocked boolean? If set, locked nodes can still be hovered (and returned by this function).
 ---@return Node?
-function Node:findChildByName(name)
+function Node:getHoveredNode(bypassControlled, bypassInvisible, bypassLocked)
+    if self:isHovered(bypassControlled, bypassInvisible, bypassLocked) then
+        return self
+    end
     for i, child in ipairs(self.children) do
-        if child:getProp("name") == name then
-            return child
-        end
-        local potentialResult = child:findChildByName(name)
+        local potentialResult = child:getHoveredNode(bypassControlled, bypassInvisible, bypassLocked)
         if potentialResult then
             return potentialResult
         end
     end
-end
-
----Returns the first encountered child that contains the provided position (recursively), or `nil` if it is not found.
----@param pos Vector2 The position to be checked.
----@return Node?
-function Node:findChildByPixel(pos)
-    for i, child in ipairs(self.children) do
-        if child:hasPixel(pos) then
-            return child
-        end
-        local potentialResult = child:findChildByPixel(pos)
-        if potentialResult then
-            return potentialResult
-        end
-    end
-end
-
----Returns the first encountered child that contains the provided position (recursively, depth first), or `nil` if it is not found.
----@param pos Vector2 The position to be checked.
----@param ignoreControlledNodes boolean? If set, controlled nodes will not be returned by this function.
----@param ignoreInvisibleNodes boolean? If set, invisible nodes will not be returned by this function.
----@param ignoreLockedNodes boolean? If set, locked nodes will not be returned by this function.
----@return Node?
-function Node:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvisibleNodes, ignoreLockedNodes)
-    for i, child in ipairs(self.children) do
-        local potentialResult = child:findChildByPixelDepthFirst(pos, ignoreControlledNodes, ignoreInvisibleNodes, ignoreLockedNodes)
-        if potentialResult then
-            return potentialResult
-        end
-        if child:hasPixel(pos) and (not ignoreControlledNodes or not child:isControlled()) and (not ignoreInvisibleNodes or child:isVisible()) and (not ignoreLockedNodes or not child:isLocked()) then
-            return child
-        end
-    end
-end
-
----Returns the last encountered child that contains the provided position (recursively, depth first), or `nil` if it is not found.
----@param pos Vector2 The position to be checked.
----@return Node?
-function Node:findChildByPixelDepthFirstReverse(pos)
-    local result = nil
-    for i, child in ipairs(self.children) do
-        if child:hasPixel(pos) then
-            result = child
-        end
-        local potentialResult = child:findChildByPixelDepthFirst(pos)
-        if potentialResult then
-            result = potentialResult
-        end
-    end
-    return result
 end
 
 

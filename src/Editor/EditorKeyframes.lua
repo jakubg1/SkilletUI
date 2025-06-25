@@ -207,7 +207,7 @@ function EditorKeyframes:draw()
         local displayGhostNode = true
         for i, name in ipairs(timeline.nodeNames) do
             local layout = self.editor:getCurrentLayoutUI()
-            local node = layout and layout:findChildByName(name)
+            local node = layout and layout:getChild(name)
             local hovered = node and self.editor.hoveredNode == node
             local selected = node and self.editor:isNodeSelected(node)
             -- Do not display the ghost node if we've selected a node that's already on the list!

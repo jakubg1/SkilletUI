@@ -24,13 +24,13 @@ function InputText:new(node, data)
         {name = "Nullable", key = "nullable", type = "boolean"}
     }
 
-    self.textNode = self.node:findChildByName("text")
+    self.textNode = self.node:getChild("text")
     assert(self.textNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Text Widget named \"text\" to work!", self.node:getName()))
-    self.colorNode = self.node:findChildByName("color")
+    self.colorNode = self.node:getChild("color")
     assert(self.colorNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Box Widget named \"color\" to work!", self.node:getName()))
-    self.spriteNode = self.node:findChildByName("sprite")
+    self.spriteNode = self.node:getChild("sprite")
     assert(self.spriteNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Sprite Widget named \"sprite\" to work!", self.node:getName()))
-    self.nullifyButtonNode = self.node:findChildByName("nullifyButton")
+    self.nullifyButtonNode = self.node:getChild("nullifyButton")
     assert(self.nullifyButtonNode, string.format("Error in InputText \"%s\": This Compound Widget must have a child Node with a Button Widget named \"nullifyButton\" to work!", self.node:getName()))
     self.nullifyButtonNode:setOnClick(function() self:setValue(nil) end)
 

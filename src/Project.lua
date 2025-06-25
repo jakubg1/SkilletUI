@@ -257,10 +257,20 @@ function Project:isSnapToGridEnabled()
     return self:getProperty("gridSnap")
 end
 
+---Switches snap to grid on or off.
+function Project:toggleSnapToGrid()
+    self:setProperty("gridSnap", not self:getProperty("gridSnap"))
+end
+
 ---Returns whether the grid is visible.
 ---@return boolean
 function Project:isGridVisible()
     return self:getProperty("gridVisible")
+end
+
+---Switches grid visibility on or off.
+function Project:toggleGridVisibility()
+    self:setProperty("gridVisible", not self:getProperty("gridVisible"))
 end
 
 --######################################################--

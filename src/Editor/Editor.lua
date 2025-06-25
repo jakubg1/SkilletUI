@@ -216,14 +216,9 @@ function Editor:getHoveredNode()
     -- Finally, look if any node is directly hovered.
     local currentLayout = self:getCurrentLayoutUI()
     if currentLayout then
-        hoveredNode = currentLayout:findChildByPixelDepthFirst(_MouseCPos, true, true, true)
+        hoveredNode = currentLayout:getHoveredNode()
         if hoveredNode then
             return hoveredNode
-        end
-        -- Bypass so that the root node itself can be hovered as well.
-        -- TODO: Make a better set of functions to select a node which matches our requirements.
-        if currentLayout:hasPixel(_MouseCPos) then
-            return currentLayout
         end
     end
 end
@@ -282,10 +277,10 @@ end
 ---@return boolean
 function Editor:doesNodeExistSomewhere(node)
     local currentLayout = self:getCurrentLayoutUI()
-    if currentLayout and (currentLayout == node or currentLayout:findChild(node) ~= nil) then
+    if currentLayout and currentLayout:isNodeInTree(node) then
         return true
     end
-    return self.UI == node or self.UI:findChild(node) ~= nil
+    return self.UI:isNodeInTree(node)
 end
 
 
@@ -317,7 +312,7 @@ end
 ---Clears and regenerates the UI for the currently loaded project's properties.
 function Editor:generateProjectPropertyUI()
     -- Clear all properties.
-    local previousPropertiesUI = self.UI:findChildByName("properties")
+    local previousPropertiesUI = self.UI:getChild("properties")
     if previousPropertiesUI then
         previousPropertiesUI:removeSelf()
     end
@@ -325,7 +320,7 @@ function Editor:generateProjectPropertyUI()
         return
     end
     -- Make a new property list UI.
-    local propertiesUI = self:node(assert(self.UI:findChildByName("s_properties")), 0, 0, "properties")
+    local propertiesUI = self:node(assert(self.UI:getChild("s_properties")), 0, 0, "properties")
     local listWrapperUI = self:node(propertiesUI, 0, 0)
     local listUI = self:generatePropertyListUI(listWrapperUI, _PROJECT.properties, _PROJECT:getPropertyList(), "Project Properties", "project")
 end
@@ -336,7 +331,7 @@ end
 ---@param node Node? The Node to generate property UI for. If not set, the node properties UI will be cleared.
 function Editor:generateNodePropertyUI(node)
     -- Clear all properties.
-    local previousPropertiesUI = self.UI:findChildByName("properties")
+    local previousPropertiesUI = self.UI:getChild("properties")
     if previousPropertiesUI then
         previousPropertiesUI:removeSelf()
     end
@@ -345,7 +340,7 @@ function Editor:generateNodePropertyUI(node)
     end
     -- Make a new property list UI.
     local widget = node.widget
-    local propertiesUI = self:node(assert(self.UI:findChildByName("s_properties")), 0, 0, "properties")
+    local propertiesUI = self:node(assert(self.UI:getChild("s_properties")), 0, 0, "properties")
     local propertyWidgetInfoUI = self:label(propertiesUI, 0, -24, "")
     if widget then
         if not widget.getPropertyList then
@@ -461,7 +456,7 @@ function Editor:clickNode(node)
         self:startCommandTransaction()
         self:duplicateSelectedNode()
     end
-    if not self.isNodeHoverIndirect and self.selectedNodes:getSize() > 0 then
+    if not self.isNodeHoverIndirect and self.selectedNodes:getSize() > 0 and not self.selectedNodes:getNode(1):isRoot() then
         -- Start dragging the actual node on the screen.
         self:startDraggingSelectedNode()
     end
@@ -1275,21 +1270,21 @@ function Editor:drawMain()
         end
         return
     end
-    self.UI:findChildByName("hovText"):setText("")
-    self.UI:findChildByName("selText"):setText("")
-    self.UI:findChildByName("hovEvText"):setText("")
-    self.UI:findChildByName("selEvText"):setText("")
+    self.UI:getChild("hovText"):setText("")
+    self.UI:getChild("selText"):setText("")
+    self.UI:getChild("hovEvText"):setText("")
+    self.UI:getChild("selEvText"):setText("")
     local projectText = string.format("Project: %s", _PROJECT:getName() or "(unnamed)")
-    self.UI:findChildByName("lb_project"):setText(projectText)
+    self.UI:getChild("lb_project"):setText(projectText)
     local layoutText = "No layout loaded"
     if self:getCurrentLayout() then
         layoutText = string.format("Layout: %s", self:getCurrentLayout():getDisplayName())
     end
-    self.UI:findChildByName("lb_layout"):setText(layoutText)
+    self.UI:getChild("lb_layout"):setText(layoutText)
 
     -- Hovered and selected node
     if self.hoveredNode then
-        self.UI:findChildByName("hovText"):setText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode:getName(), self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()))
+        self.UI:getChild("hovText"):setText(string.format("Hovered: %s {%s} pos: %s -> %s", self.hoveredNode:getName(), self.hoveredNode.type, self.hoveredNode:getPos(), self.hoveredNode:getGlobalPos()))
     end
     if self.selectedNodes:getSize() > 0 then
         local text = ""
@@ -1299,15 +1294,15 @@ function Editor:drawMain()
         else
             text = string.format("Selected: [%s nodes]", self.selectedNodes:getSize())
         end
-        self.UI:findChildByName("selText"):setText(text)
+        self.UI:getChild("selText"):setText(text)
     end
     local hoveredEvent = self.keyframeEditor.hoveredEvent
     if hoveredEvent then
-        self.UI:findChildByName("hovEvText"):setText(string.format("Hovered: %s {%s} time: %s -> %s", hoveredEvent.type, hoveredEvent.node, hoveredEvent.time, hoveredEvent.time + (hoveredEvent.duration or 0)))
+        self.UI:getChild("hovEvText"):setText(string.format("Hovered: %s {%s} time: %s -> %s", hoveredEvent.type, hoveredEvent.node, hoveredEvent.time, hoveredEvent.time + (hoveredEvent.duration or 0)))
     end
     local selectedEvent = self.keyframeEditor.selectedEvent
     if selectedEvent then
-        self.UI:findChildByName("selEvText"):setText(string.format("Selected: %s {%s} time: %s -> %s", selectedEvent.type, selectedEvent.node, selectedEvent.time, selectedEvent.time + (selectedEvent.duration or 0)))
+        self.UI:getChild("selEvText"):setText(string.format("Selected: %s {%s} time: %s -> %s", selectedEvent.type, selectedEvent.node, selectedEvent.time, selectedEvent.time + (selectedEvent.duration or 0)))
     end
 
     -- Other UI that will be hardcoded for now.
@@ -1319,15 +1314,13 @@ function Editor:drawMain()
     self.uiTree:draw()
     -- Keyframe editor
     self.keyframeEditor:draw()
-    -- Command buffer
-    self.commandMgr:draw()
 
     -- Status bar
     _SetColor(_COLORS.e_blue, 0.5)
     love.graphics.rectangle("fill", 0, _WINDOW_SIZE.y - 20, _WINDOW_SIZE.x, 20)
     local text = string.format("Draw: %.1fms | Vecs/frame: %s", _DrawTime * 1000, _VEC2S_PER_FRAME)
     _VEC2S_PER_FRAME = 0
-    --text = text .. "          [Tab] Presentation Mode   [Arrow Keys] Move Selected Nodes   [Ctrl + P] Show Internal UI Tree   [M] Parent Selected to Hovered"
+    text = text .. "          [Tab] Presentation Mode   [Arrow Keys] Move Selected Nodes   [Ctrl + P] Show Internal UI Tree   [M] Parent Selected to Hovered   [G] Toggle Grid   [F12] Debug Mode"
     self:drawShadowedText(text, 5, _WINDOW_SIZE.y - 19)
 
     -- Color palette on the status bar
@@ -1344,21 +1337,37 @@ function Editor:drawMain()
 
     -- Tooltip when dragging or resizing a node
     if self.nodeDragOrigin and not self.nodeDragSnap then
-        self:drawShadowedText(tostring(self:getSingleSelectedNode():getPos()), _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8)
+        self:drawShadowedText(tostring(self:getSingleSelectedNode():getPos()), _MousePos.x + 15, _MousePos.y + 15, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8, _COLORS.e_cyan)
     end
     if self.nodeResizeOrigin then
-        self:drawShadowedText(tostring(self:getSingleSelectedNode():getSize()), _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8)
+        self:drawShadowedText(tostring(self:getSingleSelectedNode():getSize()), _MousePos.x + 15, _MousePos.y + 15, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8, _COLORS.e_cyan)
     end
 
     -- Tooltip when a UI element is hovered
-    local hoveredNode = self.UI:findChildByPixelDepthFirst(_MousePos)
+    local hoveredNode = self.UI:getHoveredNode(true, true, true)
     local tooltip = hoveredNode and hoveredNode:getTooltip()
     if tooltip then
-        self:drawShadowedText(tooltip, _MousePos.x + 10, _MousePos.y + 20, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8)
+        self:drawShadowedText(tooltip, _MousePos.x + 15, _MousePos.y + 15, _COLORS.white, _COLORS.e_blue, nil, nil, 0.8, _COLORS.e_cyan)
     end
+
+    -- Command buffer
+    self.commandMgr:draw()
 
     -- Input box
     self.INPUT_DIALOG:draw()
+end
+
+
+
+---Draws debug information for this Editor on the screen.
+function Editor:drawDebug()
+    local text = {{1, 1, 1}, "{\n", {1, 0, 0}, "    [\n", {0, 1, 0}, "        {\n", {0, 0, 1}, "            a\n"}
+    love.graphics.setFont(_RESOURCE_MANAGER:getFont("standard").font)
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.print(text, 1, 1, 0, 2, 2)
+    love.graphics.print(text, 2, 2, 0, 2, 2)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print(text, 0, 0, 0, 2, 2)
 end
 
 
@@ -1376,6 +1385,9 @@ function Editor:draw()
 	_CANVAS:draw()
     self:drawUIPass()
     self:drawMain()
+    if _Debug then
+        self:drawDebug()
+    end
 end
 
 
@@ -1399,17 +1411,23 @@ end
 ---@param alpha number? The text alpha, 1 by default.
 ---@param noShadow boolean? If you don't want the shadow after all, despite this function's name...
 ---@param backgroundAlpha number? The background alpha, `0.5 * alpha` by default.
-function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha, noShadow, backgroundAlpha)
+---@param borderColor Color? The border color to be used. No border by default.
+function Editor:drawShadowedText(text, x, y, color, backgroundColor, alpha, noShadow, backgroundAlpha, borderColor)
     color = color or _COLORS.white
     alpha = alpha or 1
     local w = love.graphics.getFont():getWidth(text)
     local h = love.graphics.getFont():getHeight() * #_Utils.strSplit(text, "\n")
+    local margin = backgroundColor and 2 or 0
     -- Make sure the box stays entirely inside of the screen.
-    x = math.min(x, _WINDOW_SIZE.x - w - 4)
-    y = math.min(y, _WINDOW_SIZE.y - h - 4)
+    x = math.min(x, _WINDOW_SIZE.x - w - margin * 2)
+    y = math.min(y, _WINDOW_SIZE.y - h - margin * 2)
     if backgroundColor then
-        love.graphics.setColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundAlpha or (0.5 * alpha))
-        love.graphics.rectangle("fill", x - 2, y - 2, w + 4, h + 4)
+        _SetColor(backgroundColor, backgroundAlpha or (0.5 * alpha))
+        love.graphics.rectangle("fill", x - margin, y - margin, w + margin * 2, h + margin * 2)
+    end
+    if borderColor then
+        _SetColor(borderColor)
+        love.graphics.rectangle("line", x - margin, y - margin - 1, w + margin * 2 + 1, h + margin * 2 + 1)
     end
     if not noShadow then
         love.graphics.setColor(0, 0, 0, 0.8 * alpha)
@@ -1615,6 +1633,8 @@ function Editor:keypressed(key)
         self.canvasMgr:toggleFullscreen()
     elseif self.enabled and key == "m" then
         self:parentSelectedNodeToHoveredNode()
+    elseif self.enabled and key == "g" then
+        _PROJECT:toggleGridVisibility()
     end
 end
 
@@ -1642,11 +1662,11 @@ end
 ---@param h integer The new height of the window.
 function Editor:resize(w, h)
     self.UI:setSize(Vec2(w, h))
-    self.UI:findChildByName("s_align"):setPos(Vec2(240, h - 310))
-    self.UI:findChildByName("s_palign"):setPos(Vec2(360, h - 310))
-    self.UI:findChildByName("s_talign"):setPos(Vec2(480, h - 310))
-    self.UI:findChildByName("s_select"):setPos(Vec2(620, h - 310))
-    self.UI:findChildByName("s_properties"):setPos(Vec2(w - 400, 25))
+    self.UI:getChild("s_align"):setPos(Vec2(240, h - 310))
+    self.UI:getChild("s_palign"):setPos(Vec2(360, h - 310))
+    self.UI:getChild("s_talign"):setPos(Vec2(480, h - 310))
+    self.UI:getChild("s_select"):setPos(Vec2(620, h - 310))
+    self.UI:getChild("s_properties"):setPos(Vec2(w - 400, 25))
     self.keyframeEditor:resize(w, h)
     self.canvasMgr:resize(w, h)
 end

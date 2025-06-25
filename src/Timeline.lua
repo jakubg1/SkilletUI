@@ -88,11 +88,11 @@ function Timeline:getInfo()
     local info = {}
     for i, event in ipairs(self.events) do
         -- Create a list for a node if that's the first time we see it.
-        if not info[event.node] then
-            info[event.node] = {}
+        if not info[event.nodeName] then
+            info[event.nodeName] = {}
         end
         -- Add the event to the appropriate list.
-        table.insert(info[event.node], event)
+        table.insert(info[event.nodeName], event)
     end
     return info
 end
