@@ -2,6 +2,8 @@ _Utils = require("com.utils")
 
 local Vec2 = require("src.Essentials.Vector2")
 local Color = require("src.Essentials.Color")
+
+local Console = require("src.Console")
 local MainCanvas = require("src.MainCanvas")
 local TransitionTest = require("src.TransitionTest")
 local ResourceManager = require("src.ResourceManager")
@@ -71,6 +73,7 @@ _ALIGNMENTS = {
     bottomRight = Vec2(1, 1)
 }
 
+_CONSOLE = Console()
 _CANVAS = MainCanvas()
 _TRANSITION = TransitionTest()
 _RESOURCE_MANAGER = ResourceManager()
@@ -191,6 +194,10 @@ end
 
 function love.load()
 	_RESOURCE_MANAGER:init()
+	_CONSOLE:setFont(_RESOURCE_MANAGER:getFont("standard_9px").font)
+	_CONSOLE:setScale(2)
+	_CONSOLE:setWidth(1000)
+	_CONSOLE:addCommand("test", "Pretty print test.", {}, _Test)
 	_LoadRuntime()
 	if _EDITOR then
 		_EDITOR:load()
@@ -208,6 +215,7 @@ function love.update(dt)
 	_MouseCPos = _CANVAS:posToPixel(_MousePos)
 
 	-- Main update
+	_CONSOLE:_update(dt)
 	_TRANSITION:update(dt)
 	if _EDITOR then
 		_EDITOR:update(dt)
@@ -222,6 +230,7 @@ function love.draw()
 	if _EDITOR then
 		_EDITOR:draw()
 	end
+	_CONSOLE:_draw()
 	local t2 = love.timer.getTime() - t
 	_DrawTime = _DrawTime * 0.95 + t2 * 0.05
 end
@@ -239,6 +248,7 @@ function love.mousereleased(x, y, button)
 end
 
 function love.wheelmoved(x, y)
+	_CONSOLE:_wheelmoved(x, y)
 	if _EDITOR then
 		_EDITOR:wheelmoved(x, y)
 	end
@@ -248,13 +258,19 @@ function love.keypressed(key)
 	if key == "f12" then
 		_Debug = not _Debug
 	end
-	if _EDITOR then
+	_CONSOLE:_keypressed(key)
+	if _EDITOR and not _CONSOLE:isOpen() then
 		_EDITOR:keypressed(key)
 	end
 end
 
+function love.keyreleased(key)
+	_CONSOLE:_keyreleased(key)
+end
+
 function love.textinput(text)
-	if _EDITOR then
+	_CONSOLE:_textinput(text)
+	if _EDITOR and not _CONSOLE:isOpen() then
 		_EDITOR:textinput(text)
 	end
 end
@@ -268,4 +284,63 @@ end
 
 function love.quit()
 	_SaveRuntime()
+end
+
+
+
+
+
+
+
+
+function _Test()
+    local white = {1, 1, 1}
+    local blue = {0.2, 0.8, 1}
+    local yellow = {1, 0.7, 0.2}
+    local red = {1, 0, 0}
+    local green = {0, 1, 0.2}
+    local data = {
+        checksum = "8336e24e4747f6efab99a091c7808e12",
+        contents = {
+            {
+                type = "model",
+                model = {
+                    component_path = {
+                        {type = "string", value = "stacje/przyst_klepacze.t3d"}
+                    },
+                    formatted_path = {red, "stacje/przyst_klepacze.t3d"},
+                    lookup_path = "stacje/przyst_klepacze.t3d"
+                },
+                position = {
+                    {type = "number", value = 0},
+                    {type = "number", value = 0},
+                    {type = "number", value = 0}
+                },
+                rotation = {type = "number", value = 0},
+                texture = {
+                    component_path = {
+                        {type = "parameter", parameter = 1}
+                    },
+                    formatted_path = {yellow, "(p1)"}
+                }
+            }
+        },
+        errors = {
+            {type = "missing_file", contents = "stacje/przyst_klepacze.t3d", line = 5, token = 9}
+        },
+        has_backup = true,
+        position = {
+            {type = "parameter", parameter = 2},
+            {type = "parameter", parameter = 3},
+            {type = "parameter", parameter = 4}
+        },
+        rotation = {
+            {type = "number", value = 0},
+            {type = "parameter", parameter = 5},
+            {type = "number", value = 0}
+        }
+    }
+    --local text = _Utils.prettifyValue(data)
+	local text = _Utils.prettifyValue(_EDITOR.UI:serialize())
+	_CONSOLE:print(text)
 end

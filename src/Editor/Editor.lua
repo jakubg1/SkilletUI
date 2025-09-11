@@ -239,6 +239,10 @@ end
 ---If none of the resize handles are hovered, returns `nil`.
 ---@return integer?
 function Editor:getHoveredNodeResizeHandleID()
+    -- Do not hover the resize handles while a multi-selection box is active.
+    if self.nodeMultiSelectOrigin then
+        return nil
+    end
     if self.selectedNodes:getSize() ~= 1 then
         return nil
     end
@@ -1372,11 +1376,61 @@ end
 
 ---Draws debug information for this Editor on the screen.
 function Editor:drawDebug()
-    local text = {{1, 1, 1}, "{\n", {1, 0, 0}, "    [\n", {0, 1, 0}, "        {\n", {0, 0, 1}, "            a\n"}
-    love.graphics.setFont(_RESOURCE_MANAGER:getFont("standard").font)
+    local white = {1, 1, 1}
+    local blue = {0.2, 0.8, 1}
+    local yellow = {1, 0.7, 0.2}
+    local red = {1, 0, 0}
+    local green = {0, 1, 0.2}
+    local data = {
+        checksum = "8336e24e4747f6efab99a091c7808e12",
+        contents = {
+            {
+                type = "model",
+                model = {
+                    component_path = {
+                        {type = "string", value = "stacje/przyst_klepacze.t3d"}
+                    },
+                    formatted_path = {red, "stacje/przyst_klepacze.t3d"},
+                    lookup_path = "stacje/przyst_klepacze.t3d"
+                },
+                position = {
+                    {type = "number", value = 0},
+                    {type = "number", value = 0},
+                    {type = "number", value = 0}
+                },
+                rotation = {type = "number", value = 0},
+                texture = {
+                    component_path = {
+                        {type = "parameter", parameter = 1}
+                    },
+                    formatted_path = {yellow, "(p1)"}
+                }
+            }
+        },
+        errors = {
+            {type = "missing_file", contents = "stacje/przyst_klepacze.t3d", line = 5, token = 9}
+        },
+        has_backup = true,
+        position = {
+            {type = "parameter", parameter = 2},
+            {type = "parameter", parameter = 3},
+            {type = "parameter", parameter = 4}
+        },
+        rotation = {
+            {type = "number", value = 0},
+            {type = "parameter", parameter = 5},
+            {type = "number", value = 0}
+        }
+    }
+
+    local text = _Utils.prettifyValue(self.selectedNodes)
+    love.graphics.setFont(_RESOURCE_MANAGER:getFont("standard_9px").font)
     love.graphics.setColor(0, 0, 0)
-    love.graphics.print(text, 1, 1, 0, 2, 2)
-    love.graphics.print(text, 2, 2, 0, 2, 2)
+    for x = -1, 1 do
+        for y = -1, 1 do
+            love.graphics.print(text, x * 2, y * 2, 0, 2, 2)
+        end
+    end
     love.graphics.setColor(1, 1, 1)
     love.graphics.print(text, 0, 0, 0, 2, 2)
 end
@@ -1637,9 +1691,9 @@ function Editor:keypressed(key)
     elseif self.enabled and key == "kp-" then
         self.canvasMgr:zoomInOut(0.5, _MouseCPos)
     elseif self.enabled and key == "kp0" then
-        self.canvasMgr:resetZoom()
-    elseif self.enabled and key == "kp1" then
         self.canvasMgr:fitZoom()
+    elseif self.enabled and key == "kp1" then
+        self.canvasMgr:resetZoom()
     elseif not self.enabled and key == "f" then
         self.canvasMgr:toggleFullscreen()
     elseif self.enabled and key == "m" then

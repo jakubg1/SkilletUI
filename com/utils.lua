@@ -1,6 +1,11 @@
 -- utils.lua by jakubg1
 -- version for all the new stuff! (I need to find a more exhaustively edited one)
 
+---It is currently not possible to accurately describe this type using Luadoc.
+---A table with alternating values: color in format of `{r, g, b}` and text which should be drawn using that color.
+---Example: `{{1, 0, 0}, "red", {0, 1, 0}, "green", {1, 1, 1}, "white"}`
+---@alias ColoredText table
+
 local utf8 = require("utf8")
 local json = require("com.json")
 
@@ -240,13 +245,20 @@ end
 ---@return table
 function utils.tableAdd(t1, t2)
 	local t = {}
-	for i, v in ipairs(t1) do
-		table.insert(t, v)
-	end
-	for i, v in ipairs(t2) do
-		table.insert(t, v)
-	end
+	utils.tableAddInplace(t, t1)
+	utils.tableAddInplace(t, t2)
 	return t
+end
+
+
+
+---Adds all entries from `t2` to the table `t1`. Duplicates are not removed.
+---@param t1 table The first table.
+---@param t2 table The second table.
+function utils.tableAddInplace(t1, t2)
+	for i, v in ipairs(t2) do
+		table.insert(t1, v)
+	end
 end
 
 
@@ -350,22 +362,43 @@ end
 
 
 ---Splits a string `s` with the delimiter being `k` and returns a list of results.
----@param s string A string to be split.
+---If Colored Text is passed, the result will be a list of Colored Texts.
+---@param s string|ColoredText A string or LOVE Colored Text to be split.
 ---@param k string A delimiter which determines where to split `s`.
----@return table
+---@return string[]|ColoredText[]
 function utils.strSplit(s, k)
-	local t = {}
-	local l = k:len()
-	while true do
-		local n = s:find("%" .. k)
-		if n then
-			table.insert(t, s:sub(1, n - 1))
-			s = s:sub(n + l)
-		else
-			table.insert(t, s)
-			return t
+	local result = {}
+	if type(s) == "string" then
+		local l = k:len()
+		while true do
+			local n = s:find("%" .. k)
+			if n then
+				table.insert(result, s:sub(1, n - 1))
+				s = s:sub(n + l)
+			else
+				table.insert(result, s)
+				return result
+			end
 		end
+	elseif type(s) == "table" then
+		-- We are splitting a colored text.
+		-- Split each chunk separately and give it the same color.
+		for i = 2, #s, 2 do
+			local color = s[i - 1]
+			local substrs = utils.strSplit(s[i], k)
+			for j, substr in ipairs(substrs) do
+				-- The first chunk of this color should be merged with the last chunk of the previous color.
+				-- Otherwise, create a new chunk.
+				if j > 1 or #result == 0 then
+					table.insert(result, {})
+				end
+				table.insert(result[#result], color)
+				table.insert(result[#result], substr)
+			end
+		end
+		return result
 	end
+	error(string.format("Illegal input type for `utils.strSplit()`: %s (type %s, expected: string or table)", s, type(s)))
 end
 
 
@@ -379,6 +412,16 @@ function utils.strSplitChars(str)
         table.insert(characters, str:sub(utf8.offset(str, i), utf8.offset(str, i + 1) - 1))
     end
     return characters
+end
+
+
+
+---Returns `true` if the string `s` contains the clause `c`.
+---@param s string The string to be searched.
+---@param c string The expected string to be found in `s`.
+---@return boolean
+function utils.strContains(s, c)
+	return s:find(c) ~= nil
 end
 
 
@@ -720,6 +763,179 @@ function utils.pathStripExtension(path)
 	return utils.strJoin(spl, ".")
 end
 
+
+
+---Returns whether the provided table is an array (has only numerical keys going from 1 to the size of the table).
+---@param t table The table to be checked.
+---@return boolean
+function utils.tableIsArray(t)
+	-- Source: https://stackoverflow.com/questions/7526223/how-do-i-know-if-a-table-is-an-array
+	local i = 0
+	for _ in pairs(t) do
+		i = i + 1
+		if t[i] == nil then
+			return false
+		end
+	end
+	return true
+end
+
+
+
+---Adds a new text segment to the provided chunk of colored text.
+---@param ctext ColoredText The colored text to be added to.
+---@param text string|ColoredText The text or colored text to be added.
+---@param color [number, number, number]? The color of the new segment. If not specified, color of the previous segment will be used.
+function utils.ctextAdd(ctext, text, color)
+	local prevColor = ctext[#ctext - 1]
+	local sameColor = color and prevColor and utils.areTablesIdentical(color, prevColor)
+	if type(text) == "table" then
+		utils.tableAddInplace(ctext, text)
+	else
+		if color and not sameColor then
+			table.insert(ctext, color)
+			table.insert(ctext, text)
+		else
+			if #ctext == 0 then
+				-- If the colored text was empty, the first segment will be white.
+				table.insert(ctext, {1, 1, 1})
+				table.insert(ctext, text)
+			else
+				ctext[#ctext] = ctext[#ctext] .. text
+			end
+		end
+	end
+end
+
+
+
+---Returns whether the provided value is a valid colored text.
+---Empty tables are not considered colored text.
+---@param value any The value to be checked.
+---@return boolean
+function utils.tableIsCtext(value)
+	if type(value) ~= "table" or #value == 0 then
+		return false
+	end
+
+	for i, v in ipairs(value) do
+		if i % 2 == 1 then
+			-- Must be a color.
+			if type(v) ~= "table" or #v ~= 3 then
+				return false
+			end
+		else
+			-- Must be a string.
+			if type(v) ~= "string" then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+
+
+local white = {1, 1, 1}
+local blue = {0.2, 0.8, 1}
+local yellow = {1, 0.7, 0.2}
+local red = {1, 0, 0}
+local green = {0, 1, 0.2}
+local gray = {0.6, 0.6, 0.6}
+
+---Turns any value into colored text.
+---@param value any The value to be visualized.
+---@param indent integer? The indent at which this value is located. Does not change the result if the value is not a table. Defaults to 0.
+---@param usedTables table[]? Internally used for checking circular references.
+---@return ColoredText
+function utils.prettifyValue(value, indent, usedTables)
+	indent = indent or 0
+	usedTables = usedTables or {}
+	if type(value) == "table" then
+		if utils.tableIsCtext(value) then
+			local ctext = {}
+			utils.ctextAdd(ctext, "<\"", yellow)
+			utils.ctextAdd(ctext, value)
+			utils.ctextAdd(ctext, "\">", yellow)
+			return ctext
+		elseif utils.isValueInTable(usedTables, value) then
+			return {red, "<circular reference>"}
+		else
+			return utils.prettifyTable(value, indent, usedTables)
+		end
+	elseif type(value) == "string" then
+		return {blue, "\"" .. value .. "\""}
+	elseif type(value) == "number" then
+		return {yellow, tostring(value)}
+	elseif type(value) == "boolean" then
+		return value and {green, "true"} or {red, "false"}
+	elseif type(value) == "nil" then
+		return {gray, "nil"}
+	end
+	return {white, tostring(value)}
+end
+
+
+
+---Turns a table into colored text showing what is the contents of the table.
+---Use `utils.prettifyValue()` instead!
+---@param tbl table The table to be prettified.
+---@param indent integer? How far should the output be indented. Defaults to 0.
+---@param usedTables table[]? Internally used for checking circular references.
+---@return ColoredText
+function utils.prettifyTable(tbl, indent, usedTables)
+	indent = indent or 0
+	usedTables = usedTables or {}
+	table.insert(usedTables, tbl)
+	local result = {}
+
+	-- Determine the properties of the table.
+	local keys = utils.tableGetSortedKeys(tbl)
+	local isArray = keys[1] == 1 and keys[#keys] == #keys
+	local hasTables = false
+	for k, v in pairs(tbl) do
+		if type(v) == "table" then
+			hasTables = true
+			break
+		end
+	end
+	-- The `"type"` key will be always first.
+	if utils.isValueInTable(keys, "type") then
+		utils.removeValueFromTable(keys, "type")
+		table.insert(keys, 1, "type")
+	end
+
+	utils.ctextAdd(result, isArray and "[" or "{", white)
+	if hasTables then
+		utils.ctextAdd(result, "\n", white)
+	end
+	for i, key in ipairs(keys) do
+		local value = tbl[key]
+		local valueText = utils.prettifyValue(value, indent + 1, usedTables)
+		if hasTables then
+			utils.ctextAdd(result, string.rep("    ", indent + 1), white)
+		end
+		if not isArray then
+			utils.ctextAdd(result, key, key == "type" and yellow or white)
+			utils.ctextAdd(result, ": ", white)
+		end
+		utils.ctextAdd(result, valueText)
+		if i < #keys then
+			utils.ctextAdd(result, ",", white)
+			if not hasTables then
+				utils.ctextAdd(result, " ", white)
+			end
+		end
+		if hasTables then
+			utils.ctextAdd(result, "\n", white)
+		end
+	end
+	if hasTables then
+		utils.ctextAdd(result, string.rep("    ", indent), white)
+	end
+	utils.ctextAdd(result, isArray and "]" or "}", white)
+	return result
+end
 
 
 

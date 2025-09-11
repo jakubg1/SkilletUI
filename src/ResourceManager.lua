@@ -15,7 +15,8 @@ function ResourceManager:new()
     self.fonts = {
         default = Font("resources/font_default.json"),
         editor = Font("resources/font_editor.json"),
-        standard = Font("resources/font_standard.json")
+        standard = Font("resources/font_standard.json"),
+        standard_9px = Font("resources/font_standard_9px.json")
     }
     self.fontLookup = {}
 
